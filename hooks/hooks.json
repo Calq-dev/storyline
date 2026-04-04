@@ -1,0 +1,44 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -n \"${CLAUDE_PLUGIN_DATA:-}\" ]; then diff -q \"${CLAUDE_PLUGIN_ROOT}/requirements.txt\" \"${CLAUDE_PLUGIN_DATA}/requirements.txt\" >/dev/null 2>&1 || (mkdir -p \"${CLAUDE_PLUGIN_DATA}/site-packages\" && cp \"${CLAUDE_PLUGIN_ROOT}/requirements.txt\" \"${CLAUDE_PLUGIN_DATA}/requirements.txt\" && pip3 install -q -r \"${CLAUDE_PLUGIN_DATA}/requirements.txt\" --target \"${CLAUDE_PLUGIN_DATA}/site-packages\" 2>&1 | tail -1); fi"
+          },
+          {
+            "type": "command",
+            "command": "if [ -f .storyline/blueprint.yaml ]; then version=$(awk '/^  version:/{print $2; exit}' .storyline/blueprint.yaml 2>/dev/null || echo '?'); project=$(awk '/^  project:/{gsub(/[\"'\\'']/,\"\",$0); sub(/^  project: */,\"\"); print; exit}' .storyline/blueprint.yaml 2>/dev/null || echo '?'); echo \"Storyline active (blueprint v${version} — ${project}). Use /storyline:the-foreman to add features or check status. Do NOT explore the codebase directly — read the blueprint instead.\"; fi"
+          },
+          {
+            "type": "command",
+            "command": "if [ -f .storyline/blueprint.yaml ] && [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ]; then mkdir -p .claude/agents; stamp=\"${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json\"; for agent in developer-amigo testing-amigo frontend-amigo security-amigo; do src=\"${CLAUDE_PLUGIN_ROOT}/agents/${agent}.md\"; dst=\".claude/agents/${agent}.md\"; if [ -f \"$src\" ]; then if [ ! -f \"$dst\" ] || [ \"$src\" -nt \"$dst\" ]; then sed '0,/^---$/!{0,/^---$/{s/^---$/permissionMode: acceptEdits\\n---/}}' \"$src\" > \"$dst\" 2>/dev/null && echo \"Synced ${agent} to .claude/agents/\"; fi; fi; done; fi"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "tool_input=$(cat 2>/dev/null || echo '{}'); file_path=$(echo \"$tool_input\" | python3 -c \"import sys,json; d=json.loads(sys.stdin.read() or '{}'); print(d.get('tool_input',d).get('file_path',''))\" 2>/dev/null || echo ''); if [ -n \"$file_path\" ] && echo \"$file_path\" | grep -q 'blueprint.yaml$'; then blueprint validate 2>&1 || true; fi"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "product-amigo|developer-amigo|testing-amigo|frontend-amigo|security-amigo",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "input=$(cat); agent_type=$(echo \"$input\" | python3 -c \"import sys,json; print(json.load(sys.stdin).get('agent_type',''))\" 2>/dev/null); file=\".storyline/personas/${agent_type}.md\"; if [ -f \"$file\" ]; then mtime=$(python3 -c \"import os; print(int(os.path.getmtime('$file')))\" 2>/dev/null || echo 0); age=$(($(date +%s) - mtime)); if [ \"$age\" -gt 30 ]; then echo \"WARNING: ${agent_type} finished without updating their persona memory at ${file}. Re-dispatch with explicit instructions to update memory.\"; fi; else echo \"NOTE: ${agent_type} has no persona memory file yet at ${file}. This is expected for the first session.\"; fi"
+          }
+        ]
+      }
+    ]
+  }
+}

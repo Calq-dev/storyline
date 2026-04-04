@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Scaffold CLI wrapper — handles PYTHONPATH for plugin dependencies
+set -euo pipefail
+
+if [ -n "${CLAUDE_PLUGIN_DATA:-}" ]; then
+  SITE_PACKAGES="${CLAUDE_PLUGIN_DATA}/site-packages"
+  if [ -d "$SITE_PACKAGES" ]; then
+    export PYTHONPATH="${SITE_PACKAGES}:${PYTHONPATH:-}"
+  fi
+fi
+
+SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+exec python3 "${SCRIPT_DIR}/skills/the-onion/scripts/scaffold.py" "$@"

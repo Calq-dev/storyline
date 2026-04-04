@@ -1,0 +1,18 @@
+{
+  "name": "calq",
+  "owner": {
+    "name": "Jan Krikken",
+    "email": "jan.egbert.krikken@calq.nl"
+  },
+  "metadata": {
+    "description": "Storyline BDD pipeline plugin for Claude Code"
+  },
+  "plugins": [
+    {
+      "name": "storyline",
+      "source": "./",
+      "description": "Complete BDD pipeline from requirements discovery to outside-in implementation",
+      "version": "0.1.0"
+    }
+  ]
+}

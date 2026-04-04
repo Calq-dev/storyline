@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Edit(.storyline/**)",
+      "Write(.storyline/**)",
+      "Bash(blueprint *)",
+      "Bash(scaffold *)",
+      "Bash(mkdir -p .storyline/*)",
+      "Bash(git add .storyline/*)",
+      "Bash(git commit *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(python3 scripts/*)"
+    ]
+  }
+}
