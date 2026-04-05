@@ -151,3 +151,113 @@ test("changeset_init_refuses_slug_collision_from_different_title", () => {
   assert.ok((result.stderr + result.stdout).toLowerCase().includes("already exists"),
     `Expected 'already exists' in error:\n${result.stderr}\n${result.stdout}`);
 });
+
+// ---------------------------------------------------------------------------
+// Test 6: validate passes on fresh init'd changeset
+// ---------------------------------------------------------------------------
+test("changeset_validate_passes_on_fresh_changeset", () => {
+  const d = tmp();
+  initProject(d);
+  runChangeset(["init", "--title", "My Feature"], d);
+
+  const result = runChangeset(["validate"], d);
+  assert.equal(result.exitCode, 0, `validate should pass on fresh changeset:\n${result.stderr}`);
+});
+
+// ---------------------------------------------------------------------------
+// Test 7: validate errors on missing meta.title
+// ---------------------------------------------------------------------------
+test("changeset_validate_errors_on_missing_title", () => {
+  const d = tmp();
+  initProject(d);
+  mkdirSync(join(d, ".storyline", "changesets"), { recursive: true });
+  writeFileSync(
+    join(d, ".storyline", "changesets", "CS-2026-04-05-test.yaml"),
+    "meta:\n  id: CS-2026-04-05-test\n  blueprint_version: 1\n  created_at: '2026-04-05'\n  status: draft\ngoal: ''\nphases: []\ncompletion_criteria: []\nopen_questions: []\n",
+    "utf-8",
+  );
+  const result = runChangeset(["validate"], d);
+  assert.notEqual(result.exitCode, 0);
+  assert.ok((result.stderr + result.stdout).includes("meta.title"),
+    `Expected error about meta.title:\n${result.stderr}\n${result.stdout}`);
+});
+
+// ---------------------------------------------------------------------------
+// Test 8: validate errors on invalid status
+// ---------------------------------------------------------------------------
+test("changeset_validate_errors_on_invalid_status", () => {
+  const d = tmp();
+  initProject(d);
+  mkdirSync(join(d, ".storyline", "changesets"), { recursive: true });
+  writeFileSync(
+    join(d, ".storyline", "changesets", "CS-2026-04-05-test.yaml"),
+    "meta:\n  id: CS-2026-04-05-test\n  title: Test\n  blueprint_version: 1\n  created_at: '2026-04-05'\n  status: bogus\ngoal: ''\nphases: []\ncompletion_criteria: []\nopen_questions: []\n",
+    "utf-8",
+  );
+  const result = runChangeset(["validate"], d);
+  assert.notEqual(result.exitCode, 0);
+  assert.ok((result.stderr + result.stdout).includes("status"),
+    `Expected error about status:\n${result.stderr}\n${result.stdout}`);
+});
+
+// ---------------------------------------------------------------------------
+// Test 9: validate errors when refactor phase has no migration block
+// ---------------------------------------------------------------------------
+test("changeset_validate_errors_on_missing_migration_block", () => {
+  const d = tmp();
+  initProject(d);
+  mkdirSync(join(d, ".storyline", "changesets"), { recursive: true });
+  writeFileSync(
+    join(d, ".storyline", "changesets", "CS-2026-04-05-test.yaml"),
+    [
+      "meta:",
+      "  id: CS-2026-04-05-test",
+      "  title: Test",
+      "  blueprint_version: 1",
+      "  created_at: '2026-04-05'",
+      "  status: draft",
+      "goal: ''",
+      "phases:",
+      "  - id: PH-01",
+      "    title: Refactor something",
+      "    type: refactor",
+      "    touches:",
+      "      add: []",
+      "      modify: []",
+      "      remove: []",
+      "    depends_on: []",
+      "    acceptance: []",
+      "completion_criteria: []",
+      "open_questions: []",
+    ].join("\n"),
+    "utf-8",
+  );
+  const result = runChangeset(["validate"], d);
+  assert.notEqual(result.exitCode, 0);
+  assert.ok((result.stderr + result.stdout).toLowerCase().includes("migration"),
+    `Expected error about migration:\n${result.stderr}\n${result.stdout}`);
+});
+
+// ---------------------------------------------------------------------------
+// Test 10: validate --json outputs structured JSON with valid/errors fields
+// ---------------------------------------------------------------------------
+test("changeset_validate_json_output_on_error", () => {
+  const d = tmp();
+  initProject(d);
+  mkdirSync(join(d, ".storyline", "changesets"), { recursive: true });
+  // Missing meta.title
+  writeFileSync(
+    join(d, ".storyline", "changesets", "CS-2026-04-05-test.yaml"),
+    "meta:\n  id: CS-2026-04-05-test\n  blueprint_version: 1\n  created_at: '2026-04-05'\n  status: draft\ngoal: ''\nphases: []\ncompletion_criteria: []\nopen_questions: []\n",
+    "utf-8",
+  );
+  const result = runChangeset(["validate", "--json"], d);
+  const combined = result.stdout + result.stderr;
+  const jsonMatch = combined.match(/\{[\s\S]*\}/);
+  assert.ok(jsonMatch, `Expected JSON in output:\n${combined}`);
+  const parsed = JSON.parse(jsonMatch![0]);
+  assert.ok("valid" in parsed, "JSON should have 'valid' field");
+  assert.ok("errors" in parsed, "JSON should have 'errors' field");
+  assert.equal(parsed.valid, false);
+  assert.ok(Array.isArray(parsed.errors) && parsed.errors.length > 0, "errors should be non-empty");
+});
