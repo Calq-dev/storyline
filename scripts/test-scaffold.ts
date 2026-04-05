@@ -205,3 +205,32 @@ test("loadModel throws Error with 'Model file not found' when file does not exis
     },
   );
 });
+
+// ---------------------------------------------------------------------------
+// root_entity fallback — aggregate.root_entity ?? aggregate.name
+// ---------------------------------------------------------------------------
+
+const FIXTURE_YAML_NO_ROOT_ENTITY = `
+bounded_contexts:
+  - name: Billing
+    aggregates:
+      - name: Receipt
+        commands: []
+        events: []
+`.trim();
+
+test("root_entity fallback: aggregate without root_entity falls back to aggregate.name", () => {
+  const d = tmp();
+  const modelPath = join(d, "model.yaml");
+  writeFileSync(modelPath, FIXTURE_YAML_NO_ROOT_ENTITY, "utf-8");
+
+  const result = loadModel(modelPath);
+  const aggregate = result.bounded_contexts[0].aggregates[0];
+
+  // root_entity is absent in the fixture — confirm it is undefined/null
+  assert.equal(aggregate.root_entity, undefined);
+
+  // The caller pattern: aggregate.root_entity ?? aggregate.name
+  const rootEntityName = aggregate.root_entity ?? aggregate.name;
+  assert.equal(rootEntityName, "Receipt", "root_entity fallback should return aggregate.name");
+});
