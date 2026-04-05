@@ -66,6 +66,8 @@ Read: .storyline/workbench/example-map.yaml
 
 If it exists, you have a head start — but **do not skip the discovery loop**. Read the example map critically and run a clarification round via `AskUserQuestion` before writing anything.
 
+**Also check for @mister-gherkin mentions in amigo notes.** Grep `.storyline/workbench/amigo-notes/` for `@mister-gherkin`. Each mention is a direct handover note from an amigo — scenario structure advice, split suggestions, edge cases to make explicit. Read them before writing anything.
+
 **Always scan for vague rules before writing.** A rule is vague when it describes intent but not observable behavior — when you could write two completely different scenarios from it and both would be "correct".
 
 Common signals: abstract verbs ("manage", "process", "send", "validate", "display", "view", "access"), outcomes described without a concrete user-visible result, boundary conditions not specified.

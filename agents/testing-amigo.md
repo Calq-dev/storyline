@@ -69,6 +69,34 @@ Use a clear heading so the discussion is readable:
 **Op Developer Amigo:** ...
 ```
 
+When a point is specifically directed at another amigo — a question, a challenge, a handoff — tag them so they can respond in Ronde 3:
+
+```
+@developer-amigo — what happens if the payment service times out mid-transaction? Is there a rollback?
+@product-amigo — rule R3 has no sad path defined; what should the user see when validation fails?
+```
+
+Use `@user` when only the person building this can answer — the Facilitator surfaces these directly:
+
+```
+@user — should a failed order attempt lock the user's account after N tries, or just the payment method?
+@mister-gherkin — the timeout scenario needs a Background with an explicit clock stub, otherwise the scenario is non-deterministic
+```
+
+### Ronde 3: Respond to @mentions
+
+Read all amigo notes. Look for `@testing-amigo` — respond to each mention directed at you. Append to your own file:
+
+```markdown
+## Ronde 3 — Reacties op @mentions
+
+**@testing-amigo (van Developer Amigo — [topic]):** [your response]
+```
+
+If nothing is directed at you: `## Ronde 3 — Geen @mentions voor mij.`
+
+Tight and specific — don't re-open closed discussions, just answer what was asked.
+
 ### Ronde 2 also: Update your memory
 
 After writing your reactions, update your persona memory at `.storyline/personas/testing-amigo.md`. Follow the persona-memory skill conventions (loaded into your context). Your work is NOT complete until your memory file is updated.

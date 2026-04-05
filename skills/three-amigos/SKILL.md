@@ -712,6 +712,11 @@ Wait for all agents to finish writing their notes.
 
 Now dispatch the agents again. This time, each reads the others' notes and appends their reactions to their own file. They also update their persona memory. Include Frontend Amigo if dispatched in Ronde 1.
 
+**@mention convention** — amigos use tags to direct specific questions and handovers:
+- `@developer-amigo`, `@product-amigo`, `@testing-amigo`, `@frontend-amigo` — directed at a specific amigo, who responds in Ronde 3
+- `@user` — question only the human can answer; the Facilitator surfaces these in Step F5
+- `@mister-gherkin` — handover note for Phase 2; Mister Gherkin picks these up when writing scenarios
+
 ```
 Agent (subagent_type: "storyline:product-amigo"):
   prompt: |
@@ -723,6 +728,7 @@ Agent (subagent_type: "storyline:product-amigo"):
 
     Append your reactions to .storyline/workbench/amigo-notes/product.md
     Then update your persona memory at .storyline/personas/product-amigo.md
+    Use @mentions when directing questions at specific amigos, @user for human-only questions, @mister-gherkin for handover notes to Phase 2.
 
     Work from: [project directory]
 
@@ -736,6 +742,7 @@ Agent (subagent_type: "storyline:developer-amigo"):
 
     Append your reactions to .storyline/workbench/amigo-notes/developer.md
     Then update your persona memory at .storyline/personas/developer-amigo.md
+    Use @mentions when directing questions at specific amigos, @user for human-only questions, @mister-gherkin for handover notes to Phase 2.
 
     Work from: [project directory]
 
@@ -749,6 +756,7 @@ Agent (subagent_type: "storyline:testing-amigo"):
 
     Append your reactions to .storyline/workbench/amigo-notes/testing.md
     Then update your persona memory at .storyline/personas/testing-amigo.md
+    Use @mentions when directing questions at specific amigos, @user for human-only questions, @mister-gherkin for handover notes to Phase 2.
 
     Work from: [project directory]
 ```
@@ -769,6 +777,88 @@ No question needed this time — just the reflection. The user already contribut
 
 Wait for all agents to finish.
 
+### Step F3b: Ronde 3 — @mention Responses (parallel)
+
+Dispatch each amigo one final time to respond to `@mentions` directed at them. Include the same amigos as Ronde 2.
+
+```
+Agent (subagent_type: "storyline:product-amigo"):
+  prompt: |
+    This is Ronde 3 — respond to @mentions directed at you.
+
+    Read all amigo notes:
+    - .storyline/workbench/amigo-notes/developer.md
+    - .storyline/workbench/amigo-notes/testing.md
+    (and frontend.md / security.md if present)
+
+    Find every instance of @product-amigo. For each one, append a focused response to
+    .storyline/workbench/amigo-notes/product.md using the heading:
+
+    ## Ronde 3 — Reacties op @mentions
+
+    If no @product-amigo mentions exist, append: ## Ronde 3 — Geen @mentions voor mij.
+    Work from: [project directory]
+
+Agent (subagent_type: "storyline:developer-amigo"):
+  prompt: |
+    This is Ronde 3 — respond to @mentions directed at you.
+
+    Read all amigo notes:
+    - .storyline/workbench/amigo-notes/product.md
+    - .storyline/workbench/amigo-notes/testing.md
+    (and frontend.md / security.md if present)
+
+    Find every instance of @developer-amigo. For each one, append a focused response to
+    .storyline/workbench/amigo-notes/developer.md using the heading:
+
+    ## Ronde 3 — Reacties op @mentions
+
+    If no @developer-amigo mentions exist, append: ## Ronde 3 — Geen @mentions voor mij.
+    Work from: [project directory]
+
+Agent (subagent_type: "storyline:testing-amigo"):
+  prompt: |
+    This is Ronde 3 — respond to @mentions directed at you.
+
+    Read all amigo notes:
+    - .storyline/workbench/amigo-notes/product.md
+    - .storyline/workbench/amigo-notes/developer.md
+    (and frontend.md / security.md if present)
+
+    Find every instance of @testing-amigo. For each one, append a focused response to
+    .storyline/workbench/amigo-notes/testing.md using the heading:
+
+    ## Ronde 3 — Reacties op @mentions
+
+    If no @testing-amigo mentions exist, append: ## Ronde 3 — Geen @mentions voor mij.
+    Work from: [project directory]
+```
+
+If Frontend Amigo was dispatched, also dispatch:
+```
+Agent (subagent_type: "storyline:frontend-amigo"):
+  prompt: |
+    This is Ronde 3 — respond to @mentions directed at you.
+    Read all amigo notes. Find every instance of @frontend-amigo.
+    Append responses to .storyline/workbench/amigo-notes/frontend.md under:
+    ## Ronde 3 — Reacties op @mentions
+    If none: ## Ronde 3 — Geen @mentions voor mij.
+    Work from: [project directory]
+```
+
+While agents work, share a brief insight with the user:
+
+```
+★ Insight ─────────────────────────────────────
+[A quote about the value of direct questions in a team setting —
+ what gets asked explicitly gets answered; what stays implicit becomes an assumption]
+
+The amigos are following up on each other's questions. Almost done.
+───────────────────────────────────────────────
+```
+
+Wait for all agents to finish.
+
 ### Step F4: Synthesize the Discussion
 
 Read all three amigo notes files (which now contain both their analysis AND their reactions to each other):
@@ -786,6 +876,8 @@ Build a concept example-map by:
 3. **Listing open questions** — combining all three, deduplicating, noting where they agreed/disagreed
 4. **Flagging risks** — from all three perspectives
 5. **Highlighting the discussion** — where did they challenge each other? What changed in ronde 2?
+6. **Collecting @user mentions** — grep all notes for `@user`; these become direct questions for the user in Step F5
+7. **Collecting @mister-gherkin mentions** — grep all notes for `@mister-gherkin`; these are handover notes to pass to Mister Gherkin when invoking Phase 2
 
 ### Step F5: Present to User
 
@@ -801,6 +893,19 @@ Show:
 - Key discussion points — where did the amigos disagree or challenge each other?
 
 The amigo notes files in `.storyline/workbench/amigo-notes/` are the meeting minutes — the user can read them for the full discussion.
+
+**Surface @user questions** — if any `@user` mentions were found in Step F4, present them now before continuing:
+
+```
+De amigos hebben een paar vragen voor jou die zij niet kunnen beantwoorden:
+
+1. [quote the @user mention, who raised it, in which context]
+2. ...
+
+Beantwoord wat je kunt — ik verwerk de antwoorden in de example map.
+```
+
+**Note @mister-gherkin handovers** — if any `@mister-gherkin` mentions exist, include them as context when invoking Mister Gherkin in Step F6. Pass them as: "The amigos left these notes for you: [list]".
 
 Then transition into the normal conversation flow — the user discusses, refines, adds MoSCoW priorities, and the facilitator captures it all into the final example-map.
 
