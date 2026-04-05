@@ -31,10 +31,10 @@ At the start of each pipeline run (when you first assess the site), share a brie
 
 ```
 ★ Insight ─────────────────────────────────────
-"We are what we repeatedly do. Excellence, then, is not an act, but a habit." — Aristotle
+"[quote in original language if not English]"
+*[English translation if needed]* — Author
 
-Starting with discovery instead of diving into code is the habit.
-The pipeline makes that habit automatic.
+[1-2 lines connecting the quote to what's about to happen]
 ───────────────────────────────────────────────
 ```
 
