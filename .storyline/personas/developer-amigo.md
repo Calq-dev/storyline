@@ -61,8 +61,8 @@ Only Sticky Storm and Doctor Context truly need the complete blueprint.
 
 - Phase-1 complete: `scripts/scaffold.ts` exists with `toSnakeCase`, `toKebabCase`, `extractEventNames`, `extractCommandNames`, `loadModel`
 - Phase-2 complete: `generateTypescript`, `generatePython`, `printSummary` implemented — all 31 tests green (commit f3e9ebc)
-- Phase-3 part A complete: `main()` implemented, `bin/storyline scaffold` dispatcher added — all 33 tests green (commit f06d3ed)
-- Phase-3 part B remains: CLI integration tests in `scripts/test-scaffold.ts` (spawn bin/storyline, assert exit codes)
+- Phase-3 complete: `main()` implemented, `bin/storyline scaffold` dispatcher added, CLI integration tests in `scripts/test-scaffold.ts` — all 36 tests green
+- Phase-4 complete: `scaffold.py` and empty `skills/the-onion/scripts/` deleted, CLAUDE.md updated, blueprint invariant/glossary/context-description updated, GAP-001 removed, test_framework count updated to 36 tests (commit a266afe)
 - `loadModel` uses the `yaml` npm package (`parse` from `"yaml"`) — same dependency already used by `blueprint.ts` via `parseDocument`/`stringify`
 - `toSnakeCase` inserts `_` before every uppercase letter at position > 0, then lowercases: `InvoiceID` → `invoice_i_d` (documented actual behaviour, not normalised)
 - `loadModel` throws `Error` (never `process.exit`) so unit tests can call it directly without killing the runner — changeset constraint enforced
