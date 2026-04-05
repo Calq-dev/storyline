@@ -15,6 +15,8 @@
 
 import { readFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { parseArgs } from "node:util";
+import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
 
 // ---------------------------------------------------------------------------
@@ -503,9 +505,61 @@ export function printSummary(model: any, outputDir: string): void {
 }
 
 // ---------------------------------------------------------------------------
-// Phase-3 stub — main()
+// Phase-3 — main()
 // ---------------------------------------------------------------------------
 
+/**
+ * CLI entry point.
+ *
+ * Usage:
+ *   storyline scaffold --model <path> --output <dir> --lang typescript|python
+ */
 export function main(): void {
-  throw new Error("main: not yet implemented (phase-3)");
+  const { values } = parseArgs({
+    options: {
+      model: { type: "string" },
+      output: { type: "string" },
+      lang: { type: "string" },
+    },
+    strict: false,
+  });
+
+  const modelPath = values.model as string | undefined;
+  const outputDir = values.output as string | undefined;
+  const lang = values.lang as string | undefined;
+
+  if (!modelPath || !outputDir || !lang) {
+    process.stderr.write(
+      "Usage: storyline scaffold --model <path> --output <dir> --lang typescript|python\n",
+    );
+    process.exit(1);
+  }
+
+  if (lang !== "typescript" && lang !== "python") {
+    process.stderr.write(
+      `scaffold: unsupported --lang '${lang}'. Supported values: typescript, python\n`,
+    );
+    process.exit(1);
+  }
+
+  let model: any;
+  try {
+    model = loadModel(modelPath);
+  } catch (err: any) {
+    process.stderr.write(`scaffold: ${err.message}\n`);
+    process.exit(1);
+  }
+
+  if (lang === "typescript") {
+    generateTypescript(model, outputDir);
+  } else {
+    generatePython(model, outputDir);
+  }
+
+  printSummary(model, outputDir);
+}
+
+// Run main when executed directly (not when imported by tests)
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  main();
 }

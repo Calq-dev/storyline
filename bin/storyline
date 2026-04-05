@@ -27,9 +27,25 @@ fi
 
 # Dispatch to the right script based on first argument
 FIRST_ARG="${1:-}"
-if [ "$FIRST_ARG" = "changeset" ]; then
+if [ -z "$FIRST_ARG" ]; then
+  echo "Usage: storyline <command> [options]" >&2
+  echo "" >&2
+  echo "Blueprint commands:" >&2
+  echo "  init, validate, stamp, summary, view, housekeeping, archive, add-*, ..." >&2
+  echo "" >&2
+  echo "Changeset commands:" >&2
+  echo "  changeset init --title <title>" >&2
+  echo "  changeset validate [--json] [<id>]" >&2
+  echo "" >&2
+  echo "Scaffold commands:" >&2
+  echo "  scaffold --model <path> --output <dir> --lang typescript|python" >&2
+  exit 1
+elif [ "$FIRST_ARG" = "changeset" ]; then
   shift
   exec node --import "${NM}/tsx/dist/esm/index.mjs" "${SCRIPT_DIR}/scripts/changeset.ts" "$@"
+elif [ "$FIRST_ARG" = "scaffold" ]; then
+  shift
+  exec node --import "${NM}/tsx/dist/esm/index.mjs" "${SCRIPT_DIR}/scripts/scaffold.ts" "$@"
 else
   exec node --import "${NM}/tsx/dist/esm/index.mjs" "${SCRIPT_DIR}/scripts/blueprint.ts" "$@"
 fi
