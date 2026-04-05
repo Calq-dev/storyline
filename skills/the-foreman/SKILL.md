@@ -19,7 +19,7 @@ If no blueprint exists, dispatch the Surveyor. Never explore code yourself.
 </HARD-GATE>
 
 <TOOL-REQUIREMENTS>
-**ALWAYS use TaskCreate for todos** — create ALL planned todos upfront at the start of each role before doing any work. The user must be able to see the full plan immediately.
+\*\*ALWAYS use TodoWrite for todos\*\* — write ALL planned todos upfront at the start of each role before doing any work, so the user can see the full plan immediately.
 
 **ALWAYS use AskUserQuestion for every decision** — never ask a question in plain text and wait for the user to type. Every choice (build mode, what to build next, whether to refresh the survey, etc.) must be presented as an MCQ via the AskUserQuestion tool. Fetch it with ToolSearch if needed:
 ```
