@@ -1,8 +1,8 @@
 meta:
   project: Storyline
   created_at: '2026-04-04'
-  updated_at: '2026-04-05T16:14:22.850Z'
-  version: 9
+  updated_at: '2026-04-05T16:34:51.449Z'
+  version: 10
 tech_stack:
   language: "TypeScript, Markdown, Bash, YAML"
   framework: "Claude Code Plugin SDK"
@@ -379,6 +379,21 @@ bounded_contexts:
             T-Shirt sizing"
           - "Post-build flow includes as-built survey, optional security audit,
             and scenario refinement by active amigos"
+      - name: Changeset
+        root_entity: Changeset
+        entities: []
+        value_objects: []
+        commands:
+          [
+            { name: InitChangeset, feature_files: [ implementation.feature ] },
+            { name: ValidateChangeset, feature_files: [ implementation.feature ] }
+          ]
+        events:
+          [
+            { name: ChangesetInitialised, payload_fields: [ id, title, blueprintVersion ] },
+            { name: ChangesetValidated, payload_fields: [ id, errorCount, warningCount ] }
+          ]
+        invariants: []
     policies:
       - name: "HandOffToForemanAfterPlan"
         triggered_by: "ImplementationPlanCreated"
@@ -691,6 +706,27 @@ glossary:
         meaning: 'The mandatory final step of every pipeline phase: validate blueprint,
           stamp if valid, optionally clean up consumed workbench artifacts.
           Enforced via todo steps and PostToolUse hooks.'
+  Changeset:
+    definitions:
+      - context: Implementation
+        meaning: A structured YAML file (.storyline/changesets/CS-YYYY-MM-DD-slug.yaml)
+          describing what to build or refactor against a specific blueprint
+          version. Contains ordered phases with touches (add/modify/remove
+          blueprint elements), migration strategies, and acceptance criteria.
+          Replaces free-form Markdown plans.
+  Phase:
+    definitions:
+      - context: Implementation
+        meaning: One ordered step within a Changeset. Has a type (addition, refactor,
+          migration, or removal), a touches block declaring which blueprint
+          elements it affects, and acceptance criteria.
+  Touches:
+    definitions:
+      - context: Implementation
+        meaning: The structured declaration within a Phase of which blueprint elements
+          are added, modified, or removed. Paths use bracket-notation
+          (bounded_contexts[Name].aggregates[Name]...). Validated against the
+          live blueprint during storyline changeset validate.
 gaps:
   - id: "GAP-001"
     description: "No automated test coverage for scaffold.py — only blueprint.ts has
