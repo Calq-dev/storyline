@@ -172,7 +172,7 @@ For each `@command:X` tag in the feature files:
 - If the command is new, use the CLI helper:
 
 ```bash
-blueprint add-command \
+storyline add-command \
   --context <ContextName> \
   --aggregate <AggregateName> \
   --name <CommandName> \
@@ -186,7 +186,7 @@ The `--feature-files` value is the filename only (relative to `.storyline/featur
 For any terms in the example map's glossary that are now confirmed (not speculative), add them to the blueprint:
 
 ```bash
-blueprint add-glossary \
+storyline add-glossary \
   --term "<Term>" \
   --context "<ContextName>" \
   --meaning "<definition>"
@@ -197,8 +197,8 @@ blueprint add-glossary \
 Always run these two commands before committing:
 
 ```bash
-blueprint validate
-blueprint stamp
+storyline validate
+storyline stamp
 ```
 
 Fix any validation errors before proceeding. `stamp` updates `meta.updated_at` and increments `meta.version` — never edit those fields by hand.

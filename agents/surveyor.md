@@ -48,7 +48,7 @@ Use Explore (very thorough) to map:
 After the scan, directly edit the `tech_stack` section of `.storyline/blueprint.yaml` using the Edit tool. If the blueprint does not yet exist, initialize it first:
 
 ```bash
-blueprint init --project "<project name>"
+storyline init --project "<project name>"
 ```
 
 Then set `tech_stack` fields by editing the file directly (the CLI has no `set-tech-stack` command).
@@ -81,17 +81,17 @@ Transform excavation results into blueprint entries and feature files. Use the C
 
 **Bounded contexts:**
 ```bash
-blueprint add-context "<ContextName>"
+storyline add-context "<ContextName>"
 ```
 
 **Aggregates** (for each context):
 ```bash
-blueprint add-aggregate --context "<ContextName>" --name "<AggregateName>"
+storyline add-aggregate --context "<ContextName>" --name "<AggregateName>"
 ```
 
 **Events** (for each aggregate):
 ```bash
-blueprint add-event \
+storyline add-event \
   --context "<ContextName>" \
   --aggregate "<AggregateName>" \
   --name "<EventName>" \
@@ -100,7 +100,7 @@ blueprint add-event \
 
 **Commands** (for each aggregate):
 ```bash
-blueprint add-command \
+storyline add-command \
   --context "<ContextName>" \
   --aggregate "<AggregateName>" \
   --name "<CommandName>" \
@@ -109,7 +109,7 @@ blueprint add-command \
 
 **Glossary terms:**
 ```bash
-blueprint add-glossary \
+storyline add-glossary \
   --term "<Term>" \
   --context "<ContextName>" \
   --meaning "<definition found in code or comments>"
@@ -133,7 +133,7 @@ Compare findings across the codebase and the blueprint:
 
 Record each gap using the CLI:
 ```bash
-blueprint add-gap \
+storyline add-gap \
   --description "<what is missing or inconsistent>" \
   --severity "critical|important|nice_to_know" \
   --affects "<ContextName>"
@@ -141,7 +141,7 @@ blueprint add-gap \
 
 Record open questions the same way:
 ```bash
-blueprint add-question \
+storyline add-question \
   --question "<the question>" \
   --severity "critical|important|nice_to_know" \
   --raised-during "Surveyor" \
@@ -155,9 +155,9 @@ Do not write a separate gap-analysis file.
 After all entries are written, validate the blueprint and stamp it:
 
 ```bash
-blueprint validate
+storyline validate
 # Fix any errors reported, then:
-blueprint stamp
+storyline stamp
 ```
 
 `stamp` updates `meta.updated_at` and increments `meta.version`. This replaces `survey.json` — the blueprint's `meta` section is the authoritative record of when the survey ran and how far along it is.
@@ -204,18 +204,18 @@ If `.storyline/blueprint.yaml` exists and already has `bounded_contexts`:
    ```
 3. Re-survey only the affected modules — read changed files, extract new or modified entities, events, and behavior.
 4. Merge new findings into the existing blueprint:
-   - New contexts → `blueprint.py add-context`
-   - New aggregates → `blueprint.py add-aggregate`
-   - New events → `blueprint.py add-event`
-   - New commands → `blueprint.py add-command`
+   - New contexts → `storyline add-context`
+   - New aggregates → `storyline add-aggregate`
+   - New events → `storyline add-event`
+   - New commands → `storyline add-command`
    - Changed invariants, value objects, entities → Edit the blueprint directly
    - New behavior → add scenarios to existing `.feature` files or create new ones (tag `@surveyed`)
    - Changed behavior → update existing `@surveyed` scenarios to match current code
-5. Re-run gap analysis for affected contexts using `blueprint.py add-gap` for any new gaps found.
+5. Re-run gap analysis for affected contexts using `storyline add-gap` for any new gaps found.
 6. Validate and stamp:
    ```bash
-   blueprint validate
-   blueprint stamp
+   storyline validate
+   storyline stamp
    ```
 
 Staleness detection uses `meta.updated_at` + `git log --since` instead of a stored commit SHA. The orchestrator compares `meta.updated_at` with the timestamp of the most recent commit to know whether the blueprint is stale.
@@ -234,15 +234,15 @@ Run after implementation is complete (The Onion phase). The blueprint reflects t
    - **Behaviors not previously specified** → Write new feature files to `.storyline/features/` tagged `@surveyed @as-built`. Link them to the relevant commands.
    - **Planned items not implemented** → Add a gap:
      ```bash
-     blueprint add-gap \
+     storyline add-gap \
        --description "Planned <X> not found in implementation" \
        --severity "important" \
        --affects "<ContextName>"
      ```
 4. Validate and stamp:
    ```bash
-   blueprint validate
-   blueprint stamp
+   storyline validate
+   storyline stamp
    ```
 
 As-built mode does not delete existing blueprint entries — it reconciles and extends. If a planned item was deliberately removed, record it as a gap or question rather than silently dropping it.

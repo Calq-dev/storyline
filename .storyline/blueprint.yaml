@@ -1,8 +1,8 @@
 meta:
   project: Storyline
   created_at: '2026-04-04'
-  updated_at: '2026-04-04'
-  version: 3
+  updated_at: '2026-04-05'
+  version: 4
 tech_stack:
   language: "Python 3.9+, Markdown, Bash, YAML"
   framework: "Claude Code Plugin SDK"
@@ -52,6 +52,9 @@ bounded_contexts:
     - name: "DispatchSecurityAudit"
       feature_files:
       - "orchestration.feature"
+    - name: RunHousekeeping
+      feature_files:
+      - housekeeping.feature
     events:
     - name: "PipelineStarted"
       payload_fields:
@@ -430,6 +433,12 @@ bounded_contexts:
     - name: "AddQuestion"
       feature_files:
       - "blueprint-management.feature"
+    - name: GenerateSummary
+      feature_files:
+      - blueprint-views.feature
+    - name: GenerateContextView
+      feature_files:
+      - blueprint-views.feature
     events:
     - name: "BlueprintInitialized"
       payload_fields:
@@ -472,7 +481,7 @@ bounded_contexts:
   - type: "open-host-service"
     target: "Orchestration"
     pattern: "CLI interface"
-    via: "bin/blueprint wrapper provides the CLI that all skills invoke"
+    via: "bin/storyline wrapper provides the CLI that all skills invoke"
 
 glossary:
   Blueprint:
@@ -622,6 +631,24 @@ glossary:
         based on tech_stack and feature characteristics (always core three, optionally
         Frontend and Security)."
 
+  Blueprint Summary:
+    definitions:
+    - context: BlueprintManagement
+      meaning: A compact CLI-generated overview of the blueprint showing meta, 
+        tech stack, context names with descriptions, aggregate names, 
+        relationships, and glossary — used as default read for most agents
+  Blueprint View:
+    definitions:
+    - context: BlueprintManagement
+      meaning: A CLI-generated filtered view of a single bounded context 
+        including its full detail plus relationship targets and relevant 
+        glossary terms — used for targeted agent work
+  Housekeeping:
+    definitions:
+    - context: Orchestration
+      meaning: 'The mandatory final step of every pipeline phase: validate blueprint,
+        stamp if valid, optionally clean up consumed workbench artifacts. Enforced
+        via todo steps and PostToolUse hooks.'
 gaps:
 - id: "GAP-001"
   description: "No automated test coverage for scaffold.py — only blueprint.py has

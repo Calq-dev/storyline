@@ -27,7 +27,7 @@ All project knowledge lives in one file: `.storyline/blueprint.yaml`. Agents rea
 
 Feature files (`.feature`) contain the detailed behavioral specs. The blueprint points to them.
 
-A validation script (`blueprint`) enforces schema and referential integrity — agents can't corrupt the structure.
+A validation script (`storyline`) enforces schema and referential integrity — agents can't corrupt the structure.
 
 ## The Crew
 
@@ -110,19 +110,19 @@ The Foreman dispatches the Surveyor automatically — you don't invoke it direct
 | Frontend Amigo | Agent | UI/UX perspective persona (optional) |
 | Security Amigo | Agent | Post-implementation security audit (optional) |
 
-## Blueprint CLI
+## Storyline CLI
 
 ```bash
-blueprint init --project "Name"
-blueprint validate [--strict]
-blueprint stamp
-blueprint add-context "Payment"
-blueprint add-aggregate --context "Payment" --name "Invoice"
-blueprint add-event --context "Payment" --aggregate "Invoice" --name "InvoiceSent" --payload "invoiceId,amount"
-blueprint add-command --context "Payment" --aggregate "Invoice" --name "SendInvoice" --feature-files "invoicing.feature"
-blueprint add-glossary --term "Invoice" --context "Payment" --meaning "A request for payment"
-blueprint add-gap --description "Missing tests" --severity "important" --affects "Payment"
-blueprint add-question --question "How do refunds work?" --severity "important" --raised-during "Three Amigos" --affects "Payment"
+storyline init --project "Name"
+storyline validate [--strict]
+storyline stamp
+storyline add-context "Payment"
+storyline add-aggregate --context "Payment" --name "Invoice"
+storyline add-event --context "Payment" --aggregate "Invoice" --name "InvoiceSent" --payload "invoiceId,amount"
+storyline add-command --context "Payment" --aggregate "Invoice" --name "SendInvoice" --feature-files "invoicing.feature"
+storyline add-glossary --term "Invoice" --context "Payment" --meaning "A request for payment"
+storyline add-gap --description "Missing tests" --severity "important" --affects "Payment"
+storyline add-question --question "How do refunds work?" --severity "important" --raised-during "Three Amigos" --affects "Payment"
 ```
 
 ## Roadmap

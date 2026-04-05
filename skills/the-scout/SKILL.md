@@ -52,7 +52,7 @@ Read: blueprint.yaml
 **If `blueprint.yaml` does not exist**: Initialize one. Run:
 
 ```bash
-blueprint init --project "Project Name"
+storyline init --project "Project Name"
 ```
 
 Ask the user for the project name if it isn't obvious. This creates a minimal `blueprint.yaml` with `meta` fields set. Then proceed to fill in the `tech_stack` section (Step 1 below).
@@ -106,13 +106,13 @@ tech_stack:
 After editing `blueprint.yaml`, always run the validate/stamp workflow:
 
 ```bash
-blueprint validate
+storyline validate
 ```
 
 If there are errors, fix them in `blueprint.yaml` and re-validate. Repeat until clean. When validation passes:
 
 ```bash
-blueprint stamp
+storyline stamp
 ```
 
 This updates `meta.updated_at` and increments `meta.version` — do not skip it.

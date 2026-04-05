@@ -54,7 +54,7 @@ Use the CLI helpers — do not write separate JSON files:
 
 **Domain events:**
 ```bash
-blueprint add-event \
+storyline add-event \
   --context "Ordering" \
   --aggregate "Order" \
   --name "OrderPlaced" \
@@ -63,7 +63,7 @@ blueprint add-event \
 
 **Commands** (if not already added by Mister Gherkin):
 ```bash
-blueprint add-command \
+storyline add-command \
   --context "Ordering" \
   --aggregate "Order" \
   --name "PlaceOrder" \
@@ -77,7 +77,7 @@ blueprint add-command \
 Surface uncertainties as questions:
 
 ```bash
-blueprint add-question \
+storyline add-question \
   --question "What happens when payment fails after OrderPlaced?" \
   --severity "critical" \
   --raised-during "Sticky Storm" \
@@ -87,8 +87,8 @@ blueprint add-question \
 ### Step 5: Validate and Stamp
 
 ```bash
-blueprint validate
-blueprint stamp
+storyline validate
+storyline stamp
 ```
 
 Fix any validation errors before stamping.
