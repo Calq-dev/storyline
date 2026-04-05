@@ -170,4 +170,4 @@ MIT
 
 ## Author
 
-Jan Krikken — [Calq](https://calq.nl)
+Jan Egbert Krikken — [Calq](https://calq.nl)
