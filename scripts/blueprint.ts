@@ -1049,7 +1049,12 @@ function cmdSummary(_args: unknown, cwd: string) {
     lines.push("## Tech Stack");
     for (const [key, val] of Object.entries(ts)) {
       if (Array.isArray(val)) {
-        lines.push(`  ${key}: ${val.join(", ")}`);
+        const items = val.map((item: unknown) =>
+          item && typeof item === "object" && "name" in (item as object)
+            ? `${(item as {name: string; version?: string; purpose?: string}).name}${(item as {version?: string}).version ? ` ${(item as {version: string}).version}` : ""}`
+            : String(item)
+        );
+        lines.push(`  ${key}: ${items.join(", ")}`);
       } else {
         lines.push(`  ${key}: ${val}`);
       }
