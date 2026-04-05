@@ -113,6 +113,11 @@ function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+/** Full ISO 8601 datetime string (UTC). Used for updated_at and resolved_at. */
+function nowIso(): string {
+  return new Date().toISOString();
+}
+
 /** Run a git command safely using execFileSync (no shell injection). */
 function gitExec(args: string[], cwd: string): string {
   try {
@@ -260,6 +265,21 @@ function validateSchema(data: any, strict = false): string[] {
               if (!("feature_files" in cmd)) {
                 errors.push(fmtError(`${cprefix}.feature_files`, "Command must have a 'feature_files' field.", "Add 'feature_files: []' to this command."));
               }
+              if ("actor" in cmd && cmd.actor != null && typeof cmd.actor !== "string") {
+                errors.push(fmtError(`${cprefix}.actor`, "'actor' must be a string.", "Set 'actor' to a string like 'Customer' or remove it."));
+              }
+              if ("rejection_reasons" in cmd && cmd.rejection_reasons != null) {
+                if (!Array.isArray(cmd.rejection_reasons)) {
+                  errors.push(fmtError(`${cprefix}.rejection_reasons`, "'rejection_reasons' must be a list.", "Change to a YAML sequence of strings."));
+                } else {
+                  for (const rr of cmd.rejection_reasons) {
+                    if (typeof rr !== "string") {
+                      errors.push(fmtError(`${cprefix}.rejection_reasons`, "Each rejection reason must be a string.", "Use plain strings, e.g. 'InsufficientStock'."));
+                      break;
+                    }
+                  }
+                }
+              }
             }
             // events
             const events = agg.events || [];
@@ -292,6 +312,43 @@ function validateSchema(data: any, strict = false): string[] {
           for (const field of ["name", "triggered_by", "issues_command"]) {
             if (!(field in pol) || !pol[field]) {
               errors.push(fmtError(`${pprefix}.${field}`, `Policy must have '${field}'.`, `Add '${field}: ...' to this policy.`));
+            }
+          }
+        }
+
+        // sagas
+        const sagas = ctx.sagas || [];
+        for (let k = 0; k < (sagas?.length ?? 0); k++) {
+          const saga = sagas[k];
+          const sprefix = `${prefix}.sagas[${k}]`;
+          if (!isDict(saga)) {
+            errors.push(fmtError(sprefix, "Saga must be a mapping.", "Use a YAML mapping."));
+            continue;
+          }
+          if (!("name" in saga) || !saga.name) {
+            errors.push(fmtError(`${sprefix}.name`, "Saga must have a 'name'.", "Add 'name: ...' to this saga."));
+          }
+          if (!("steps" in saga) || !Array.isArray(saga.steps)) {
+            errors.push(fmtError(`${sprefix}.steps`, "Saga must have a 'steps' list.", "Add 'steps: []' to this saga."));
+          } else {
+            for (let s = 0; s < saga.steps.length; s++) {
+              const step = saga.steps[s];
+              const stprefix = `${sprefix}.steps[${s}]`;
+              if (!isDict(step)) {
+                errors.push(fmtError(stprefix, "Saga step must be a mapping.", "Use a YAML mapping."));
+                continue;
+              }
+              if (!("on" in step) || !step.on) {
+                errors.push(fmtError(`${stprefix}.on`, "Saga step must have 'on' (triggering event).", "Add 'on: EventName'."));
+              }
+              if (!("do" in step) || !step.do) {
+                errors.push(fmtError(`${stprefix}.do`, "Saga step must have 'do' (command to issue).", "Add 'do: CommandName'."));
+              }
+            }
+          }
+          if ("compensation" in saga && saga.compensation != null) {
+            if (!Array.isArray(saga.compensation)) {
+              errors.push(fmtError(`${sprefix}.compensation`, "'compensation' must be a list of command names.", "Change to a YAML sequence of strings."));
             }
           }
         }
@@ -389,6 +446,12 @@ function validateSchema(data: any, strict = false): string[] {
             `Question status must be one of ${JSON.stringify(sorted(ALLOWED_QUESTION_STATUSES))}, got '${status}'.`,
             "Set 'status' to 'open', 'resolved', or 'deferred'.",
           ));
+        }
+        if ("answer" in q && q.answer != null && typeof q.answer !== "string") {
+          errors.push(fmtError(`${qprefix}.answer`, "'answer' must be a string.", "Set 'answer' to a string or remove it."));
+        }
+        if ("decided_at" in q && q.decided_at != null && typeof q.decided_at !== "string") {
+          errors.push(fmtError(`${qprefix}.decided_at`, "'decided_at' must be a string.", "Use format: '2026-04-05'."));
         }
       }
     }
@@ -532,6 +595,44 @@ function validateReferentialIntegrity(data: any, cwd: string): string[] {
           `Known contexts: ${JSON.stringify(sorted(contextNames))}`,
           "rename the target to match an existing bounded context name",
         ));
+      }
+    }
+
+    // Check 7b: saga step referential integrity
+    for (const saga of ctx.sagas || []) {
+      if (!isDict(saga)) continue;
+      const sagaName = saga.name || "?";
+      const sagaPrefix = `${ctxPrefix}.sagas[${sagaName}]`;
+      for (let s = 0; s < (saga.steps || []).length; s++) {
+        const step = saga.steps[s];
+        if (!isDict(step)) continue;
+        const stprefix = `${sagaPrefix}.steps[${s}]`;
+        if (step.on && !(step.on in allEvents)) {
+          errors.push(fmtRefError(
+            `${stprefix}.on`,
+            `Event '${step.on}' not found in any bounded context.`,
+            `Known events: ${JSON.stringify(sorted(Object.keys(allEvents)))}`,
+            "rename to a valid event name, or add the event to an aggregate",
+          ));
+        }
+        if (step.do && !allCommands.has(step.do)) {
+          errors.push(fmtRefError(
+            `${stprefix}.do`,
+            `Command '${step.do}' not found in any bounded context.`,
+            `Known commands: ${JSON.stringify(sorted(allCommands))}`,
+            "rename to a valid command name, or add the command to an aggregate",
+          ));
+        }
+      }
+      for (const compCmd of saga.compensation || []) {
+        if (typeof compCmd === "string" && !allCommands.has(compCmd)) {
+          errors.push(fmtRefError(
+            `${sagaPrefix}.compensation`,
+            `Compensation command '${compCmd}' not found in any bounded context.`,
+            `Known commands: ${JSON.stringify(sorted(allCommands))}`,
+            "rename to a valid command name, or add the command to an aggregate",
+          ));
+        }
       }
     }
 
@@ -785,13 +886,13 @@ function cmdStamp(_args: unknown, cwd: string) {
   // Round-trip safe: load document, update, save
   const doc = loadDocument(bp);
   const meta = findDocNode(doc, ["meta"]);
-  const todayStr = today();
-  meta.set("updated_at", todayStr);
+  const isoNow = nowIso();
+  meta.set("updated_at", isoNow);
   const version = (parseInt(String(meta.get("version") ?? "0"), 10) || 0) + 1;
   meta.set("version", version);
 
   saveDocument(bp, doc);
-  console.log(`Stamped blueprint: version=${version}, updated_at=${todayStr}`);
+  console.log(`Stamped blueprint: version=${version}, updated_at=${isoNow}`);
 }
 
 function cmdAddContext(args: { name: string }, cwd: string) {
@@ -1025,6 +1126,157 @@ function cmdAddQuestion(args: { question: string; severity: string; raisedDuring
 }
 
 // ---------------------------------------------------------------------------
+// New commands: add-relationship, add-invariant, add-policy, resolve-question
+// ---------------------------------------------------------------------------
+
+function cmdAddRelationship(args: { context: string; type: string; target: string; via: string }, cwd: string) {
+  const [bp, data] = requireBlueprint(cwd);
+  const ctx = findContext(data, args.context);
+  if (ctx === null) {
+    console.error(`Error: bounded context '${args.context}' not found.`);
+    process.exit(1);
+  }
+  if (!ALLOWED_RELATIONSHIP_TYPES.has(args.type)) {
+    console.error(`Error: relationship type '${args.type}' is not valid. Allowed types: ${sorted(ALLOWED_RELATIONSHIP_TYPES).join(", ")}`);
+    process.exit(1);
+  }
+  const contextNames = new Set<string>((data.bounded_contexts || []).filter(isDict).map((c: Dict) => c.name as string));
+  if (!contextNames.has(args.target)) {
+    console.error(`Error: relationship target '${args.target}' is not a known bounded context. Known contexts: ${sorted(contextNames).join(", ")}`);
+    process.exit(1);
+  }
+
+  const doc = loadDocument(bp);
+  const ctxIndex = findDocContextIndex(doc, args.context);
+  let rels = findDocNode(doc, ["bounded_contexts", ctxIndex, "relationships"]);
+  if (!rels) {
+    const ctxNode = findDocNode(doc, ["bounded_contexts", ctxIndex]);
+    ctxNode.set("relationships", doc.createNode([]));
+    rels = findDocNode(doc, ["bounded_contexts", ctxIndex, "relationships"]);
+  }
+
+  const relEntry: Dict = { type: args.type, target: args.target };
+  if (args.via) relEntry.via = args.via;
+  rels.add(doc.createNode(relEntry));
+
+  saveDocument(bp, doc);
+  console.log(`Added relationship from '${args.context}' to '${args.target}' (${args.type}).`);
+}
+
+function cmdAddInvariant(args: { context: string; aggregate: string; invariant: string }, cwd: string) {
+  const [bp, data] = requireBlueprint(cwd);
+  const ctx = findContext(data, args.context);
+  if (ctx === null) {
+    console.error(`Error: bounded context '${args.context}' not found.`);
+    process.exit(1);
+  }
+  const agg = findAggregate(ctx, args.aggregate);
+  if (agg === null) {
+    console.error(`Error: aggregate '${args.aggregate}' not found in context '${args.context}'.`);
+    process.exit(1);
+  }
+
+  const doc = loadDocument(bp);
+  const ctxIndex = findDocContextIndex(doc, args.context);
+  const aggIndex = findDocAggregateIndex(doc, ctxIndex, args.aggregate);
+  let invs = findDocNode(doc, ["bounded_contexts", ctxIndex, "aggregates", aggIndex, "invariants"]);
+  if (!invs) {
+    const aggNode = findDocNode(doc, ["bounded_contexts", ctxIndex, "aggregates", aggIndex]);
+    aggNode.set("invariants", doc.createNode([]));
+    invs = findDocNode(doc, ["bounded_contexts", ctxIndex, "aggregates", aggIndex, "invariants"]);
+  }
+
+  invs.add(doc.createNode(args.invariant));
+
+  saveDocument(bp, doc);
+  console.log(`Added invariant to aggregate '${args.aggregate}' in context '${args.context}'.`);
+}
+
+function cmdAddPolicy(args: { context: string; name: string; triggeredBy: string; issuesCommand: string }, cwd: string) {
+  const [bp, data] = requireBlueprint(cwd);
+  const ctx = findContext(data, args.context);
+  if (ctx === null) {
+    console.error(`Error: bounded context '${args.context}' not found.`);
+    process.exit(1);
+  }
+
+  // Build event set for this context only
+  const ctxEventNames = new Set<string>();
+  for (const agg of ctx.aggregates || []) {
+    if (!isDict(agg)) continue;
+    for (const evt of agg.events || []) {
+      if (isDict(evt) && evt.name) ctxEventNames.add(evt.name as string);
+    }
+  }
+  if (!ctxEventNames.has(args.triggeredBy)) {
+    console.error(`Error: event '${args.triggeredBy}' not found in context '${args.context}'. Known events: ${sorted(ctxEventNames).join(", ") || "(none)"}`);
+    process.exit(1);
+  }
+
+  // Build all-commands set across all contexts
+  const allCommands = new Set<string>();
+  for (const c of data.bounded_contexts || []) {
+    if (!isDict(c)) continue;
+    for (const agg of c.aggregates || []) {
+      if (!isDict(agg)) continue;
+      for (const cmd of agg.commands || []) {
+        if (isDict(cmd) && cmd.name) allCommands.add(cmd.name as string);
+      }
+    }
+  }
+  if (!allCommands.has(args.issuesCommand)) {
+    console.error(`Error: command '${args.issuesCommand}' not found in any bounded context. Known commands: ${sorted(allCommands).join(", ") || "(none)"}`);
+    process.exit(1);
+  }
+
+  const doc = loadDocument(bp);
+  const ctxIndex = findDocContextIndex(doc, args.context);
+  let policies = findDocNode(doc, ["bounded_contexts", ctxIndex, "policies"]);
+  if (!policies) {
+    const ctxNode = findDocNode(doc, ["bounded_contexts", ctxIndex]);
+    ctxNode.set("policies", doc.createNode([]));
+    policies = findDocNode(doc, ["bounded_contexts", ctxIndex, "policies"]);
+  }
+
+  policies.add(doc.createNode({ name: args.name, triggered_by: args.triggeredBy, issues_command: args.issuesCommand }));
+
+  saveDocument(bp, doc);
+  console.log(`Added policy '${args.name}' to context '${args.context}'.`);
+}
+
+function cmdResolveQuestion(args: { id: string; answer: string }, cwd: string) {
+  const [bp, data] = requireBlueprint(cwd);
+  const questions: any[] = data.questions || [];
+  const q = questions.find((item: any) => isDict(item) && item.id === args.id);
+  if (!q) {
+    console.error(`Error: question '${args.id}' not found.`);
+    process.exit(1);
+  }
+
+  if (q.status === "resolved") {
+    const resolvedAt = q.resolved_at || "(unknown)";
+    console.error(`Warning: question '${args.id}' was already resolved at ${resolvedAt}. Updating the answer.`);
+  }
+
+  const doc = loadDocument(bp);
+  const questionsNode = findDocNode(doc, ["questions"]);
+  let qNode: any = null;
+  for (const item of questionsNode.items || []) {
+    if (item.get && item.get("id") === args.id) {
+      qNode = item;
+      break;
+    }
+  }
+
+  qNode.set("status", "resolved");
+  qNode.set("answer", args.answer);
+  qNode.set("resolved_at", nowIso());
+
+  saveDocument(bp, doc);
+  console.log(`Resolved question '${args.id}'.`);
+}
+
+// ---------------------------------------------------------------------------
 // New command: summary
 // ---------------------------------------------------------------------------
 
@@ -1207,10 +1459,11 @@ function cmdHousekeeping(args: { cleanup: boolean; phase?: string }, cwd: string
     process.exit(1);
   }
 
-  // Check if already up to date
+  // Check if already up to date (compare date portion only — updated_at is now a full ISO datetime)
   const data = loadYaml(bp);
   const todayStr = today();
-  const isUpToDate = data?.meta?.updated_at === todayStr;
+  const updatedAt: string = data?.meta?.updated_at ?? "";
+  const isUpToDate = updatedAt.slice(0, 10) === todayStr;
   let blueprintHasGitChanges = false;
 
   const gitDiffOutput = gitExec(["diff", "--name-only", "--", BLUEPRINT_PATH], cwd);
@@ -1242,11 +1495,12 @@ function cmdHousekeeping(args: { cleanup: boolean; phase?: string }, cwd: string
     // Stamp
     const doc = loadDocument(bp);
     const meta = findDocNode(doc, ["meta"]);
-    meta.set("updated_at", todayStr);
+    const isoNow = nowIso();
+    meta.set("updated_at", isoNow);
     const version = (parseInt(String(meta.get("version") ?? "0"), 10) || 0) + 1;
     meta.set("version", version);
     saveDocument(bp, doc);
-    console.log(`Stamped blueprint: version=${version}, updated_at=${todayStr}`);
+    console.log(`Stamped blueprint: version=${version}, updated_at=${isoNow}`);
   }
 
   // Cleanup phase
@@ -1393,6 +1647,10 @@ Commands:
   add-glossary --term X --context Y --meaning Z  Add a glossary term
   add-gap --description X --severity Y --affects Z
   add-question --question X --severity Y --raised-during Z --affects W
+  add-relationship --context X --type T --target Y [--via 'description']
+  add-invariant --context X --aggregate Y --invariant 'rule text'
+  add-policy --context X --name Y --triggered-by Z --issues-command W
+  resolve-question --id Q-001 --answer 'answer text'
   summary                                        Compact blueprint overview
   view --context X                               View a single bounded context
   housekeeping [--cleanup] [--phase X]           Validate + stamp + cleanup
@@ -1577,6 +1835,84 @@ function main() {
         raisedDuring: values["raised-during"],
         affects: values.affects,
       }, cwd);
+      break;
+    }
+
+    case "add-relationship": {
+      const { values } = parseArgs({
+        args: rest,
+        options: {
+          context: { type: "string" },
+          type: { type: "string" },
+          target: { type: "string" },
+          via: { type: "string", default: "" },
+        },
+        strict: true,
+      });
+      if (!values.context || !values.type || !values.target) {
+        console.error("Error: --context, --type, and --target are required for add-relationship");
+        process.exit(1);
+      }
+      cmdAddRelationship({ context: values.context, type: values.type, target: values.target, via: values.via ?? "" }, cwd);
+      break;
+    }
+
+    case "add-invariant": {
+      const { values } = parseArgs({
+        args: rest,
+        options: {
+          context: { type: "string" },
+          aggregate: { type: "string" },
+          invariant: { type: "string" },
+        },
+        strict: true,
+      });
+      if (!values.context || !values.aggregate || !values.invariant) {
+        console.error("Error: --context, --aggregate, and --invariant are required for add-invariant");
+        process.exit(1);
+      }
+      cmdAddInvariant({ context: values.context, aggregate: values.aggregate, invariant: values.invariant }, cwd);
+      break;
+    }
+
+    case "add-policy": {
+      const { values } = parseArgs({
+        args: rest,
+        options: {
+          context: { type: "string" },
+          name: { type: "string" },
+          "triggered-by": { type: "string" },
+          "issues-command": { type: "string" },
+        },
+        strict: true,
+      });
+      if (!values.context || !values.name || !values["triggered-by"] || !values["issues-command"]) {
+        console.error("Error: --context, --name, --triggered-by, and --issues-command are required for add-policy");
+        process.exit(1);
+      }
+      cmdAddPolicy({
+        context: values.context,
+        name: values.name,
+        triggeredBy: values["triggered-by"],
+        issuesCommand: values["issues-command"],
+      }, cwd);
+      break;
+    }
+
+    case "resolve-question": {
+      const { values } = parseArgs({
+        args: rest,
+        options: {
+          id: { type: "string" },
+          answer: { type: "string" },
+        },
+        strict: true,
+      });
+      if (!values.id || !values.answer) {
+        console.error("Error: --id and --answer are required for resolve-question");
+        process.exit(1);
+      }
+      cmdResolveQuestion({ id: values.id, answer: values.answer }, cwd);
       break;
     }
 

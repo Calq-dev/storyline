@@ -2,7 +2,7 @@ meta:
   project: Storyline
   created_at: '2026-04-04'
   updated_at: '2026-04-05'
-  version: 6
+  version: 7
 tech_stack:
   language: "TypeScript, Markdown, Bash, YAML"
   framework: "Claude Code Plugin SDK"
@@ -754,9 +754,8 @@ questions:
     affects:
       - "DomainModeling"
     status: "resolved"
-    answer: "They are agents only (agents/sticky-storm.md,
-      agents/doctor-context.md), dispatched by The Foreman as subagents. No
-      standalone skills needed."
+    answer: "test answer"
+    resolved_at: 2026-04-05T15:46:29.637Z
   - id: "Q-002"
     question: "Is the Security Amigo intended to be dispatched automatically by The
       Foreman for all features, or only when explicitly triggered by the user?"

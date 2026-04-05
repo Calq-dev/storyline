@@ -7,7 +7,7 @@
 
 import { test, afterEach } from "node:test";
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -23,20 +23,15 @@ function run(
   args: string[],
   cwd: string,
 ): { stdout: string; stderr: string; exitCode: number } {
-  try {
-    const stdout = execFileSync("npx", ["tsx", SCRIPT, ...args], {
-      cwd,
-      encoding: "utf-8",
-      stdio: ["pipe", "pipe", "pipe"],
-    });
-    return { stdout, stderr: "", exitCode: 0 };
-  } catch (err: any) {
-    return {
-      stdout: err.stdout ?? "",
-      stderr: err.stderr ?? "",
-      exitCode: err.status ?? 1,
-    };
-  }
+  const result = spawnSync("npx", ["tsx", SCRIPT, ...args], {
+    cwd,
+    encoding: "utf-8",
+  });
+  return {
+    stdout: result.stdout ?? "",
+    stderr: result.stderr ?? "",
+    exitCode: result.status ?? 1,
+  };
 }
 
 function makeTmp(): string {
@@ -855,4 +850,515 @@ test("test_archive_requires_feature_flag", () => {
 
   const result = run(["archive"], d);
   assert.equal(result.exitCode, 1, "Expected archive without --feature to fail");
+});
+
+// ===========================================================================
+// Fixture helper for structural mutation tests
+// ===========================================================================
+
+/**
+ * Writes a blueprint with two contexts:
+ *   - Payments: has Invoice aggregate (no events/commands), empty relationships/policies
+ *   - Orchestration: has Pipeline aggregate with StartPipeline command and PipelineStarted event
+ *
+ * Note: StartPipeline lives in Payments (not Orchestration) so that add-policy tests
+ * exercise cross-context command lookup rather than same-context lookup.
+ */
+function writeMutationFixture(dir: string): string {
+  const bp = join(dir, ".storyline", "blueprint.yaml");
+  writeFileSync(bp, `\
+meta:
+  project: "Test"
+  created_at: "2026-01-01"
+tech_stack:
+  language: TypeScript
+bounded_contexts:
+  - name: Payments
+    aggregates:
+      - name: Invoice
+        invariants: []
+        commands:
+          - name: StartPipeline
+            feature_files: []
+        events: []
+    relationships: []
+    policies: []
+  - name: Orchestration
+    aggregates:
+      - name: Pipeline
+        commands: []
+        events:
+          - name: PipelineStarted
+            payload_fields: []
+    relationships: []
+    policies: []
+questions:
+  - id: "Q-001"
+    question: "Should the Security Amigo run on every feature?"
+    severity: "important"
+    affects:
+      - Payments
+    status: open
+`, "utf-8");
+  return bp;
+}
+
+// ===========================================================================
+// Tests 40–49: structural mutation commands
+// ===========================================================================
+
+// ---------------------------------------------------------------------------
+// Test 40: add-relationship appends to context relationships
+// ---------------------------------------------------------------------------
+test("test_add_relationship", () => {
+  const d = tmp();
+  setupBddDir(d);
+  writeMutationFixture(d);
+
+  const result = run(
+    ["add-relationship", "--context", "Payments", "--type", "customer-supplier", "--target", "Orchestration", "--via", "payment events trigger pipeline transitions"],
+    d,
+  );
+  assert.equal(result.exitCode, 0, `add-relationship failed:\nSTDOUT: ${result.stdout}\nSTDERR: ${result.stderr}`);
+
+  const content = readFileSync(join(d, ".storyline", "blueprint.yaml"), "utf-8");
+  assert.ok(content.includes("customer-supplier"), "Expected relationship type in blueprint");
+  assert.ok(content.includes("Orchestration"), "Expected relationship target in blueprint");
+
+  const validate = run(["validate"], d);
+  assert.equal(validate.exitCode, 0, `validate failed after add-relationship:\nSTDOUT: ${validate.stdout}\nSTDERR: ${validate.stderr}`);
+});
+
+// ---------------------------------------------------------------------------
+// Test 41: add-relationship fails when context does not exist
+// ---------------------------------------------------------------------------
+test("test_add_relationship_context_not_found", () => {
+  const d = tmp();
+  setupBddDir(d);
+  writeMutationFixture(d);
+
+  const result = run(
+    ["add-relationship", "--context", "NonExistent", "--type", "customer-supplier", "--target", "Orchestration"],
+    d,
+  );
+  assert.equal(result.exitCode, 1, "Expected exit code 1 when context not found");
+  assert.ok(result.stderr.includes("NonExistent"), `Expected error to name the missing context.\nSTDERR: ${result.stderr}`);
+});
+
+// ---------------------------------------------------------------------------
+// Test 42: add-invariant appends to aggregate invariants
+// ---------------------------------------------------------------------------
+test("test_add_invariant", () => {
+  const d = tmp();
+  setupBddDir(d);
+  writeMutationFixture(d);
+
+  const result = run(
+    ["add-invariant", "--context", "Payments", "--aggregate", "Invoice", "--invariant", "An invoice amount must be greater than zero"],
+    d,
+  );
+  assert.equal(result.exitCode, 0, `add-invariant failed:\nSTDOUT: ${result.stdout}\nSTDERR: ${result.stderr}`);
+
+  const content = readFileSync(join(d, ".storyline", "blueprint.yaml"), "utf-8");
+  assert.ok(content.includes("An invoice amount must be greater than zero"), "Expected invariant text in blueprint");
+
+  const validate = run(["validate"], d);
+  assert.equal(validate.exitCode, 0, `validate failed after add-invariant:\nSTDOUT: ${validate.stdout}\nSTDERR: ${validate.stderr}`);
+});
+
+// ---------------------------------------------------------------------------
+// Test 43: add-invariant fails when aggregate does not exist in context
+// ---------------------------------------------------------------------------
+test("test_add_invariant_aggregate_not_found", () => {
+  const d = tmp();
+  setupBddDir(d);
+  writeMutationFixture(d);
+
+  const result = run(
+    ["add-invariant", "--context", "Payments", "--aggregate", "Order", "--invariant", "x"],
+    d,
+  );
+  assert.equal(result.exitCode, 1, "Expected exit code 1 when aggregate not found");
+  assert.ok(result.stderr.includes("Order"), `Expected error to name the missing aggregate.\nSTDERR: ${result.stderr}`);
+  assert.ok(result.stderr.includes("Payments"), `Expected error to name the context.\nSTDERR: ${result.stderr}`);
+});
+
+// ---------------------------------------------------------------------------
+// Test 44: add-policy appends to context policies (cross-context command lookup)
+// ---------------------------------------------------------------------------
+test("test_add_policy", () => {
+  const d = tmp();
+  setupBddDir(d);
+  writeMutationFixture(d);
+
+  // StartPipeline is in Payments (cross-context), PipelineStarted is in Orchestration
+  const result = run(
+    ["add-policy", "--context", "Orchestration", "--name", "StartOnInit", "--triggered-by", "PipelineStarted", "--issues-command", "StartPipeline"],
+    d,
+  );
+  assert.equal(result.exitCode, 0, `add-policy failed:\nSTDOUT: ${result.stdout}\nSTDERR: ${result.stderr}`);
+
+  const content = readFileSync(join(d, ".storyline", "blueprint.yaml"), "utf-8");
+  assert.ok(content.includes("StartOnInit"), "Expected policy name in blueprint");
+  assert.ok(content.includes("PipelineStarted"), "Expected triggered_by in blueprint");
+  assert.ok(content.includes("StartPipeline"), "Expected issues_command in blueprint");
+
+  const validate = run(["validate"], d);
+  assert.equal(validate.exitCode, 0, `validate failed after add-policy:\nSTDOUT: ${validate.stdout}\nSTDERR: ${validate.stderr}`);
+});
+
+// ---------------------------------------------------------------------------
+// Test 45: add-policy fails when triggered-by event not in context
+// ---------------------------------------------------------------------------
+test("test_add_policy_event_not_found", () => {
+  const d = tmp();
+  setupBddDir(d);
+  writeMutationFixture(d);
+
+  const result = run(
+    ["add-policy", "--context", "Orchestration", "--name", "NotifyOnOrder", "--triggered-by", "OrderPlaced", "--issues-command", "StartPipeline"],
+    d,
+  );
+  assert.equal(result.exitCode, 1, "Expected exit code 1 when event not found");
+  assert.ok(result.stderr.includes("OrderPlaced"), `Expected error to name the missing event.\nSTDERR: ${result.stderr}`);
+});
+
+// ---------------------------------------------------------------------------
+// Test 46: add-policy fails when issues-command not found in any context
+// ---------------------------------------------------------------------------
+test("test_add_policy_command_not_found", () => {
+  const d = tmp();
+  setupBddDir(d);
+  writeMutationFixture(d);
+
+  const result = run(
+    ["add-policy", "--context", "Orchestration", "--name", "Notify", "--triggered-by", "PipelineStarted", "--issues-command", "SendEmail"],
+    d,
+  );
+  assert.equal(result.exitCode, 1, "Expected exit code 1 when command not found");
+  assert.ok(result.stderr.includes("SendEmail"), `Expected error to name the missing command.\nSTDERR: ${result.stderr}`);
+});
+
+// ---------------------------------------------------------------------------
+// Test 47: resolve-question sets status to resolved with answer and resolved_at
+// ---------------------------------------------------------------------------
+test("test_resolve_question", () => {
+  const d = tmp();
+  setupBddDir(d);
+  writeMutationFixture(d);
+
+  const result = run(
+    ["resolve-question", "--id", "Q-001", "--answer", "Only when the feature touches auth, user input, or sensitive data"],
+    d,
+  );
+  assert.equal(result.exitCode, 0, `resolve-question failed:\nSTDOUT: ${result.stdout}\nSTDERR: ${result.stderr}`);
+
+  const content = readFileSync(join(d, ".storyline", "blueprint.yaml"), "utf-8");
+  assert.ok(content.includes("status: resolved"), "Expected status to be resolved");
+  assert.ok(content.includes("Only when the feature touches auth"), "Expected answer text in blueprint");
+  assert.ok(/resolved_at:\s*\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(content), "Expected resolved_at ISO datetime in blueprint");
+
+  const validate = run(["validate"], d);
+  assert.equal(validate.exitCode, 0, `validate failed after resolve-question:\nSTDOUT: ${validate.stdout}\nSTDERR: ${validate.stderr}`);
+});
+
+// ---------------------------------------------------------------------------
+// Test 48: resolve-question fails when question ID does not exist
+// ---------------------------------------------------------------------------
+test("test_resolve_question_not_found", () => {
+  const d = tmp();
+  setupBddDir(d);
+  writeMutationFixture(d);
+
+  const result = run(
+    ["resolve-question", "--id", "Q-999", "--answer", "irrelevant"],
+    d,
+  );
+  assert.equal(result.exitCode, 1, "Expected exit code 1 when question not found");
+  assert.ok(result.stderr.includes("Q-999"), `Expected error to name the missing question ID.\nSTDERR: ${result.stderr}`);
+});
+
+// ---------------------------------------------------------------------------
+// Test 49: resolve-question on already-resolved question warns and updates answer
+// ---------------------------------------------------------------------------
+test("test_resolve_question_already_resolved", () => {
+  const d = tmp();
+  setupBddDir(d);
+  writeMutationFixture(d);
+
+  // First resolution
+  run(["resolve-question", "--id", "Q-001", "--answer", "Original answer"], d);
+
+  // Capture the resolved_at timestamp written by the first resolution
+  const afterFirst = readFileSync(join(d, ".storyline", "blueprint.yaml"), "utf-8");
+  const resolvedAtMatch = afterFirst.match(/resolved_at:\s*(\S+)/);
+  assert.ok(resolvedAtMatch, "Expected resolved_at to be set after first resolution");
+  const originalResolvedAt = resolvedAtMatch![1];
+
+  // Second resolution
+  const result = run(
+    ["resolve-question", "--id", "Q-001", "--answer", "Updated answer"],
+    d,
+  );
+  assert.equal(result.exitCode, 0, `re-resolve failed:\nSTDOUT: ${result.stdout}\nSTDERR: ${result.stderr}`);
+  assert.ok(result.stderr.includes("already resolved"), `Expected warning about already resolved.\nSTDERR: ${result.stderr}`);
+  assert.ok(result.stderr.includes(originalResolvedAt), `Expected original resolved_at timestamp in warning.\nSTDERR: ${result.stderr}`);
+
+  const content = readFileSync(join(d, ".storyline", "blueprint.yaml"), "utf-8");
+  assert.ok(content.includes("Updated answer"), "Expected updated answer in blueprint");
+});
+
+// ===========================================================================
+// Tests 50–58: new schema fields — actor, rejection_reasons, sagas, answer/decided_at
+// ===========================================================================
+
+function mutationFixtureWithSagaSupport(dir: string): string {
+  const bp = join(dir, ".storyline", "blueprint.yaml");
+  writeFileSync(bp, `\
+meta:
+  project: "Test"
+  created_at: "2026-01-01"
+bounded_contexts:
+  - name: Ordering
+    aggregates:
+      - name: Order
+        commands:
+          - name: PlaceOrder
+            feature_files: []
+          - name: CancelOrder
+            feature_files: []
+        events:
+          - name: OrderPlaced
+            payload_fields: [orderId]
+          - name: OrderCancelled
+            payload_fields: [orderId]
+    policies: []
+    relationships: []
+  - name: Payment
+    aggregates:
+      - name: PaymentLedger
+        commands:
+          - name: RequestPayment
+            feature_files: []
+          - name: RefundPayment
+            feature_files: []
+        events:
+          - name: PaymentReceived
+            payload_fields: [orderId, amount]
+    policies: []
+    relationships: []
+questions:
+  - id: "Q-001"
+    question: "What payment methods?"
+    severity: "important"
+    affects:
+      - Payment
+    status: open
+`, "utf-8");
+  return bp;
+}
+
+// ---------------------------------------------------------------------------
+// Test 50: actor field on command is accepted
+// ---------------------------------------------------------------------------
+test("test_actor_on_command_accepted", () => {
+  const d = tmp();
+  setupBddDir(d);
+  mutationFixtureWithSagaSupport(d);
+
+  const bp = join(d, ".storyline", "blueprint.yaml");
+  const content = readFileSync(bp, "utf-8");
+  // Insert actor into PlaceOrder command
+  writeFileSync(bp, content.replace(
+    "          - name: PlaceOrder\n            feature_files: []",
+    "          - name: PlaceOrder\n            actor: Customer\n            feature_files: []",
+  ), "utf-8");
+
+  const result = run(["validate"], d);
+  assert.equal(result.exitCode, 0, `validate failed with valid actor field:\nSTDOUT: ${result.stdout}\nSTDERR: ${result.stderr}`);
+});
+
+// ---------------------------------------------------------------------------
+// Test 51: actor field must be a string
+// ---------------------------------------------------------------------------
+test("test_actor_must_be_string", () => {
+  const d = tmp();
+  setupBddDir(d);
+  mutationFixtureWithSagaSupport(d);
+
+  const bp = join(d, ".storyline", "blueprint.yaml");
+  const content = readFileSync(bp, "utf-8");
+  writeFileSync(bp, content.replace(
+    "          - name: PlaceOrder\n            feature_files: []",
+    "          - name: PlaceOrder\n            actor: [Customer, Admin]\n            feature_files: []",
+  ), "utf-8");
+
+  const result = run(["validate"], d);
+  assert.notEqual(result.exitCode, 0, "Expected validation to fail when actor is not a string");
+  assert.ok(result.stderr.includes("actor"), `Expected 'actor' in error:\nSTDERR: ${result.stderr}`);
+});
+
+// ---------------------------------------------------------------------------
+// Test 52: rejection_reasons field on command is accepted
+// ---------------------------------------------------------------------------
+test("test_rejection_reasons_on_command_accepted", () => {
+  const d = tmp();
+  setupBddDir(d);
+  mutationFixtureWithSagaSupport(d);
+
+  const bp = join(d, ".storyline", "blueprint.yaml");
+  const content = readFileSync(bp, "utf-8");
+  writeFileSync(bp, content.replace(
+    "          - name: PlaceOrder\n            feature_files: []",
+    "          - name: PlaceOrder\n            feature_files: []\n            rejection_reasons:\n              - InsufficientStock\n              - CreditLimitExceeded",
+  ), "utf-8");
+
+  const result = run(["validate"], d);
+  assert.equal(result.exitCode, 0, `validate failed with valid rejection_reasons:\nSTDOUT: ${result.stdout}\nSTDERR: ${result.stderr}`);
+});
+
+// ---------------------------------------------------------------------------
+// Test 53: rejection_reasons must be a list
+// ---------------------------------------------------------------------------
+test("test_rejection_reasons_must_be_list", () => {
+  const d = tmp();
+  setupBddDir(d);
+  mutationFixtureWithSagaSupport(d);
+
+  const bp = join(d, ".storyline", "blueprint.yaml");
+  const content = readFileSync(bp, "utf-8");
+  writeFileSync(bp, content.replace(
+    "          - name: PlaceOrder\n            feature_files: []",
+    "          - name: PlaceOrder\n            feature_files: []\n            rejection_reasons: InsufficientStock",
+  ), "utf-8");
+
+  const result = run(["validate"], d);
+  assert.notEqual(result.exitCode, 0, "Expected validation to fail when rejection_reasons is not a list");
+  assert.ok(result.stderr.includes("rejection_reasons"), `Expected 'rejection_reasons' in error:\nSTDERR: ${result.stderr}`);
+});
+
+// ---------------------------------------------------------------------------
+// Test 54: valid saga is accepted
+// ---------------------------------------------------------------------------
+test("test_valid_saga_accepted", () => {
+  const d = tmp();
+  setupBddDir(d);
+  mutationFixtureWithSagaSupport(d);
+
+  const bp = join(d, ".storyline", "blueprint.yaml");
+  const content = readFileSync(bp, "utf-8");
+  writeFileSync(bp, content.replace(
+    "    policies: []\n    relationships: []\n  - name: Payment",
+    `    sagas:
+      - name: OrderFulfillmentSaga
+        steps:
+          - on: OrderPlaced
+            do: RequestPayment
+            context: Payment
+        compensation:
+          - CancelOrder
+    policies: []
+    relationships: []
+  - name: Payment`,
+  ), "utf-8");
+
+  const result = run(["validate"], d);
+  assert.equal(result.exitCode, 0, `validate failed with valid saga:\nSTDOUT: ${result.stdout}\nSTDERR: ${result.stderr}`);
+});
+
+// ---------------------------------------------------------------------------
+// Test 55: saga step with unknown event fails referential integrity
+// ---------------------------------------------------------------------------
+test("test_saga_step_unknown_event_fails", () => {
+  const d = tmp();
+  setupBddDir(d);
+  mutationFixtureWithSagaSupport(d);
+
+  const bp = join(d, ".storyline", "blueprint.yaml");
+  const content = readFileSync(bp, "utf-8");
+  writeFileSync(bp, content.replace(
+    "    policies: []\n    relationships: []\n  - name: Payment",
+    `    sagas:
+      - name: BrokenSaga
+        steps:
+          - on: NonExistentEvent
+            do: RequestPayment
+    policies: []
+    relationships: []
+  - name: Payment`,
+  ), "utf-8");
+
+  const result = run(["validate"], d);
+  assert.notEqual(result.exitCode, 0, "Expected validation to fail for unknown saga event");
+  assert.ok(result.stderr.includes("NonExistentEvent"), `Expected event name in error:\nSTDERR: ${result.stderr}`);
+});
+
+// ---------------------------------------------------------------------------
+// Test 56: saga step with unknown command fails referential integrity
+// ---------------------------------------------------------------------------
+test("test_saga_step_unknown_command_fails", () => {
+  const d = tmp();
+  setupBddDir(d);
+  mutationFixtureWithSagaSupport(d);
+
+  const bp = join(d, ".storyline", "blueprint.yaml");
+  const content = readFileSync(bp, "utf-8");
+  writeFileSync(bp, content.replace(
+    "    policies: []\n    relationships: []\n  - name: Payment",
+    `    sagas:
+      - name: BrokenSaga
+        steps:
+          - on: OrderPlaced
+            do: NonExistentCommand
+    policies: []
+    relationships: []
+  - name: Payment`,
+  ), "utf-8");
+
+  const result = run(["validate"], d);
+  assert.notEqual(result.exitCode, 0, "Expected validation to fail for unknown saga command");
+  assert.ok(result.stderr.includes("NonExistentCommand"), `Expected command name in error:\nSTDERR: ${result.stderr}`);
+});
+
+// ---------------------------------------------------------------------------
+// Test 57: answer and decided_at on question are accepted
+// ---------------------------------------------------------------------------
+test("test_answer_and_decided_at_on_question_accepted", () => {
+  const d = tmp();
+  setupBddDir(d);
+  mutationFixtureWithSagaSupport(d);
+
+  const bp = join(d, ".storyline", "blueprint.yaml");
+  const content = readFileSync(bp, "utf-8");
+  writeFileSync(bp, content.replace(
+    '    status: "open"',
+    '    status: "resolved"\n    answer: "Card and bank transfer only"\n    decided_at: "2026-04-05"',
+  ), "utf-8");
+
+  const result = run(["validate"], d);
+  assert.equal(result.exitCode, 0, `validate failed with valid answer/decided_at:\nSTDOUT: ${result.stdout}\nSTDERR: ${result.stderr}`);
+});
+
+// ---------------------------------------------------------------------------
+// Test 58: saga missing steps field fails schema validation
+// ---------------------------------------------------------------------------
+test("test_saga_missing_steps_fails", () => {
+  const d = tmp();
+  setupBddDir(d);
+  mutationFixtureWithSagaSupport(d);
+
+  const bp = join(d, ".storyline", "blueprint.yaml");
+  const content = readFileSync(bp, "utf-8");
+  writeFileSync(bp, content.replace(
+    "    policies: []\n    relationships: []\n  - name: Payment",
+    `    sagas:
+      - name: IncompleteSaga
+    policies: []
+    relationships: []
+  - name: Payment`,
+  ), "utf-8");
+
+  const result = run(["validate"], d);
+  assert.notEqual(result.exitCode, 0, "Expected validation to fail when saga has no steps");
+  assert.ok(result.stderr.includes("steps"), `Expected 'steps' in error:\nSTDERR: ${result.stderr}`);
 });
