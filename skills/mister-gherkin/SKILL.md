@@ -11,6 +11,15 @@ The Three Amigos session already explored the code. You formalize what was disco
 If a rule is too vague, ask the USER, don't go digging in code for answers.
 </HARD-GATE>
 
+<TOOL-REQUIREMENTS>
+**ALWAYS use TaskCreate for todos** — create ALL todos from the todo-actions block upfront before starting any work.
+
+**ALWAYS use AskUserQuestion for vague rules** — when a rule needs clarification before writing a scenario, present options as MCQ via the AskUserQuestion tool. Never ask in plain text. Fetch with ToolSearch if needed:
+```
+ToolSearch: select:AskUserQuestion
+```
+</TOOL-REQUIREMENTS>
+
 <todo-actions>
 - Mister Gherkin: tasting the example map
 - Mister Gherkin: resolving vague rules with the user
