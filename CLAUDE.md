@@ -101,6 +101,10 @@ Skills follow this convention for reading the blueprint:
 2. **Context view for targeted work** — `storyline view --context X` when editing a specific context
 3. **Full read only for cross-context agents** — Sticky Storm (event uniqueness) and Doctor Context (boundary modeling)
 
+## Plugin Versioning
+
+**Bump the version in `.claude-plugin/plugin.json` with every feature commit.** Claude Code's `/plugin upgrade` only triggers when the version changes — users won't get updates otherwise. Use semver: `MAJOR.MINOR.PATCH`.
+
 ## Git Commits
 
 - Do NOT add `Co-Authored-By` lines to commit messages
