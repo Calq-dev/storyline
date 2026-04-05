@@ -197,10 +197,18 @@ fi
 
 If code has changed since `meta.updated_at`:
 
-> "Blueprints are from [date], and there have been [N] commits to src/ since then — touching [modules]. Want me to refresh the survey before we continue? Or should we press on?"
+```
+AskUserQuestion:
+  question: "Blueprints are from [date] — [N] commits to src/ since then, touching [modules]. What do you want to do?"
+  options:
+    - "[recommended ✓] Refresh the survey — update the blueprint to match the code"
+    - "Press on — the blueprint is close enough, let's not lose momentum"
+    - "Quick check — just show me what changed, I'll decide"
+```
 
-- If yes: run incremental survey focused on changed modules
-- If no: proceed to Scenario 4 or 5
+If "refresh": run incremental survey focused on changed modules.
+If "press on": proceed to Scenario 4 or 5.
+If "quick check": show the git diff summary (files changed, modules affected), then re-ask with just the first two options.
 
 ### Scenario 4: Blueprint exists AND user specifies a feature
 
@@ -226,13 +234,25 @@ Pass the confirmed user story to Three Amigos so they can start without re-askin
 TodoWrite: Foreman: blueprint's current — asking what to build next
 ```
 
-Read blueprint for gaps and questions:
+Read blueprint for gaps, questions, and backlog items. Then present what's available as MCQ:
 
-> "The site's in good shape. What feature do you want to add?"
+If there are gaps, open questions, or backlog items:
 
-If there are gaps or open questions in the blueprint, surface them:
+```
+AskUserQuestion:
+  question: "The site's in good shape. What do you want to work on?"
+  options:
+    - "[Gap/backlog item A] — [severity/description, why it matters]"
+    - "[Gap/backlog item B] — [severity/description]"
+    - "[Open question C] — raised during [phase], affects [context]"
+    - "Something else — I have a different feature in mind"
+```
 
-> "I see a few gaps in the blueprint worth looking at: [list top gaps by severity]. Want to tackle one of these, or do you have something else in mind?"
+Build the options from the blueprint's `gaps[]`, `questions[]`, and any files in `.storyline/backlog/`. Order by severity (critical first). Cap at 4-5 options — if there are more, show the top ones and add "Show me everything — list all gaps and backlog items".
+
+If there are no gaps, questions, or backlog items:
+
+> "Clean site — no gaps, no open questions. What feature do you want to add?"
 
 Once the user specifies a feature → proceed as Scenario 4.
 

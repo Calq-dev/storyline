@@ -37,6 +37,19 @@ TodoWrite([
 
 Mark each step as completed as you finish it. Be creative with the wording — it should feel like *you*, not a template. The next skill will add its own steps when it starts.
 
+### Mid-Phase Todo Updates
+
+The Scout's work varies depending on whether a blueprint exists. Update todos to reflect what you actually find.
+
+- **If no blueprint exists**: "Scout: virgin territory — initializing the blueprint from scratch"
+- **If blueprint exists but tech stack is empty**: "Scout: blueprint found but tech stack is blank — scanning for intel"
+- **If blueprint is already populated**: "Scout: blueprint's in good shape — capturing new ideas for the backlog"
+- **While filling tech stack**: "Scout: found Node 20, Next.js, PostgreSQL — documenting the stack"
+- **While capturing backlog items**: Update with actual count: "Scout: 3 ideas captured for the backlog — any more targets?"
+- **When handing off**: "Scout: terrain mapped, [N] backlog items ready — the amigos can take it from here"
+
+The Scout phase is usually quick, but the user should still see the transition from "checking what we have" to "here's what I found" to "ready for the next phase".
+
 ## What You Do
 
 ### 0. Check for the Blueprint First
@@ -223,13 +236,27 @@ Each phase reads `blueprint.yaml` first (cheap, already done), then does a targe
 
 When the blueprint is read and ideas are captured, guide the user:
 
-"I've read the blueprint and captured [N] ideas in the backlog. Here's what I recommend:"
+"I've read the blueprint and captured [N] ideas in the backlog."
 
-- If there are backlog items ready: "Pick a feature and run `/storyline:three-amigos` to explore it with the Three Amigos."
-- If questions need answering first: "The [feature] idea has some open questions. Want to discuss those before starting a Three Amigos session?"
-- If the project is brand new: "Clean slate! Tell me what you want to build, and I'll create a backlog item and kick off a Three Amigos session."
+If multiple backlog items exist, present them as MCQ so the user can pick their next move:
 
-Or: "Run `/storyline:the-foreman` to see the full pipeline status."
+```
+AskUserQuestion:
+  question: "Here's what's in the backlog. What do you want to work on first?"
+  options:
+    - "[recommended ✓] [Feature A] — [one-line summary, why recommended: most valuable / least risky / unblocks others]"
+    - "[Feature B] — [one-line summary]"
+    - "[Feature C] — [one-line summary] ⚠️ has open questions"
+    - "Something else — I have a different idea"
+```
+
+Build the options from the actual backlog files. The `[recommended ✓]` marker goes on the item that seems most valuable or has the fewest blockers. Items with open questions get a ⚠️ marker so the user knows they'll need to resolve something before Three Amigos can fully complete.
+
+If there's only one item, skip the MCQ and confirm directly: "Ready to explore [Feature] with the Three Amigos?"
+
+If questions need answering first: "The [feature] idea has some open questions. Want to discuss those before starting a Three Amigos session?"
+
+If the project is brand new: "Clean slate! Tell me what you want to build."
 
 ### Commit Convention
 

@@ -33,23 +33,57 @@ When invoked by The Foreman after an implementation plan is written, the estimat
 
 Use ALL of this as input — the more context, the better the estimate.
 
+## TodoWrite: Track Progress
+
+When this skill starts, add your steps to the todo list. Preserve completed items from previous skills. Prefix with "Appraiser:" and write in character — you're the seasoned construction estimator sizing up the job before anyone picks up a hammer.
+
+Example (adapt to the feature being estimated):
+```
+TodoWrite([
+  ...keep existing completed items...
+  { content: "Appraiser: sizing up the job",                       status: "in_progress", activeForm: "The Appraiser is sizing up the job" },
+  { content: "Appraiser: sending out the three estimators",        status: "pending",     activeForm: "The Appraiser is dispatching estimators" },
+  { content: "Appraiser: comparing the numbers",                   status: "pending",     activeForm: "The Appraiser is consolidating estimates" },
+  { content: "Appraiser: writing the final appraisal",             status: "pending",     activeForm: "The Appraiser is writing the report" }
+])
+```
+
+### Mid-Phase Todo Updates
+
+The Appraiser has a natural wait period (parallel agent dispatch) where the user benefits most from progress updates.
+
+- **After gathering preferences**: "Appraiser: executive audience, standard detail, person-days — sending the estimators out"
+- **When agents are dispatched**: "Appraiser: three estimators working in parallel — PERT, WBS, and T-Shirt"
+- **As agents return**: "Appraiser: PERT is back — waiting on WBS and T-Shirt" → "Appraiser: all three in — comparing the numbers"
+- **During consolidation**: If estimates agree: "Appraiser: all three within 15% — high confidence". If they diverge: "Appraiser: PERT and WBS disagree by 40% — investigating the gap"
+- **When writing the report**: "Appraiser: final appraisal: [X]–[Y] person-days with [N]% confidence"
+
+Match the tone to the results. If estimates diverge wildly, show that tension. If they agree, show confidence. The user should feel whether this estimate is solid or shaky before they even read the report.
+
 ## Step 0: Gather Preferences
 
-Ask the user via AskUserQuestion (or infer from context):
+Ask the user via a single `AskUserQuestion` that combines the key choices. Don't ask 4 separate questions — that feels like a form, not a conversation. Bundle the most important decisions into one MCQ and infer the rest.
 
-1. **Audience** — who reads this?
-   - `executive` — high-level, visual, minimal jargon
-   - `technical` — detailed, task breakdowns, dependencies
-   - `hybrid` — executive summary + technical appendix (default)
+```
+AskUserQuestion:
+  question: "Who is this estimate for and how detailed should it be?"
+  options:
+    - "[recommended ✓] Standard for the team — 3-5 pages, all three frameworks, person-days"
+    - "Quick for me — 1 page, T-shirt sizes with PERT range"
+    - "Comprehensive for stakeholders — full WBS, risk analysis, Gantt chart"
+    - "Executive summary — high-level, visual, minimal jargon"
+```
 
-2. **Detail level**:
-   - `quick` — ~1 page, T-shirt sizes with PERT range
-   - `standard` — 3-5 pages, all three frameworks (default)
-   - `comprehensive` — 8+ pages, full WBS, risk analysis
+From the user's choice, infer the full preference set:
 
-3. **Units**: story points, person-days, person-hours, calendar weeks, cost
+| Choice | Audience | Detail | Units | Language |
+|---|---|---|---|---|
+| Standard for the team | `technical` | `standard` | `person-days` | conversation language |
+| Quick for me | `technical` | `quick` | `person-days` | conversation language |
+| Comprehensive for stakeholders | `hybrid` | `comprehensive` | `person-days` | conversation language |
+| Executive summary | `executive` | `standard` | `calendar weeks` | conversation language |
 
-4. **Language**: default to conversation language
+If the user needs a different unit (story points, person-hours, cost), they'll say so — don't front-load that question. Default to person-days and adjust if asked.
 
 ## Step 1: Dispatch Three Sub-Agents
 

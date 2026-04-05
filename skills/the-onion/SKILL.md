@@ -55,6 +55,33 @@ TodoWrite([
 
 As you work through scenarios, update dynamically: "The Onion: layer 3 of 5 — the tears are flowing but the tests are green". Mark each step as completed as you finish it.
 
+### Mid-Phase Todo Updates
+
+The initial todos cover the planning layers. But The Onion's real work is the build loop — and that's where the user most needs to see progress. Each scenario is a layer, and each layer has its own red-green-refactor cycle.
+
+Update todos at these natural moments:
+
+**During planning (Step 0–0c):**
+- After reading the blueprint: "The Onion: blueprint absorbed — [N] contexts, [N] scenarios to implement"
+- When writing the plan: "The Onion: charting the layers — walking skeleton first, then [N] scenarios"
+- During plan review: "The Onion: amigos are reviewing the plan — waiting for sign-off"
+- If plan needs adjustment: "The Onion: developer amigo flagged a dependency issue — adjusting the build order"
+
+**During build (Steps 2–8) — update per scenario:**
+- Starting a scenario: "The Onion: scenario 2 of 7 — 'Customer applies discount code'"
+- Step reuse check: "The Onion: checking existing steps — 3 reusable, 2 new to write"
+- Red phase: "The Onion: acceptance test written — confirming it fails for the right reason"
+- If red phase surprises: "The Onion: test passed unexpectedly — investigating before proceeding"
+- Inner loop progress: "The Onion: inner loop — 3 of 5 components passing"
+- Green phase: "The Onion: scenario 2 green — peeling the next layer"
+- Refactoring: "The Onion: refactoring — cleaning up cross-scenario duplication"
+- Outside-in verification: "The Onion: checking the git log — commit order looks right"
+
+**After all scenarios:**
+- "The Onion: all [N] scenarios green — handing the building back to the Foreman"
+
+The user should always know: which scenario, which phase of the loop (red/green/refactor), and how many layers are left. This is where the feeling of "being in a process" matters most — the build is the longest phase.
+
 ## How You Work
 
 ### Step 0: Load Blueprints (BEFORE any code)
@@ -255,9 +282,21 @@ The Foreman will read the plan and ask the user how they want to build. Do not s
 
 ### Step 2: Choose the First Scenario
 
-The implementation plan already defines the execution order, but confirm with the user:
+The implementation plan defines the execution order, but let the user confirm or adjust. Present the top scenarios as MCQ with the recommended walking skeleton marked:
 
-"Based on the blueprint, I recommend starting with '[scenario name]' — it's the simplest path through the core domain and will establish [key components]. Here's the full sequence I'm proposing: [list from plan]. Does this order make sense?"
+```
+AskUserQuestion:
+  question: "Here's the build order from the plan. Which scenario do you want to start with?"
+  options:
+    - "[recommended ✓] '[Scenario A]' — walking skeleton, establishes [key components]"
+    - "'[Scenario B]' — [why someone might start here instead]"
+    - "'[Scenario C]' — [what this establishes]"
+    - "Different order — let me explain what I'd prefer"
+```
+
+Build the options from the implementation plan's scenario execution order. The `[recommended ✓]` is always the walking skeleton — the simplest end-to-end path. Include the top 3-4 scenarios; the rest can follow in plan order once the first is chosen.
+
+If the user picks "different order", ask which scenario and why — their reasoning may reveal a constraint the plan missed.
 
 ### Step 3: Generate Step Definitions
 
@@ -332,7 +371,31 @@ tests/acceptance/steps/checkout_steps.ts
 tests/acceptance/steps/checkout_steps.py
 ```
 
-### Step 4: Run the Failing Acceptance Test
+### Step 3b: Check for Reusable Step Definitions
+
+Before writing new step definitions, check if any existing step definitions already match or partially match the steps in the current scenario. Duplicated step definitions are a top BDD anti-pattern — they create fragile coupling where a change in one domain breaks scenarios in another.
+
+```bash
+# Find existing step definition files
+```
+```
+Glob: tests/acceptance/steps/**/*
+Grep: pattern="Given|When|Then" path="tests/acceptance/steps/"
+```
+
+For each step in the new scenario:
+- **Exact match exists** → reuse it, don't create a duplicate
+- **Similar match exists** (same intent, different wording) → consider generalizing the existing step with a regex or expression parameter, or align the scenario wording to match the existing step
+- **No match** → write a new step definition
+
+Report: "Step reuse check: [N] steps reused from existing definitions, [N] new steps written."
+
+### Step 4: Run the Failing Acceptance Test (Red-Phase Gate)
+
+<HARD-GATE>
+This is not optional. The acceptance test MUST fail before you write implementation code.
+A test that has never failed proves nothing — it could be wired wrong, matching the wrong step, or asserting nothing meaningful. The red phase is how you verify the test actually tests something.
+</HARD-GATE>
 
 ```bash
 # TypeScript/Cucumber.js
@@ -345,7 +408,14 @@ behave features/checkout.feature --tags=first-scenario
 mvn test -Dcucumber.filter.tags="@first-scenario"
 ```
 
-It should fail — that's the point. The failure tells you what to build first. Read the error message and use it to decide what to implement next.
+**Verify the failure is meaningful:**
+1. The test must fail for the **right reason** — a missing implementation, not a syntax error or misconfigured step
+2. The error message should point to the behavior that needs implementing (e.g., "function not found", "expected X but got undefined")
+3. If the test passes immediately, something is wrong — investigate before proceeding. Either the step definitions are wired incorrectly (matching a different step), or the behavior already exists
+
+**If the test passes when it shouldn't:** Stop. Do not proceed to implementation. Diagnose why — the step definitions may be too loosely matched, or a previous implementation already covers this case. Report this to the user.
+
+Only after confirming a meaningful failure, proceed to implementation.
 
 ### Step 5: Work Inward — Inner Loop TDD
 
@@ -428,7 +498,32 @@ npx cucumber-js features/checkout.feature
 
 If it doesn't pass, the failure message tells you exactly what's missing. Fix it with another inner loop cycle.
 
-### Step 7b: Outside-In Verification
+### Step 7b: Outer-Loop Refactoring (mandatory)
+
+The inner loop has its own refactoring step, but outer-loop refactoring is equally important and often skipped. Now that the acceptance test is green and the feature works end-to-end, step back and look at the bigger picture.
+
+**Refactoring checklist:**
+1. **Cross-scenario duplication** — Do multiple scenarios share similar setup or assertion logic? Extract into shared helpers or a Background block.
+2. **Step definition bloat** — Are step definitions doing too much? Each step should delegate to application code, not contain business logic itself.
+3. **Naming alignment** — Do class names, method names, and variables match the glossary in the blueprint? If the code says `createPurchase()` but the glossary says "Order", rename now while the test suite protects you.
+4. **Test readability** — Can someone unfamiliar with the codebase read the acceptance test output and understand what the system does? If not, improve scenario titles and step wording.
+5. **Dead code** — Did the implementation leave behind any scaffolding, TODOs, or commented-out code? Remove it.
+
+The green test suite is your safety net — refactor confidently. Run the full suite after refactoring to confirm nothing broke:
+
+```bash
+# Run full acceptance suite, not just the current scenario
+npx cucumber-js features/
+# or: behave features/ / mvn test
+```
+
+Commit the refactoring separately from the feature implementation:
+```bash
+git add .
+git commit -m "refactor: clean up after [scenario name] implementation"
+```
+
+### Step 7c: Outside-In Verification
 
 Before committing, verify you actually followed outside-in TDD:
 
