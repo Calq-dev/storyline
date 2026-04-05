@@ -13,7 +13,7 @@ If invoked with arguments (e.g., `/storyline:three-amigos order cancellation`), 
 
 <HARD-GATE>
 Do NOT explore the codebase. The blueprint IS your context.
-Read `.storyline/blueprint.yaml` and relevant feature files — nothing else.
+Run `storyline summary` for project context, then read relevant feature files — nothing else.
 In full session mode, the persona AGENTS explore the code, not you.
 In quick scan mode, the blueprint + feature files are sufficient.
 </HARD-GATE>
@@ -94,11 +94,11 @@ Be creative and context-specific. If you're exploring "payment refunds", say "Th
 
 Before asking the user anything, **load the project context** from the blueprint:
 
-```
-Read: .storyline/blueprint.yaml
+```bash
+storyline summary
 ```
 
-This gives you the tech stack, bounded contexts, existing aggregates, commands, events, and domain glossary — all without re-scanning. If the file doesn't exist, suggest running `/storyline:the-scout` first.
+This gives you tech stack, bounded contexts, aggregates, and — crucially — the exact `storyline view --context "<name>"` commands to get full detail on any context. If the blueprint doesn't exist, suggest running `/storyline:the-scout` first.
 
 Then read the feature files that are relevant to the feature being explored (the blueprint's `commands[].feature_files` tells you which ones matter).
 
@@ -387,7 +387,7 @@ Agent (subagent_type: "storyline:product-amigo"):
     The feature to explore was provided by the user above.
 
     ## Project blueprint:
-    Read the blueprint at .storyline/blueprint.yaml for project context.
+    Run `storyline summary` for project overview. Use `storyline view --context "<name>"` (names listed in summary output) for full detail on relevant contexts.
 
     Write your findings to .storyline/workbench/amigo-notes/product.md
     Do NOT read the other amigos' notes yet — they haven't written theirs.
@@ -409,7 +409,7 @@ Agent (subagent_type: "storyline:developer-amigo"):
     The feature to explore was provided by the user above.
 
     ## Project blueprint:
-    Read the blueprint at .storyline/blueprint.yaml for project context.
+    Run `storyline summary` for project overview. Use `storyline view --context "<name>"` (names listed in summary output) for full detail on relevant contexts.
 
     Write your findings to .storyline/workbench/amigo-notes/developer.md
     Do NOT read the other amigos' notes yet — they haven't written theirs.
@@ -431,7 +431,7 @@ Agent (subagent_type: "storyline:testing-amigo"):
     The feature to explore was provided by the user above.
 
     ## Project blueprint:
-    Read the blueprint at .storyline/blueprint.yaml for project context.
+    Run `storyline summary` for project overview. Use `storyline view --context "<name>"` (names listed in summary output) for full detail on relevant contexts.
 
     Write your findings to .storyline/workbench/amigo-notes/testing.md
     Do NOT read the other amigos' notes yet — they haven't written theirs.
@@ -457,7 +457,7 @@ Agent (subagent_type: "storyline:frontend-amigo"):
     The feature to explore was provided by the user above.
 
     ## Project blueprint:
-    Read the blueprint at .storyline/blueprint.yaml for project context.
+    Run `storyline summary` for project overview. Use `storyline view --context "<name>"` (names listed in summary output) for full detail on relevant contexts.
 
     Write your findings to .storyline/workbench/amigo-notes/frontend.md
     Do NOT read the other amigos' notes yet — they haven't written theirs.
@@ -484,7 +484,7 @@ Agent (subagent_type: "storyline:security-amigo"):
     The feature to explore was provided by the user above.
 
     ## Project blueprint:
-    Read the blueprint at .storyline/blueprint.yaml for project context.
+    Run `storyline summary` for project overview. Use `storyline view --context "<name>"` (names listed in summary output) for full detail on relevant contexts.
 
     Write your findings to .storyline/workbench/amigo-notes/security.md
     Focus on: auth design, data exposure risks, input validation needs,

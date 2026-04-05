@@ -43,8 +43,8 @@ Mark each step as completed as you finish it. Be creative with the wording — i
 
 Before doing anything, check if a blueprint exists:
 
-```
-Read: blueprint.yaml
+```bash
+storyline summary 2>/dev/null || echo "no blueprint yet"
 ```
 
 **If `blueprint.yaml` exists**: You have the full project picture — tech stack, bounded contexts, domain model, gaps, open questions. **Skip the full codebase scan.** Your job now is purely to orient the team on what's in the blueprint, capture new ideas into the backlog, and suggest which pipeline phase to run next.

@@ -70,7 +70,7 @@ Agent (description: "PERT estimation"):
     
     Read the framework guide: skills/the-appraiser/references/framework-pert.md
     Read the implementation plan: .storyline/plans/<plan-filename>.md
-    Read the blueprint: .storyline/blueprint.yaml
+    Run `storyline summary` for project overview. Use `storyline view --context "<name>"` for relevant contexts.
     
     Apply PERT to estimate this work. Output structured JSON.
     Be honest about uncertainty — flag assumptions explicitly.
@@ -83,7 +83,7 @@ Agent (description: "WBS estimation"):
     
     Read the framework guide: skills/the-appraiser/references/framework-wbs.md
     Read the implementation plan: .storyline/plans/<plan-filename>.md
-    Read the blueprint: .storyline/blueprint.yaml
+    Run `storyline summary` for project overview. Use `storyline view --context "<name>"` for relevant contexts.
     
     Apply WBS to estimate this work. Output structured JSON.
     Save to: .storyline/workbench/estimates/wbs.json
@@ -94,7 +94,7 @@ Agent (description: "T-Shirt estimation"):
     
     Read the framework guide: skills/the-appraiser/references/framework-tshirt.md
     Read the implementation plan: .storyline/plans/<plan-filename>.md
-    Read the blueprint: .storyline/blueprint.yaml
+    Run `storyline summary` for project overview. Use `storyline view --context "<name>"` for relevant contexts.
     
     Apply T-Shirt sizing. Output structured JSON.
     Save to: .storyline/workbench/estimates/tshirt.json

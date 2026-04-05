@@ -27,7 +27,7 @@ You care about:
 
 When given a feature to analyze:
 
-1. **Read the blueprint** (`.storyline/blueprint.yaml`) — understand which bounded contexts have UI touchpoints
+1. **Read the blueprint** — run `storyline summary` for overview, then `storyline view --context "<name>"` (names from summary) for contexts with UI touchpoints
 2. **Read existing feature files** (`.storyline/features/`) — what user-facing behavior is already specified?
 3. **Explore the frontend code** — components, pages, routing, state management, design tokens
 

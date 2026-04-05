@@ -1100,6 +1100,37 @@ function cmdSummary(_args: unknown, cwd: string) {
     lines.push("");
   }
 
+  // Context views — dynamic, based on actual contexts in this blueprint
+  if (bcs.length > 0) {
+    lines.push("## Context Views");
+    lines.push("  # Run these to get full detail for a specific context:");
+    for (const ctx of bcs) {
+      if (isDict(ctx) && ctx.name) {
+        lines.push(`  storyline view --context "${ctx.name}"`);
+      }
+    }
+    lines.push("");
+  }
+
+  // Available CLI commands — static reference for agents
+  lines.push("## Available CLI Commands");
+  lines.push("");
+  lines.push("  ### Read (no side effects)");
+  lines.push('  storyline summary                                          # this output');
+  lines.push('  storyline view --context "<name>"                         # full detail for one context');
+  lines.push('  storyline validate [--strict]                             # schema + referential integrity');
+  lines.push("");
+  lines.push("  ### Mutate (trigger PostToolUse validation)");
+  lines.push('  storyline add-context "<name>"');
+  lines.push('  storyline add-aggregate --context "<name>" --name "<name>"');
+  lines.push('  storyline add-event --context "<ctx>" --aggregate "<agg>" --name "<name>" --payload "field1,field2"');
+  lines.push('  storyline add-command --context "<ctx>" --aggregate "<agg>" --name "<name>" --feature-files "file.feature"');
+  lines.push('  storyline add-glossary --term "<term>" --context "<name>" --meaning "<meaning>"');
+  lines.push('  storyline add-gap --description "<desc>" --severity "critical|important|nice_to_know" --affects "<name>"');
+  lines.push('  storyline add-question --question "<q>" --severity "critical|important|nice_to_know" --raised-during "<phase>" --affects "<name>"');
+  lines.push('  storyline stamp                                            # bump version + updated_at');
+  lines.push('  storyline housekeeping [--cleanup [--phase <name>]]       # validate + stamp + optional cleanup');
+
   console.log(lines.join("\n"));
 }
 

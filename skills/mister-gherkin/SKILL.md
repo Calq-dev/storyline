@@ -9,7 +9,7 @@ description: |
 # Mister Gherkin — BDD Pipeline Phase 2: Specify
 
 <HARD-GATE>
-Do NOT explore the codebase. Read the blueprint and the example map — that's your input.
+Do NOT explore the codebase. Run `storyline summary` for project context, then read the example map — that's your input.
 The Three Amigos session already explored the code. You formalize what was discovered.
 If a rule is too vague, ask the USER, don't go digging in code for answers.
 </HARD-GATE>

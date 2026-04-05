@@ -567,6 +567,43 @@ test("test_summary_on_empty_blueprint", () => {
   assert.ok(result.stdout.includes("Test App"), "Expected project name in summary");
 });
 
+test("test_summary_includes_context_views_section", () => {
+  const d = tmp();
+  setupBddDir(d);
+  run(["init", "--project", "Test App"], d);
+  run(["add-context", "Payment"], d);
+  run(["add-context", "Ordering"], d);
+
+  const result = run(["summary"], d);
+  assert.equal(result.exitCode, 0, `summary failed:\nSTDOUT: ${result.stdout}\nSTDERR: ${result.stderr}`);
+  assert.ok(result.stdout.includes("## Context Views"), "Expected '## Context Views' section in summary");
+  assert.ok(result.stdout.includes('storyline view --context "Payment"'), "Expected view command for Payment");
+  assert.ok(result.stdout.includes('storyline view --context "Ordering"'), "Expected view command for Ordering");
+});
+
+test("test_summary_includes_cli_commands_section", () => {
+  const d = tmp();
+  setupBddDir(d);
+  run(["init", "--project", "Test App"], d);
+
+  const result = run(["summary"], d);
+  assert.equal(result.exitCode, 0, `summary failed:\nSTDOUT: ${result.stdout}\nSTDERR: ${result.stderr}`);
+  assert.ok(result.stdout.includes("## Available CLI Commands"), "Expected '## Available CLI Commands' section");
+  assert.ok(result.stdout.includes("storyline validate"), "Expected validate command listed");
+  assert.ok(result.stdout.includes("storyline housekeeping"), "Expected housekeeping command listed");
+  assert.ok(result.stdout.includes("storyline add-context"), "Expected add-context command listed");
+});
+
+test("test_summary_no_context_views_when_empty", () => {
+  const d = tmp();
+  setupBddDir(d);
+  run(["init", "--project", "Test App"], d);
+
+  const result = run(["summary"], d);
+  assert.equal(result.exitCode, 0, `summary failed:\nSTDOUT: ${result.stdout}\nSTDERR: ${result.stderr}`);
+  assert.ok(!result.stdout.includes("## Context Views"), "Expected NO '## Context Views' section on empty blueprint");
+});
+
 // ===========================================================================
 // View tests
 // ===========================================================================

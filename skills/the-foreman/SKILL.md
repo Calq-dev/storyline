@@ -1,7 +1,7 @@
 ---
 name: the-foreman
 description: |
-  **The Foreman — Pipeline Entry Point & Build Director**: The central coordinator for the BDD pipeline. Invoke explicitly as the-foreman or foreman, when asked "check the site", "where are we", "what's the pipeline status", or when The Onion hands off after completing implementation. This is the main entry point for the storyline plugin. Reads .storyline/blueprint.yaml as the single source of truth.
+  **The Foreman — Pipeline Entry Point & Build Director**: The central coordinator for the BDD pipeline. Invoke explicitly as the-foreman or foreman, when asked "check the site", "where are we", "what's the pipeline status", or when The Onion hands off after completing implementation. This is the main entry point for the storyline plugin. Runs `storyline summary` as the single source of truth.
 argument-hint: "[feature description | @backlog-file.md | build [plan-name]]"
 ---
 
@@ -17,7 +17,7 @@ If invoked with arguments, handle these cases:
 
 <HARD-GATE>
 Do NOT explore the codebase. Do NOT use Explore, Glob, Grep, or Read on source code.
-The blueprint IS your codebase context. Read `.storyline/blueprint.yaml` — that's it.
+The blueprint IS your codebase context. Run `storyline summary` — that's it.
 If no blueprint exists, dispatch the Surveyor. Never explore code yourself.
 </HARD-GATE>
 
@@ -134,8 +134,8 @@ TodoWrite: Foreman: checking the site
 **Step 1: Read the site.**
 
 ```bash
-# Check for blueprint
-cat .storyline/blueprint.yaml 2>/dev/null
+# Check for blueprint — summary also lists available view commands per context
+storyline summary 2>/dev/null || echo "no blueprint yet"
 
 # Check if source code exists (any files outside .storyline/)
 ls src/ 2>/dev/null || find . -maxdepth 2 -name "*.ts" -o -name "*.py" -o -name "*.js" -o -name "*.rb" 2>/dev/null | head -5
@@ -247,7 +247,7 @@ TodoWrite: Foreman: plan's ready — time for the briefing
 Read the key artifacts and present a briefing to the user (and to yourself — this is critical context for a new session):
 
 ```
-Read: .storyline/blueprint.yaml
+Bash: storyline summary
 Glob: .storyline/plans/*.md          ← List available plans; read the selected plan
 Glob: .storyline/workbench/amigo-notes/*.md
 Glob: .storyline/features/*.feature
@@ -503,7 +503,7 @@ Agent (subagent_type: "storyline:security-amigo"):
     Also run git log --oneline -10 and git diff HEAD~[task count] to see the actual changes.
 
     ## Blueprint:
-    Read the blueprint at .storyline/blueprint.yaml for project context.
+    Run `storyline summary` for project context. For specific contexts, use `storyline view --context "<name>"` with names from the summary output.
 
     Write your findings to .storyline/workbench/amigo-notes/security.md
     Focus on the code that was just changed — not the entire codebase.
@@ -605,7 +605,7 @@ TodoWrite: Foreman: checking the site
 Read the blueprint and working directory, then present a progress report:
 
 ```bash
-cat .storyline/blueprint.yaml
+storyline summary
 ls .storyline/features/*.feature 2>/dev/null
 ls .storyline/plans/ 2>/dev/null
 ls .storyline/workbench/ 2>/dev/null
@@ -664,7 +664,7 @@ Also show the current todo list if one exists.
 
 ## State Detection Reference
 
-Read `blueprint.yaml` content to determine what's happened. No scattered file scanning needed — the blueprint is the single source of truth:
+Run `storyline summary` to determine what's happened. No scattered file scanning needed — the blueprint is the single source of truth. The summary output also lists available `storyline view --context` commands for detailed context inspection:
 
 | What blueprint shows | What it means | What to do |
 |---|---|---|
@@ -685,7 +685,7 @@ Check `meta.updated_at` against git log to detect staleness.
 
 You have access to tools that support the pipeline:
 
-- **Glob/Grep/Read**: Read `blueprint.yaml`, scan `.storyline/features/` and `.storyline/workbench/`
+- **Bash**: Run `storyline summary` (overview), `storyline view --context X` (detail), scan `.storyline/features/` and `.storyline/workbench/`
 - **Write/Edit**: Generate and update `blueprint.yaml`, feature files, working docs
 - **Bash**: Run `storyline` helpers, create directories, run build tools
 - **Agent (subagents)**: Delegate complex analysis to focused workers (Surveyor)
