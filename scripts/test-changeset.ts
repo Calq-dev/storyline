@@ -261,3 +261,140 @@ test("changeset_validate_json_output_on_error", () => {
   assert.equal(parsed.valid, false);
   assert.ok(Array.isArray(parsed.errors) && parsed.errors.length > 0, "errors should be non-empty");
 });
+
+// ---------------------------------------------------------------------------
+// Test 11: validate warns on blueprint version drift (exit 0)
+// ---------------------------------------------------------------------------
+test("changeset_validate_warns_on_version_drift", () => {
+  const d = tmp();
+  initProject(d);
+
+  // Init captures version 1. Stamp to drift to version 2.
+  runChangeset(["init", "--title", "My Feature"], d);
+  runBlueprint(["stamp"], d);
+
+  const result = runChangeset(["validate"], d);
+  // version drift must WARN, not block — exit 0
+  assert.equal(result.exitCode, 0, `version drift should warn not block:\n${result.stderr}\n${result.stdout}`);
+  const combined = (result.stdout + result.stderr).toLowerCase();
+  assert.ok(combined.includes("warn") || combined.includes("warning"),
+    `Expected a warning in output:\n${result.stdout}\n${result.stderr}`);
+});
+
+// ---------------------------------------------------------------------------
+// Test 12: validate errors on stale modify path
+// ---------------------------------------------------------------------------
+test("changeset_validate_errors_on_stale_modify_path", () => {
+  const d = tmp();
+  initProject(d);
+  // Add a context so blueprint is non-empty, but NOT the aggregate we'll reference
+  runBlueprint(["add-context", "Ordering"], d);
+  runBlueprint(["stamp"], d);
+
+  mkdirSync(join(d, ".storyline", "changesets"), { recursive: true });
+  writeFileSync(
+    join(d, ".storyline", "changesets", "CS-2026-04-05-test.yaml"),
+    [
+      "meta:",
+      "  id: CS-2026-04-05-test",
+      "  title: Test",
+      "  blueprint_version: 2",
+      "  created_at: '2026-04-05'",
+      "  status: draft",
+      "goal: ''",
+      "phases:",
+      "  - id: PH-01",
+      "    title: Extend OrderPlaced",
+      "    type: refactor",
+      "    migration:",
+      "      strategy: dual-write",
+      "      rollback: Remove field",
+      "    touches:",
+      "      add: []",
+      "      modify:",
+      "        - path: 'bounded_contexts[Ordering].aggregates[Order].events[OrderPlaced]'",
+      "          field: payload_fields",
+      "          action: append",
+      "          value: ['paymentMethod']",
+      "      remove: []",
+      "    depends_on: []",
+      "    acceptance: []",
+      "completion_criteria: []",
+      "open_questions: []",
+    ].join("\n"),
+    "utf-8",
+  );
+
+  const result = runChangeset(["validate"], d);
+  assert.notEqual(result.exitCode, 0, "stale modify path should fail validation");
+  const combined = result.stdout + result.stderr;
+  assert.ok(
+    combined.includes("path_not_found") || combined.includes("not found"),
+    `Expected path_not_found error:\n${combined}`
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Test 13: validate errors when add path already exists in blueprint
+// ---------------------------------------------------------------------------
+test("changeset_validate_errors_when_add_context_already_exists", () => {
+  const d = tmp();
+  initProject(d);
+  runBlueprint(["add-context", "Payment"], d);
+  runBlueprint(["stamp"], d);
+
+  mkdirSync(join(d, ".storyline", "changesets"), { recursive: true });
+  writeFileSync(
+    join(d, ".storyline", "changesets", "CS-2026-04-05-test.yaml"),
+    [
+      "meta:",
+      "  id: CS-2026-04-05-test",
+      "  title: Test",
+      "  blueprint_version: 2",
+      "  created_at: '2026-04-05'",
+      "  status: draft",
+      "goal: ''",
+      "phases:",
+      "  - id: PH-01",
+      "    title: Add Payment",
+      "    type: addition",
+      "    touches:",
+      "      add:",
+      "        bounded_contexts:",
+      "          - name: Payment",
+      "      modify: []",
+      "      remove: []",
+      "    depends_on: []",
+      "    acceptance: []",
+      "completion_criteria: []",
+      "open_questions: []",
+    ].join("\n"),
+    "utf-8",
+  );
+
+  const result = runChangeset(["validate"], d);
+  assert.notEqual(result.exitCode, 0, "adding existing context should fail validation");
+  assert.ok(
+    (result.stdout + result.stderr).includes("already exists"),
+    `Expected 'already exists' error:\n${result.stdout}\n${result.stderr}`
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Test 14: validate --json on version drift includes warning in output
+// ---------------------------------------------------------------------------
+test("changeset_validate_json_includes_version_drift_warning", () => {
+  const d = tmp();
+  initProject(d);
+  runChangeset(["init", "--title", "My Feature"], d);
+  runBlueprint(["stamp"], d); // drift to v2
+
+  const result = runChangeset(["validate", "--json"], d);
+  assert.equal(result.exitCode, 0, `version drift should not block:\n${result.stderr}`);
+  const parsed = JSON.parse(result.stdout);
+  assert.ok(Array.isArray(parsed.warnings), "warnings should be an array");
+  assert.ok(
+    parsed.warnings.some((w: any) => w.type === "version_drift"),
+    `should contain version_drift warning:\n${JSON.stringify(parsed.warnings)}`
+  );
+});
