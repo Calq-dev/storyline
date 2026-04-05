@@ -137,7 +137,16 @@ This is round one only. More questions will follow once you've mapped the rules.
 This is the heart of the Three Amigos session. Organize the feature into four categories:
 
 #### 🟡 User Story
-The high-level feature in one sentence. Not a formal user story template — just plain language.
+
+Formulate the feature as a proper user story **before** mapping rules:
+
+> **As a** [role — who benefits?]
+> **I want** [action/capability]
+> **So that** [goal/value — why does this matter?]
+
+This format is not optional bureaucracy — it forces three questions that plain language skips: *who* is this for, *what* do they actually need, and *why* does it matter to them. If you can't fill in the "so that" without guessing, you don't understand the feature well enough to build it yet.
+
+If the user gave a feature description that isn't a user story, reformulate it and confirm with the user before continuing.
 
 #### 🔵 Rules
 Business rules that govern the behavior. Each rule is a constraint or policy. Examples:
@@ -202,9 +211,45 @@ The goal is to surface hidden assumptions before they calcify into bugs. For eac
 
 These are captured in an `assumptions:` section in `workbench/example-map.yaml`, alongside the existing `questions:` section. Assumptions with `confidence: low` or `confidence: medium` that have significant consequences should be converted to questions and given a severity.
 
+### Step 2d: Story Readiness & Size Check
+
+Before prioritizing, count the 🔵 rules in the example map and apply this gate:
+
+| Rules | Signal | Action |
+|---|---|---|
+| ≤ 4 | Right-sized | Continue to MoSCoW |
+| 5–7 | Getting large | Warn and ask if the user wants to split |
+| ≥ 8 | Too large | Hard recommendation to split — propose how |
+
+**Also check for red cards (🔴):** If there are 3 or more critical questions without a `best_guess`, the story is not ready for development. Stop here.
+
+**When ≥ 8 rules, do not ask — propose a split immediately:**
+
+Look at the rules and find the natural seams — groups of rules that form a coherent, independently deliverable behavior. Then present:
+
+> "This story has [N] rules — that's too large to build cleanly in one go. Here's how I'd split it:
+>
+> **Story A — [name]:** Rules [X, Y, Z] — [one-line description of what this delivers]
+> **Story B — [name]:** Rules [A, B, C] — [one-line description]
+> **Story C — [name]:** Rules [D, E] — [one-line description]
+>
+> Which one do you want to tackle first? The others go to the backlog."
+
+Each proposed story should be independently releasable — not a technical slice, but a slice of user value. A user should be able to use Story A without needing Story B to exist.
+
+If the user disagrees with the split, work with them to find a better boundary. But do not proceed with ≥ 8 rules in a single story.
+
+**When 5–7 rules, offer the choice:**
+
+> "This story has [N] rules. That's workable but on the large side. Do you want to:
+> - (a) Continue as one story
+> - (b) Split — I'll propose how"
+
+If they choose (b), apply the same split logic as above.
+
 ### Step 3: MoSCoW Prioritization
 
-After the example map is filled in, assign a MoSCoW label to **every rule**. This is not optional — unscoped rules lead to unscoped builds, and as a solo developer you have no one else to guard the scope boundary.
+After the example map is filled in (and sized to ≤ 7 rules), assign a MoSCoW label to **every rule**. This is not optional — unscoped rules lead to unscoped builds, and as a solo developer you have no one else to guard the scope boundary.
 
 For each rule and its examples:
 

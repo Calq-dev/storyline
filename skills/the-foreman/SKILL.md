@@ -208,11 +208,17 @@ If code has changed since `meta.updated_at`:
 TodoWrite: Foreman: blueprint's current — putting the amigos on the case
 ```
 
-> "Blueprint's in good shape. Let's get the amigos on this."
+If the user's description is already a proper user story (`As a... / I want... / So that...`), proceed directly. If it's plain language, reframe it first and confirm:
+
+> "Before I get the amigos on this, let me frame it as a user story:
+> **As a** [role] **I want** [action] **so that** [value].
+> Does that capture what you mean?"
+
+Adjust based on their response, then:
 
 → `Skill: storyline:three-amigos`
 
-Pass the feature description to Three Amigos so they can start without re-asking.
+Pass the confirmed user story to Three Amigos so they can start without re-asking.
 
 ### Scenario 5: Blueprint exists AND no feature specified
 
