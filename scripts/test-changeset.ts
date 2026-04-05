@@ -129,11 +129,12 @@ test("changeset_init_creates_changesets_dir", () => {
   const d = tmp();
   initProject(d);
 
-  assert.ok(!existsSync(join(d, ".storyline", "changesets")), "changesets/ should not exist yet");
+  // changesets/ is now created by blueprint init
+  assert.ok(existsSync(join(d, ".storyline", "changesets")), "changesets/ should exist after blueprint init");
 
   runChangeset(["init", "--title", "My Feature"], d);
 
-  assert.ok(existsSync(join(d, ".storyline", "changesets")), "changesets/ should be created");
+  assert.ok(existsSync(join(d, ".storyline", "changesets")), "changesets/ should still exist");
 });
 
 // ---------------------------------------------------------------------------

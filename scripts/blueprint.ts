@@ -118,6 +118,28 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
+/** Read the current session ID from .storyline/.session-id, or null if not set. */
+function readSessionId(cwd: string): string | null {
+  const p = join(cwd, ".storyline", ".session-id");
+  try {
+    return readFileSync(p, "utf-8").trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+/** Initialize a session ID (UUID v4) and write it to .storyline/.session-id. */
+function cmdSessionInit(cwd: string) {
+  const dir = join(cwd, ".storyline");
+  if (!existsSync(dir)) {
+    console.error("Error: .storyline/ directory not found. Run 'storyline init' first.");
+    process.exit(1);
+  }
+  const id = crypto.randomUUID();
+  writeFileSync(join(dir, ".session-id"), id + "\n", "utf-8");
+  console.log(id);
+}
+
 /** Run a git command safely using execFileSync (no shell injection). */
 function gitExec(args: string[], cwd: string): string {
   try {
@@ -1157,6 +1179,8 @@ function cmdAddRelationship(args: { context: string; type: string; target: strin
 
   const relEntry: Dict = { type: args.type, target: args.target };
   if (args.via) relEntry.via = args.via;
+  const sessionId = readSessionId(cwd);
+  if (sessionId) relEntry.session_id = sessionId;
   rels.add(doc.createNode(relEntry));
 
   saveDocument(bp, doc);
@@ -1238,7 +1262,10 @@ function cmdAddPolicy(args: { context: string; name: string; triggeredBy: string
     policies = findDocNode(doc, ["bounded_contexts", ctxIndex, "policies"]);
   }
 
-  policies.add(doc.createNode({ name: args.name, triggered_by: args.triggeredBy, issues_command: args.issuesCommand }));
+  const policyEntry: Dict = { name: args.name, triggered_by: args.triggeredBy, issues_command: args.issuesCommand };
+  const policySessionId = readSessionId(cwd);
+  if (policySessionId) policyEntry.session_id = policySessionId;
+  policies.add(doc.createNode(policyEntry));
 
   saveDocument(bp, doc);
   console.log(`Added policy '${args.name}' to context '${args.context}'.`);
@@ -1271,6 +1298,8 @@ function cmdResolveQuestion(args: { id: string; answer: string }, cwd: string) {
   qNode.set("status", "resolved");
   qNode.set("answer", args.answer);
   qNode.set("resolved_at", nowIso());
+  const resolveSessionId = readSessionId(cwd);
+  if (resolveSessionId) qNode.set("resolved_by_session", resolveSessionId);
 
   saveDocument(bp, doc);
   console.log(`Resolved question '${args.id}'.`);
@@ -1651,6 +1680,7 @@ Commands:
   add-invariant --context X --aggregate Y --invariant 'rule text'
   add-policy --context X --name Y --triggered-by Z --issues-command W
   resolve-question --id Q-001 --answer 'answer text'
+  session-init                                   Generate and store a session ID (.storyline/.session-id)
   summary                                        Compact blueprint overview
   view --context X                               View a single bounded context
   housekeeping [--cleanup] [--phase X]           Validate + stamp + cleanup
@@ -1959,6 +1989,11 @@ function main() {
         process.exit(1);
       }
       cmdArchive({ feature: values.feature }, cwd);
+      break;
+    }
+
+    case "session-init": {
+      cmdSessionInit(cwd);
       break;
     }
 
