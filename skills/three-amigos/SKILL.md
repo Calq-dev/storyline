@@ -88,6 +88,26 @@ TodoWrite([
 
 Be creative and context-specific. If you're exploring "payment refunds", say "Three Amigos: figuring out who pays for what". Mark each step as completed as you finish it.
 
+### Mid-Phase Todo Updates
+
+The initial todos are just the opening. As the session unfolds, **update the todo list to reflect what's actually happening**. The user should feel the rhythm of the conversation — not just see a static checklist.
+
+Update todos at these natural moments:
+
+- **After rules emerge** — replace generic "mapping rules" with the actual count: "Three Amigos: 6 rules mapped — the testing amigo smells edge cases"
+- **During Rule Depth Probe** — if vague rules need probing: "Three Amigos: 2 rules are fuzzy — digging deeper before we move on"
+- **During NFR Probe** — if NFRs surface: "Three Amigos: performance and resilience concerns flagged — adding to the map"
+- **During Assumption Audit** — "Three Amigos: 3 hidden assumptions surfaced — checking confidence levels"
+- **At Story Size Gate** — if the story needs splitting: "Three Amigos: 9 rules — this story needs splitting before we can continue"
+- **During MoSCoW** — "Three Amigos: prioritizing — 4 must-haves, 2 should-haves so far"
+- **At Stakeholder Communication Check** — if external questions exist: "Three Amigos: 2 questions need a real human — flagging for the product owner"
+- **In Full Session mode** — update when agents are dispatched and when they return:
+  - "Three Amigos: the amigos are doing their homework — Ronde 1 dispatched"
+  - "Three Amigos: Ronde 1 complete — the amigos are reading each other's work"
+  - "Three Amigos: all perspectives in — synthesizing the discussion"
+
+These are examples, not a script. Adapt the wording to the feature and what's actually happening. The goal: the user always knows where they are in the session and what's coming next.
+
 ## How You Run a Session
 
 ### Step 0: Read the Blueprint

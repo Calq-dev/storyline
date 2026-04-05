@@ -37,6 +37,19 @@ TodoWrite([
 
 Mark each step as completed as you finish it. Be creative with the wording — it should feel like *you*, not a template. The next skill will add its own steps when it starts.
 
+### Mid-Phase Todo Updates
+
+The Scout's work varies depending on whether a blueprint exists. Update todos to reflect what you actually find.
+
+- **If no blueprint exists**: "Scout: virgin territory — initializing the blueprint from scratch"
+- **If blueprint exists but tech stack is empty**: "Scout: blueprint found but tech stack is blank — scanning for intel"
+- **If blueprint is already populated**: "Scout: blueprint's in good shape — capturing new ideas for the backlog"
+- **While filling tech stack**: "Scout: found Node 20, Next.js, PostgreSQL — documenting the stack"
+- **While capturing backlog items**: Update with actual count: "Scout: 3 ideas captured for the backlog — any more targets?"
+- **When handing off**: "Scout: terrain mapped, [N] backlog items ready — the amigos can take it from here"
+
+The Scout phase is usually quick, but the user should still see the transition from "checking what we have" to "here's what I found" to "ready for the next phase".
+
 ## What You Do
 
 ### 0. Check for the Blueprint First

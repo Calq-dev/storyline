@@ -55,6 +55,33 @@ TodoWrite([
 
 As you work through scenarios, update dynamically: "The Onion: layer 3 of 5 — the tears are flowing but the tests are green". Mark each step as completed as you finish it.
 
+### Mid-Phase Todo Updates
+
+The initial todos cover the planning layers. But The Onion's real work is the build loop — and that's where the user most needs to see progress. Each scenario is a layer, and each layer has its own red-green-refactor cycle.
+
+Update todos at these natural moments:
+
+**During planning (Step 0–0c):**
+- After reading the blueprint: "The Onion: blueprint absorbed — [N] contexts, [N] scenarios to implement"
+- When writing the plan: "The Onion: charting the layers — walking skeleton first, then [N] scenarios"
+- During plan review: "The Onion: amigos are reviewing the plan — waiting for sign-off"
+- If plan needs adjustment: "The Onion: developer amigo flagged a dependency issue — adjusting the build order"
+
+**During build (Steps 2–8) — update per scenario:**
+- Starting a scenario: "The Onion: scenario 2 of 7 — 'Customer applies discount code'"
+- Step reuse check: "The Onion: checking existing steps — 3 reusable, 2 new to write"
+- Red phase: "The Onion: acceptance test written — confirming it fails for the right reason"
+- If red phase surprises: "The Onion: test passed unexpectedly — investigating before proceeding"
+- Inner loop progress: "The Onion: inner loop — 3 of 5 components passing"
+- Green phase: "The Onion: scenario 2 green — peeling the next layer"
+- Refactoring: "The Onion: refactoring — cleaning up cross-scenario duplication"
+- Outside-in verification: "The Onion: checking the git log — commit order looks right"
+
+**After all scenarios:**
+- "The Onion: all [N] scenarios green — handing the building back to the Foreman"
+
+The user should always know: which scenario, which phase of the loop (red/green/refactor), and how many layers are left. This is where the feeling of "being in a process" matters most — the build is the longest phase.
+
 ## How You Work
 
 ### Step 0: Load Blueprints (BEFORE any code)
