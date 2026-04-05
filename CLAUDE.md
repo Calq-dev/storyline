@@ -60,6 +60,7 @@ Target project directory structure:
   features/                   <- Gherkin scenarios (permanent)
   plans/                      <- Implementation plans (one per feature, dated: YYYY-MM-DD-feature-name.md)
   workbench/                  <- Transient phase docs (example-map.yaml, events-raw.md, estimation-report.md, tech-choices.md)
+  sessions/                   <- Completed session archives (one per feature: example-map, amigo-notes, tech-choices, manifest)
   personas/                   <- Persona memory (accumulated project knowledge per amigo)
   backlog/                    <- Feature ideas waiting to enter the pipeline
 ```
@@ -87,6 +88,7 @@ storyline add-command --context "Payment" --aggregate "Invoice" --name "SendInvo
 storyline add-glossary --term "Invoice" --context "Payment" --meaning "A request for payment"
 storyline add-gap --description "Missing tests" --severity "important" --affects "Payment"
 storyline add-question --question "How do refunds work?" --severity "important" --raised-during "Three Amigos" --affects "Payment"
+storyline archive --feature "Shopping Cart"   # Archive session artifacts → sessions/YYYY-MM-DD-shopping-cart/
 
 # Run tests
 npx tsx --test scripts/test-blueprint.ts
@@ -131,4 +133,4 @@ Edit blueprint (Edit tool for scalar updates, CLI helpers for list insertions)
 - Working documents (example-map.yaml, events-raw.md) are transient — they live in `workbench/` during a pipeline run; implementation plans are persistent and live in `plans/` as dated files (YYYY-MM-DD-feature-name.md)
 - `example-map.yaml` contains both `questions:` (unknowns) and `assumptions:` (things assumed known, with confidence level and consequence-if-wrong) — making hidden assumptions visible before they become bugs
 - The Quartermaster runs after Mister Gherkin and writes `workbench/tech-choices.md` — package/library recommendations per technical capability, so The Onion starts with build-vs-buy decisions already made
-- History is in git — no separate archive directory needed
+- Completed sessions are archived to `sessions/YYYY-MM-DD-feature/` via `storyline archive` — workbench is then cleaned up

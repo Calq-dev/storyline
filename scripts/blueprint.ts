@@ -20,7 +20,7 @@
  *   housekeeping [--cleanup] [--phase X]  Validate + stamp + optional cleanup
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync, cpSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { execFileSync } from "node:child_process";
@@ -1130,6 +1130,7 @@ function cmdSummary(_args: unknown, cwd: string) {
   lines.push('  storyline add-question --question "<q>" --severity "critical|important|nice_to_know" --raised-during "<phase>" --affects "<name>"');
   lines.push('  storyline stamp                                            # bump version + updated_at');
   lines.push('  storyline housekeeping [--cleanup [--phase <name>]]       # validate + stamp + optional cleanup');
+  lines.push('  storyline archive --feature "<name>"                      # archive session artifacts to sessions/');
 
   console.log(lines.join("\n"));
 }
@@ -1294,6 +1295,82 @@ function cmdHousekeeping(args: { cleanup: boolean; phase?: string }, cwd: string
 }
 
 // ---------------------------------------------------------------------------
+// New command: archive
+// ---------------------------------------------------------------------------
+
+function cmdArchive(args: { feature: string }, cwd: string) {
+  const feature = args.feature.trim();
+  if (!feature) {
+    console.error("Error: --feature cannot be empty");
+    process.exit(1);
+  }
+
+  // Slug: lowercase, spaces → hyphens, strip non-alphanumeric except hyphens
+  const slug = feature.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+  const sessionDir = join(cwd, ".storyline", "sessions", `${today()}-${slug}`);
+
+  if (existsSync(sessionDir)) {
+    console.error(`Error: session archive already exists at ${sessionDir.replace(cwd + "/", "")}`);
+    process.exit(1);
+  }
+
+  mkdirSync(sessionDir, { recursive: true });
+
+  const workbench = join(cwd, ".storyline", "workbench");
+  const copied: string[] = [];
+  const skipped: string[] = [];
+
+  // Artifacts to archive (source → dest filename)
+  const artifacts: Array<{ src: string; dest: string }> = [
+    { src: join(workbench, "example-map.yaml"), dest: "example-map.yaml" },
+    { src: join(workbench, "amigo-notes"), dest: "amigo-notes" },
+    { src: join(workbench, "tech-choices.md"), dest: "tech-choices.md" },
+    { src: join(workbench, "estimates"), dest: "estimates" },
+  ];
+
+  for (const { src, dest } of artifacts) {
+    if (existsSync(src)) {
+      cpSync(src, join(sessionDir, dest), { recursive: true });
+      copied.push(dest);
+    } else {
+      skipped.push(dest);
+    }
+  }
+
+  // Write session manifest
+  const data = existsSync(join(cwd, BLUEPRINT_PATH)) ? loadYaml(join(cwd, BLUEPRINT_PATH)) : {};
+  const featureFiles = globFiles(join(cwd, ".storyline", "features"), "*.feature");
+  const planFiles = globFiles(join(cwd, ".storyline", "plans"), "*.md");
+
+  const manifest = {
+    date: today(),
+    feature,
+    project: data?.meta?.project ?? "(unknown)",
+    blueprint_version: data?.meta?.version ?? "?",
+    artifacts_archived: copied,
+    feature_files: featureFiles.map(f => f.replace(cwd + "/", "")),
+    plans: planFiles.map(f => f.replace(cwd + "/", "")),
+  };
+
+  writeFileSync(join(sessionDir, "session.yaml"), stringify(manifest));
+
+  const relDir = sessionDir.replace(cwd + "/", "");
+  console.log(`Archived session to ${relDir}/`);
+  if (copied.length > 0) console.log(`  Archived: ${copied.join(", ")}`);
+  if (skipped.length > 0) console.log(`  Skipped (not found): ${skipped.join(", ")}`);
+  console.log(`  session.yaml written`);
+}
+
+// Helper: list files in a directory matching a suffix
+function globFiles(dir: string, suffix: string): string[] {
+  if (!existsSync(dir)) return [];
+  const ext = suffix.replace("*", "");
+  return readdirSync(dir)
+    .filter(f => f.endsWith(ext))
+    .map(f => join(dir, f));
+}
+
+// ---------------------------------------------------------------------------
 // Argument parsing & dispatch
 // ---------------------------------------------------------------------------
 
@@ -1313,7 +1390,8 @@ Commands:
   add-question --question X --severity Y --raised-during Z --affects W
   summary                                        Compact blueprint overview
   view --context X                               View a single bounded context
-  housekeeping [--cleanup] [--phase X]           Validate + stamp + cleanup`);
+  housekeeping [--cleanup] [--phase X]           Validate + stamp + cleanup
+  archive --feature "name"                       Archive session artifacts to sessions/`);
   process.exit(1);
 }
 
@@ -1526,6 +1604,20 @@ function main() {
         strict: true,
       });
       cmdHousekeeping({ cleanup: values.cleanup ?? false, phase: values.phase }, cwd);
+      break;
+    }
+
+    case "archive": {
+      const { values } = parseArgs({
+        args: rest,
+        options: { feature: { type: "string" } },
+        strict: true,
+      });
+      if (!values.feature) {
+        console.error("Error: --feature is required for archive");
+        process.exit(1);
+      }
+      cmdArchive({ feature: values.feature }, cwd);
       break;
     }
 

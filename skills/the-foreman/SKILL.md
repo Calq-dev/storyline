@@ -99,7 +99,7 @@ project-root/
 
 **`backlog/`** is pre-pipeline — ideas not yet worked through any phase. When ready, they enter the pipeline via Three Amigos.
 
-There is no `archive/` directory. Git history *is* the archive.
+**`sessions/`** contains completed session bundles — one directory per finished feature with the full discovery package: example map, amigo notes, tech choices, and a manifest. These are permanent and committed.
 
 ## The Pipeline
 
@@ -638,16 +638,34 @@ Read all refinement notes. Categorize findings:
 TodoWrite: Foreman: final inspection done — [N] scenarios refined, [M] items to backlog
 ```
 
-If Mister Gherkin updated feature files, run validate + stamp and commit everything:
+If Mister Gherkin updated feature files, run validate + stamp:
 
 ```bash
 storyline validate
 storyline stamp
-git add .storyline/
-git commit -m "refine: scenario refinement after [feature name] implementation"
 ```
 
-> "Building's done, specs are updated, crew's notes are filed. Ready for the next job."
+**Step 5: Archive the session**
+
+Before cleaning up the workbench, archive all discovery artifacts for this feature:
+
+```bash
+storyline archive --feature "<feature name>"
+git add .storyline/sessions/ .storyline/
+git commit -m "refine: scenario refinement + session archive for [feature name]"
+```
+
+The session archive lives at `.storyline/sessions/YYYY-MM-DD-<feature>/` and contains the example map, amigo notes, tech choices, and a manifest — the full story of how this feature was discovered and decided.
+
+After archiving, clean up the workbench:
+
+```bash
+storyline housekeeping --cleanup
+git add .storyline/
+git commit -m "chore: workbench cleanup after [feature name]"
+```
+
+> "Building's done, specs are updated, session's archived. Ready for the next job."
 
 ---
 
