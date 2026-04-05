@@ -160,6 +160,46 @@ function loadBlueprint(cwd: string): any | null {
 }
 
 // ---------------------------------------------------------------------------
+// Init command
+// ---------------------------------------------------------------------------
+
+function cmdInit(args: { title: string }, cwd: string) {
+  const changesetsDir = join(cwd, CHANGESETS_DIR);
+  mkdirSync(changesetsDir, { recursive: true });
+
+  const slug = titleToSlug(args.title);
+  const dateStr = today();
+  const id = `CS-${dateStr}-${slug}`;
+  const filename = `${id}.yaml`;
+  const filePath = join(changesetsDir, filename);
+
+  if (existsSync(filePath)) {
+    console.error(`Error: Changeset ${filename} already exists. Edit it directly or use a different title.`);
+    process.exit(1);
+  }
+
+  const blueprintVersion = loadBlueprintVersion(cwd) ?? 0;
+
+  const doc = new Document({
+    meta: {
+      id,
+      title: args.title,
+      blueprint_version: blueprintVersion,
+      created_at: nowIso(),
+      status: "draft",
+    },
+    goal: "",
+    constraints: [],
+    phases: [],
+    completion_criteria: [],
+    open_questions: [],
+  });
+
+  writeFileSync(filePath, String(doc), "utf-8");
+  console.log(`Changeset initialised at ${CHANGESETS_DIR}/${filename}`);
+}
+
+// ---------------------------------------------------------------------------
 // Usage
 // ---------------------------------------------------------------------------
 
@@ -183,7 +223,19 @@ function main() {
   const cwd = process.cwd();
 
   switch (command) {
-    case "init":
+    case "init": {
+      const { values } = parseArgs({
+        args: rest,
+        options: { title: { type: "string" } },
+        strict: true,
+      });
+      if (!values.title) {
+        console.error("Error: --title is required for changeset init");
+        process.exit(1);
+      }
+      cmdInit({ title: values.title }, cwd);
+      break;
+    }
     case "validate":
       console.error(`Command '${command}' not yet implemented`);
       process.exit(1);
