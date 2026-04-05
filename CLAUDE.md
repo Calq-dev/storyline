@@ -34,6 +34,7 @@ agents/
   testing-amigo.md                <- Persona: quality/risk perspective for Three Amigos
   frontend-amigo.md               <- Persona: UI/UX perspective (optional, when feature has frontend scope)
   security-amigo.md               <- Security audit after implementation (optional, when feature touches auth/input/data)
+  quartermaster.md                <- Agent: researches packages/libraries before implementation — build vs. buy decisions
 references/
   ddd-patterns.md                 <- DDD patterns quick reference (used by Doctor Context)
 ```
@@ -41,11 +42,11 @@ references/
 ## Pipeline Flow
 
 ```
-The Foreman -> The Scout -> Three Amigos -> Mister Gherkin -> The Foreman -> The Onion -> The Foreman
-(Entry)       (Capture)    (Discover)       (Specify)         (Orchestrate)  (Build)     (Build Director)
-                                                                  |
-                                                          Sticky Storm (agent, if needed)
-                                                          Doctor Context (agent, if needed)
+The Foreman -> The Scout -> Three Amigos -> Mister Gherkin -> Quartermaster -> The Foreman -> The Onion -> The Foreman
+(Entry)       (Capture)    (Discover)       (Specify)         (Tech Research)  (Orchestrate)  (Build)     (Build Director)
+                                                                                    |
+                                                                            Sticky Storm (agent, if needed)
+                                                                            Doctor Context (agent, if needed)
 ```
 
 ## The Blueprint
@@ -58,7 +59,7 @@ Target project directory structure:
   blueprint.yaml              <- Single source of truth for the app's architecture
   features/                   <- Gherkin scenarios (permanent)
   plans/                      <- Implementation plans (one per feature, dated: YYYY-MM-DD-feature-name.md)
-  workbench/                  <- Transient phase docs (example-map.yaml, events-raw.md, estimation-report.md)
+  workbench/                  <- Transient phase docs (example-map.yaml, events-raw.md, estimation-report.md, tech-choices.md)
   personas/                   <- Persona memory (accumulated project knowledge per amigo)
   backlog/                    <- Feature ideas waiting to enter the pipeline
 ```
@@ -128,4 +129,6 @@ Edit blueprint (Edit tool for scalar updates, CLI helpers for list insertions)
 - Surveyed (baseline) artifacts are tagged `@surveyed` to distinguish from new pipeline-produced work
 - Three Amigos supports two modes: quick scan (single AI, all perspectives) and full session (three parallel persona agents with persistent memory in `.storyline/personas/`)
 - Working documents (example-map.yaml, events-raw.md) are transient — they live in `workbench/` during a pipeline run; implementation plans are persistent and live in `plans/` as dated files (YYYY-MM-DD-feature-name.md)
+- `example-map.yaml` contains both `questions:` (unknowns) and `assumptions:` (things assumed known, with confidence level and consequence-if-wrong) — making hidden assumptions visible before they become bugs
+- The Quartermaster runs after Mister Gherkin and writes `workbench/tech-choices.md` — package/library recommendations per technical capability, so The Onion starts with build-vs-buy decisions already made
 - History is in git — no separate archive directory needed

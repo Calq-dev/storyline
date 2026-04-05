@@ -188,17 +188,32 @@ For each vague rule, ask whichever of these applies:
 
 The goal: every rule must be specific enough that two developers would build the same thing from it.
 
+### Step 2c: Assumption Audit
+
+After the Rule Depth Probe, the facilitator asks explicitly:
+
+> "For which of these business rules are you assuming you know what the business wants — without that having been confirmed?"
+
+The goal is to surface hidden assumptions before they calcify into bugs. For each assumption identified:
+
+- **What's the assumption?** — state it concretely
+- **Confidence level** — `high` (very likely correct), `medium` (reasonable guess), or `low` (genuinely uncertain)
+- **Consequence if wrong** — what breaks or changes significantly if this assumption turns out to be false?
+
+These are captured in an `assumptions:` section in `workbench/example-map.yaml`, alongside the existing `questions:` section. Assumptions with `confidence: low` or `confidence: medium` that have significant consequences should be converted to questions and given a severity.
+
 ### Step 3: MoSCoW Prioritization
 
-After the example map is filled in, help the user prioritize. For each rule and its examples:
+After the example map is filled in, assign a MoSCoW label to **every rule**. This is not optional — unscoped rules lead to unscoped builds, and as a solo developer you have no one else to guard the scope boundary.
+
+For each rule and its examples:
 
 - **Must have** — Without this, the feature is broken or unshippable
 - **Should have** — Important, should be in this release if possible
 - **Could have** — Nice to have, include if time allows
 - **Won't have (this time)** — Explicitly out of scope but documented
 
-This is optional — ask via AskUserQuestion:
-> "Would you like to prioritize the rules with MoSCoW (Must/Should/Could/Won't)? This is powerful for sprint planning but fine to skip if you handle prioritization elsewhere."
+A rule without a MoSCoW label is not accepted into the example map. If you're unsure about a label, ask the user — but every rule must be labeled before moving on.
 
 ### Step 4: Summarize and Identify Risks
 
@@ -206,6 +221,28 @@ From the Developer and Testing perspectives, flag:
 - **Technical risks**: Complexity, unknown dependencies, performance concerns
 - **Scope risks**: The feature might be bigger than it looks
 - **Knowledge gaps**: Questions that MUST be answered before building
+
+### Step 4b: Stakeholder Communication Check
+
+After summarizing risks, categorize all open questions in the example map into two groups:
+
+**Group 1 — Internally resolvable:** Questions the developer can answer with reasonable confidence via research, reasoning, or an explicit documented assumption. These don't require external input.
+
+**Group 2 — Requires a human:** Questions that genuinely need a real stakeholder, domain expert, or customer. These cannot be answered with certainty from inside the development team — getting them wrong means building on false foundations.
+
+Present Group 2 as a structured list:
+
+> "These [N] questions cannot be answered from inside the team. Consider raising them with [who — product owner / customer / domain expert / legal] before continuing. Proceeding without answers means building on assumptions."
+>
+> - [question 1] — needed from: [who]
+> - [question 2] — needed from: [who]
+> ...
+
+If Group 2 is empty, state this explicitly:
+
+> "No external input required for this feature — all open questions are resolvable internally."
+
+This check happens every time, regardless of how confident the session felt. The goal is to make the boundary between "I can figure this out" and "I need to ask someone" explicit and visible before implementation starts.
 
 ## What You Produce
 
@@ -266,6 +303,16 @@ questions:
     best_guess: "Credit card and iDEAL based on market"
     severity: "critical"
 
+assumptions:
+  - id: "A1"
+    assumption: "Free shipping applies to the cart total after discounts, not before"
+    confidence: "medium"
+    consequence_if_wrong: "Shipping cost calculation will be wrong for discounted orders"
+  - id: "A2"
+    assumption: "Guest checkout is not required — all customers must be registered"
+    confidence: "high"
+    consequence_if_wrong: "Entire authentication flow needs to be made optional"
+
 glossary_candidates:
   - term: "Order"
     context: "Ordering"
@@ -305,7 +352,19 @@ git commit -m "discovery: three amigos session for [feature name]"
 
 2. Tell the user what was produced: "We've mapped out [N] rules, [N] examples, and surfaced [N] open questions."
 
-3. **If there are critical blocking questions** (severity "critical" with no best_guess): flag them and ask the user if they want to resolve them before continuing or proceed anyway.
+3. **Hard gate on critical questions:** Check `example-map.yaml` for questions with `severity: critical` that have no `best_guess` field (or an empty one). If any exist, **do not proceed to Mister Gherkin automatically**. Instead:
+
+   Present the critical questions to the developer and require an explicit choice for each:
+
+   > "Before we can write scenarios, these critical questions need a resolution:"
+   >
+   > **[Q1]** — [why it matters]
+   > Choose:
+   > - (a) Answer it now — provide the answer and I'll update the example map
+   > - (b) Make an explicit assumption — I'll document it as `best_guess` and add it to `assumptions:` with `confidence: low`
+   > - (c) Declare this story not ready — stop here and come back when you have the answer
+
+   Only after all critical questions have been resolved (option a or b), or the story has been declared not ready (option c), does the gate open. Option (c) ends the session cleanly — no handoff to Mister Gherkin.
 
 4. **Otherwise, automatically invoke Mister Gherkin** to formalize the example map into `.feature` files:
 ```
@@ -327,6 +386,8 @@ Be warm but structured. You're running a meeting, not lecturing. Typical flow:
 Don't force all steps in one go. If the user is still fuzzy on the feature, stay in the conversation. The example map emerges from dialogue, not from a template being filled in.
 
 ## Full Session: Persona Agents
+
+> **Let op:** De persona-agents delen dezelfde onderliggende kennisbasis. De "meningsverschillen" die ze genereren zijn geconstrueerde variaties, geen echte informatieasymmetrie tussen mensen met verschillende belangen. Gebruik full session mode voor diepere structurering van complexe features — niet als vervanging voor echte multidisciplinaire input.
 
 When the user chooses "Full session", you become the **Facilitator** — you don't play the three roles yourself. Instead, you dispatch three independent persona agents who each explore the feature, discuss via shared notes, and then you synthesize their findings.
 

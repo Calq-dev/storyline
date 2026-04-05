@@ -104,15 +104,15 @@ There is no `archive/` directory. Git history *is* the archive.
 ## The Pipeline
 
 ```
-The Foreman       The Scout           Phase 1: THREE       Phase 2: MISTER      Phase 3: STICKY       Phase 4: DOCTOR       Phase 5: THE ONION
-(Entry Point)     (Capture Ideas)     AMIGOS (Discover)    GHERKIN (Specify)    STORM (Event Storm)   CONTEXT (Model)       (Plan) → The Foreman
-                                                                                                                             (Build Director)
+The Foreman       The Scout           Phase 1: THREE       Phase 2: MISTER      QUARTERMASTER        Phase 3: STICKY       Phase 4: DOCTOR       Phase 5: THE ONION
+(Entry Point)     (Capture Ideas)     AMIGOS (Discover)    GHERKIN (Specify)    (Tech Research)      STORM (Event Storm)   CONTEXT (Model)       (Plan) → The Foreman
+                                                                                                                                                   (Build Director)
 
 .storyline/
-blueprint.yaml ──→ backlog/        ──→ workbench/         ──→ features/        ──→ blueprint.yaml    ──→ blueprint.yaml    ──→ plans/
-(tech_stack,        *.md                example-map.yaml      *.feature              (events,              (bounded_contexts,    YYYY-MM-DD-<feature>.md
- bounded_contexts,                                                                    commands)             invariants,
- gaps)                                                                                                      relationships)
+blueprint.yaml ──→ backlog/        ──→ workbench/         ──→ features/        ──→ workbench/        ──→ blueprint.yaml    ──→ blueprint.yaml    ──→ plans/
+(tech_stack,        *.md                example-map.yaml      *.feature              tech-choices.md        (events,              (bounded_contexts,    YYYY-MM-DD-<feature>.md
+ bounded_contexts,                                                                                           commands)             invariants,
+ gaps)                                                                                                                             relationships)
 ```
 
 Each phase produces **concrete artifacts** that feed into `blueprint.yaml` or `features/`. Every line of code traces back to a business behavior, and every business behavior is validated by a test.
@@ -229,6 +229,33 @@ If there are gaps or open questions in the blueprint, surface them:
 > "I see a few gaps in the blueprint worth looking at: [list top gaps by severity]. Want to tackle one of these, or do you have something else in mind?"
 
 Once the user specifies a feature → proceed as Scenario 4.
+
+### Scenario 6: Feature files exist but no tech-choices.md
+
+When Mister Gherkin has finished (commands have `feature_files`) but `.storyline/workbench/tech-choices.md` does not yet exist:
+
+```
+TodoWrite: Foreman: scenarios are written — calling in the quartermaster
+```
+
+> "Scenarios are locked in. Before The Onion starts planning, let me get the Quartermaster to check what's on the shelf."
+
+Dispatch the Quartermaster agent:
+
+```
+Agent (subagent_type: "storyline:quartermaster"):
+  prompt: |
+    Research packages and libraries for the feature currently being built.
+    The feature files are in .storyline/features/.
+    Run `storyline summary` to load the project context and tech stack.
+    Write your findings to .storyline/workbench/tech-choices.md.
+    Work from: [project directory]
+```
+
+After the Quartermaster completes, continue with Sticky Storm / Doctor Context dispatch (if needed) and then The Onion.
+
+**The Onion reads tech-choices.md:** When dispatching or continuing to The Onion, include this instruction:
+> "Read `.storyline/workbench/tech-choices.md` if it exists — the Quartermaster has researched which packages to use. Follow those recommendations unless you have a specific reason not to."
 
 ---
 
@@ -383,7 +410,28 @@ If yes, tell the user to run `/permissions` and switch to `acceptEdits` mode. If
 
 **The build loop** — for each task in the implementation plan:
 
-**1. Developer Amigo builds:**
+**1. Testing Amigo writes the acceptance test first:**
+
+```
+Agent (subagent_type: "storyline:testing-amigo"):
+  prompt: |
+    ## Your notes from previous sessions:
+    Read your persona memory from .storyline/personas/testing-amigo.md (may not exist yet on first session).
+
+    ## Your task:
+    Read the current task from .storyline/plans/<plan-filename>.md — identify the next pending task
+    and the Gherkin scenario(s) it corresponds to in .storyline/features/.
+
+    ## Your discovery notes — risks you flagged:
+    Read .storyline/workbench/amigo-notes/testing.md for your notes from the discovery session.
+
+    Write the acceptance test for this task BEFORE any implementation exists.
+    The test must be RED — if it passes before the Developer builds anything, it is not a valid test.
+    Verify the test fails, then commit the failing test and report back.
+    Use context7 for test framework docs.
+```
+
+**2. Developer Amigo implements:**
 
 ```
 Agent (subagent_type: "storyline:developer-amigo"):
@@ -393,16 +441,18 @@ Agent (subagent_type: "storyline:developer-amigo"):
 
     ## Your task:
     Read the current task from .storyline/plans/<plan-filename>.md — pick up the next pending task.
+    The Testing Amigo has already written a failing acceptance test for this task.
 
     ## Your discovery notes from Three Amigos:
     Read .storyline/workbench/amigo-notes/developer.md for your notes from the discovery session.
 
-    Build it. Follow Outside-in TDD: acceptance test first, then unit tests, then implementation.
+    Implement until the acceptance test is GREEN. Follow Outside-in TDD: the acceptance test is already
+    there — now write unit tests for the inner loop, then implement.
     Use context7 for framework/library docs.
-    Commit when done and report back.
+    Commit when the acceptance test passes and report back.
 ```
 
-**2. Testing Amigo reviews:**
+**3. Testing Amigo verifies green + adds edge cases:**
 
 ```
 Agent (subagent_type: "storyline:testing-amigo"):
@@ -416,12 +466,13 @@ Agent (subagent_type: "storyline:testing-amigo"):
     ## Your discovery notes — risks you flagged:
     Read .storyline/workbench/amigo-notes/testing.md for your notes from the discovery session.
 
-    Review the tests — are they covering the edge cases you worried about?
-    Add any missing tests. Use context7 for test framework docs.
-    Commit and report back.
+    Confirm the acceptance test is green. Then review: are the edge cases you worried about during
+    discovery covered? Add any missing tests.
+    Use context7 for test framework docs.
+    Commit any additions and report back.
 ```
 
-**3. (Optional — complex features) Product Amigo validates:**
+**4. (Optional — complex features) Product Amigo validates:**
 
 ```
 Agent (subagent_type: "storyline:product-amigo"):
@@ -435,7 +486,7 @@ Agent (subagent_type: "storyline:product-amigo"):
     Does this match what we discussed? Is the behavior what the user expects?
 ```
 
-**4. Check: tests green? Update todo and move to next task.**
+**5. Check: tests green? Update todo and move to next task.**
 
 ```
 TodoWrite: Foreman: task [N] of [total] — walls are going up
@@ -635,6 +686,10 @@ Use the same state detection logic as Role 1, then generate a summary:
 - 4 feature files, 18 scenarios
 - Commands with feature files: 6/6
 
+### The Quartermaster (Tech Research) ✅
+- workbench/tech-choices.md
+- 3 packages recommended, 1 build-it-yourself
+
 ### Phase 3: Sticky Storm (Event Storm) ✅
 - 9 domain events in blueprint
 - 3 aggregates with events
@@ -672,6 +727,7 @@ Run `storyline summary` to determine what's happened. No scattered file scanning
 | `bounded_contexts` empty or absent | Surveyor hasn't run | Dispatch Surveyor |
 | `tech_stack` empty or absent | Scout hasn't run | Suggest `/storyline:the-scout` |
 | Contexts exist but commands have no `feature_files` | Mister Gherkin hasn't run | Suggest `/storyline:mister-gherkin` |
+| Commands have `feature_files` but no `workbench/tech-choices.md` | Quartermaster hasn't run | Dispatch Quartermaster agent |
 | Commands exist but aggregates have no `events` | Sticky Storm hasn't run | Dispatch Sticky Storm agent |
 | Events exist but no `invariants` or `relationships` | Doctor Context hasn't run | Dispatch Doctor Context agent |
 | `plans/*.md` exists (glob matches) | The Onion wrote a plan | Present build choice (Role 2) |
@@ -759,6 +815,7 @@ TodoWrite([
   { content: "Scout: tech stack and ideas captured",                    status: "completed",   activeForm: "The Scout is scanning the project" },
   { content: "Three Amigos: discovery session complete",                status: "completed",   activeForm: "The amigos are working the feature" },
   { content: "Mister Gherkin: scenarios written",                       status: "in_progress", activeForm: "Mister Gherkin is writing scenarios" },
+  { content: "Quartermaster: tech choices researched",                  status: "pending",     activeForm: "Quartermaster is checking the stores" },
   { content: "Sticky Storm: domain events discovered",                  status: "pending",     activeForm: "Sticky Storm is blowing through the domain" },
   { content: "Doctor Context: domain model complete",                   status: "pending",     activeForm: "Doctor Context is drawing boundaries" },
   { content: "Foreman: plan ready — picking the right crew",            status: "pending",     activeForm: "Foreman is reviewing the build plan" }

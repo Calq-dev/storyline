@@ -1,6 +1,8 @@
 # Storyline — From Idea to Working Code
 
-A Claude Code plugin that guides software development through a complete Behavior-Driven Development pipeline. You describe what you want to build, and a crew of specialized AI agents takes it from discovery through implementation.
+A Claude Code plugin that applies BDD principles to guide software development from discovery through implementation. You describe what you want to build, and a crew of specialized AI agents takes it from exploration through working code.
+
+> **A note on BDD:** Storyline applies BDD-inspired principles to enforce methodical thinking before implementation — it is not a BDD framework. It does not replace the human conversations and executable specifications that real BDD requires. The loop is not fully closed without a BDD framework (Cucumber, SpecFlow, etc.) running Gherkin scenarios as automated tests in your project — that integration is intentionally out of scope for this plugin.
 
 ## What It Does
 
@@ -9,10 +11,11 @@ You say "I want to add shopping cart persistence" and the pipeline:
 1. **The Foreman** assesses the project, checks the blueprint, starts the right process
 2. **Three Amigos** explore the feature from three perspectives (Product, Developer, Testing) — writing shared notes and challenging each other
 3. **Mister Gherkin** formalizes the rules into concrete Gherkin scenarios, pushing back on anything vague
-4. **Sticky Storm** discovers the domain events hiding inside the scenarios (dispatched only if needed)
-5. **Doctor Context** refines bounded contexts, invariants, and the domain glossary (dispatched only if needed)
-6. **The Onion** plans the implementation layer by layer, outside-in
-7. **The Foreman** returns as Build Director — lets you choose how to build: continue here, new session, or **The Crew** (the amigos who discovered the feature now build it)
+4. **The Quartermaster** researches packages and libraries for what needs to be built — before anyone writes code
+5. **Sticky Storm** discovers the domain events hiding inside the scenarios (dispatched only if needed)
+6. **Doctor Context** refines bounded contexts, invariants, and the domain glossary (dispatched only if needed)
+7. **The Onion** plans the implementation layer by layer, outside-in
+8. **The Foreman** returns as Build Director — lets you choose how to build: continue here, new session, or **The Crew** (the amigos who discovered the feature now build it)
 
 Everything flows automatically. The pipeline pauses only when human input is needed — vague rules, blocking questions, build approach decisions.
 
@@ -102,6 +105,7 @@ The Foreman dispatches the Surveyor automatically — you don't invoke it direct
 | The Appraiser | Skill | Triangulated estimation (PERT + WBS + T-Shirt) |
 | The Onion | Skill | Outside-in TDD implementation planning |
 | Surveyor | Agent | Reverse-engineers codebase into blueprint (full, incremental, or as-built) |
+| The Quartermaster | Agent | Package/library research before implementation — build vs. buy decisions |
 | Sticky Storm | Agent | Event Storming (dispatched when needed) |
 | Doctor Context | Agent | DDD modeling (dispatched when needed) |
 | Product Amigo | Agent | Business perspective persona |
@@ -129,6 +133,7 @@ storyline add-question --question "How do refunds work?" --severity "important" 
 
 - [ ] **Living Documentation** — generate readable project documentation from feature files + blueprint
 - [ ] **Continuous Validation** — CI/CD integration to run Gherkin scenarios on every commit
+- [ ] **Executable specs bridge** — guidance for wiring `.feature` files to a BDD framework (Cucumber, SpecFlow, Behave) in the target project, closing the feedback loop between specification and running tests
 - [ ] **Refactoring support** — use the pipeline for restructuring existing code (currently focused on new features)
 - [ ] **Greenfield projects** — full project scaffolding from scratch (currently focused on existing codebases)
 
