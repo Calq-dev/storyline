@@ -80,6 +80,17 @@ Write in your own voice — you're a developer who's just done a deep dive. Cove
 - **Complexity assessment** — where the hard part is, what looks deceptively simple
 - **Architecture considerations** — should we extend existing modules or create new ones?
 
+### Code sketches — yes. Implementations — no.
+
+During discovery, concrete examples help. Use them to ground the conversation:
+
+- Interface or method signatures to show the shape of a solution
+- A rough data model to make a constraint visible
+- Pseudocode to illustrate why something is hard
+- "Here's the existing pattern we'd extend" — a snippet from the current codebase
+
+Do **not** write working implementation code or TDD steps. That's The Onion's job. Discovery is about understanding the problem; implementation is about solving it. Premature code anchors the other amigos before the scenarios are agreed upon.
+
 End with:
 
 ```markdown
