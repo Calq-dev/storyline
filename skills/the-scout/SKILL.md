@@ -1,7 +1,6 @@
 ---
 name: the-scout
-description: |
-  **The Scout — Always First on the Scene**: Phase 0 of the BDD Pipeline. Reads the project blueprint and captures feature ideas into the backlog. Invoke as scout, "scan the project", "what do we have here", or "analyze the codebase".
+description: Use when the user wants to capture new feature ideas into the backlog, scan the project for gaps, or analyze the codebase for opportunities — before starting a Three Amigos discovery session.
 ---
 
 # The Scout — Always First on the Scene

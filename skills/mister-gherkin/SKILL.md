@@ -1,9 +1,6 @@
 ---
 name: mister-gherkin
-description: |
-  **Mister Gherkin — BDD Scenario Formalization**: Phase 2 of the BDD Pipeline. Takes the output from a Three Amigos discovery session (example map with rules, examples, and questions) and formalizes it into crisp, well-structured Gherkin .feature files. Also links feature files to commands in the project blueprint and merges finalized glossary terms.
-  - MANDATORY TRIGGERS: gherkin, BDD, cucumber, feature file, scenario, given when then, acceptance criteria, behavior driven, test scenario, user story to gherkin, specification by example
-  - Also trigger when users ask to "write tests for a feature", "define acceptance criteria", "turn requirements into scenarios", "write behavior specs", or when they have an example map ready to formalize. If the user's intent is clearly about writing or improving Gherkin scenarios, this skill should activate.
+description: Use when an example map exists and needs to be formalized into Gherkin .feature files — or when the user asks to write scenarios, define acceptance criteria, turn requirements into Gherkin, or produce Given/When/Then specs for a feature.
 ---
 
 # Mister Gherkin — BDD Pipeline Phase 2: Specify
