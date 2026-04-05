@@ -4,11 +4,25 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
-# Plugin install: use dependencies from plugin data dir
-if [ -n "${CLAUDE_PLUGIN_DATA:-}" ] && [ -d "${CLAUDE_PLUGIN_DATA}/node_modules" ]; then
-  export NODE_PATH="${CLAUDE_PLUGIN_DATA}/node_modules:${NODE_PATH:-}"
-  exec node --import "${CLAUDE_PLUGIN_DATA}/node_modules/tsx/esm" "${SCRIPT_DIR}/scripts/blueprint.ts" "$@"
-fi
+find_node_modules() {
+  # 1. Plugin install: node_modules symlinked into cache dir by SessionStart hook
+  if [ -d "${SCRIPT_DIR}/node_modules" ]; then
+    echo "${SCRIPT_DIR}/node_modules"; return
+  fi
+  # 2. CLAUDE_PLUGIN_DATA is set in hook subprocess contexts (fallback)
+  if [ -n "${CLAUDE_PLUGIN_DATA:-}" ] && [ -d "${CLAUDE_PLUGIN_DATA}/node_modules" ]; then
+    echo "${CLAUDE_PLUGIN_DATA}/node_modules"; return
+  fi
+  # 3. Local dev: project node_modules in cwd
+  if [ -d "$(pwd)/node_modules" ]; then
+    echo "$(pwd)/node_modules"
+  fi
+}
 
-# Local dev: use project node_modules
-exec npx tsx "${SCRIPT_DIR}/scripts/blueprint.ts" "$@"
+NM="$(find_node_modules)"
+if [ -n "$NM" ]; then
+  exec node --import "${NM}/tsx/dist/esm/index.mjs" "${SCRIPT_DIR}/scripts/blueprint.ts" "$@"
+else
+  echo "storyline: node_modules not found. Run: npm install" >&2
+  exit 1
+fi
