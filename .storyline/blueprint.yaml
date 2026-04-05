@@ -2,714 +2,754 @@ meta:
   project: Storyline
   created_at: '2026-04-04'
   updated_at: '2026-04-05'
-  version: 4
+  version: 5
 tech_stack:
-  language: "Python 3.9+, Markdown, Bash, YAML"
+  language: "TypeScript, Markdown, Bash, YAML"
   framework: "Claude Code Plugin SDK"
-  runtime: "Claude Code CLI (claude.ai/code)"
-  package_manager: "pip (requirements.txt)"
-  test_framework: "Custom test runner (scripts/test_blueprint.py, unittest-style assertions)"
+  runtime: "Node.js 18+ via tsx (ESM), Claude Code CLI (claude.ai/code)"
+  package_manager: "npm"
+  test_framework: "node:test (scripts/test-blueprint.ts, 30 tests)"
   key_dependencies:
-  - name: "ruamel.yaml"
-    version: ">=0.17"
-    purpose: "YAML parsing and round-trip editing for blueprint.yaml"
+    - name: "yaml"
+      version: "^2.7.0"
+      purpose: "YAML parsing and editing for blueprint.yaml"
+    - name: "tsx"
+      version: "^4.19.0"
+      purpose: "TypeScript execution via ESM loader for the blueprint CLI"
 bounded_contexts:
-- name: "Orchestration"
-  description: "Pipeline entry point, phase coordination, build direction, estimation,
-    and status reporting. The Foreman skill and its subagents (foreman inspector,
-    surveyor) manage pipeline flow. Includes hooks (SessionStart, PostToolUse, SubagentStop),
-    CLI wrappers in bin/, and The Appraiser for estimation."
-  aggregates:
-  - name: "PipelineSession"
-    root_entity: "PipelineSession"
-    entities: []
-    value_objects:
-    - "PipelinePhase"
-    - "BuildChoice"
-    - "EstimationReport"
-    commands:
-    - name: "StartPipeline"
-      feature_files:
-      - "orchestration.feature"
-    - name: "DetectProjectState"
-      feature_files:
-      - "orchestration.feature"
-    - name: "PresentBuildChoice"
-      feature_files:
-      - "orchestration.feature"
-    - name: "ReportStatus"
-      feature_files:
-      - "orchestration.feature"
-    - name: "DispatchSurveyor"
-      feature_files:
-      - "orchestration.feature"
-    - name: "DispatchAppraiser"
-      feature_files:
-      - "orchestration.feature"
-    - name: "RunScenarioRefinement"
-      feature_files:
-      - "orchestration.feature"
-    - name: "DispatchSecurityAudit"
-      feature_files:
-      - "orchestration.feature"
-    - name: RunHousekeeping
-      feature_files:
-      - housekeeping.feature
-    events:
-    - name: "PipelineStarted"
-      payload_fields:
-      - "projectName"
-      - "detectedState"
-    - name: "ProjectStateDetected"
-      payload_fields:
-      - "hasBlueprint"
-      - "hasSourceCode"
-      - "isStale"
-    - name: "BuildChoicePresented"
-      payload_fields:
-      - "taskCount"
-      - "recommendation"
-      - "options"
-    - name: "SurveyorDispatched"
-      payload_fields:
-      - "mode"
-      - "targetProject"
-    - name: "PhaseTransitioned"
-      payload_fields:
-      - "fromPhase"
-      - "toPhase"
-    - name: "AppraiserDispatched"
-      payload_fields:
-      - "planFile"
-      - "audience"
-      - "detailLevel"
-    - name: "ScenarioRefinementCompleted"
-      payload_fields:
-      - "featureFilesReviewed"
-      - "refinementsApplied"
-    - name: "SecurityAuditCompleted"
-      payload_fields:
-      - "criticalIssues"
-      - "findings"
-    invariants:
-    - "Exactly one pipeline phase may be in_progress at a time"
-    - "The Foreman never explores the codebase directly — reads the blueprint only"
-    - "Blueprint must be validated and stamped before any commit"
-  policies:
-  - name: "DispatchSurveyorOnMissingBlueprint"
-    triggered_by: "ProjectStateDetected"
-    issues_command: "DispatchSurveyor"
-  - name: "StartThreeAmigosAfterSurvey"
-    triggered_by: "PhaseTransitioned"
-    issues_command: "StartPipeline"
-  read_models: []
-  external_systems: []
-  domain_services: []
-  relationships:
-  - type: "customer-supplier"
-    target: "Discovery"
-    pattern: "Published Language"
-    via: "PhaseTransitioned event triggers Three Amigos"
-  - type: "customer-supplier"
-    target: "BlueprintManagement"
-    pattern: "Published Language"
-    via: "All phases read/write blueprint.yaml through the CLI"
+  - name: "Orchestration"
+    description: "Pipeline entry point, phase coordination, build direction,
+      estimation, and status reporting. The Foreman skill and its subagents
+      (foreman inspector, surveyor) manage pipeline flow. Includes hooks
+      (SessionStart, PostToolUse, SubagentStop), CLI wrappers in bin/, and The
+      Appraiser for estimation."
+    aggregates:
+      - name: "PipelineSession"
+        root_entity: "PipelineSession"
+        entities: []
+        value_objects:
+          - "PipelinePhase"
+          - "BuildChoice"
+          - "EstimationReport"
+        commands:
+          - name: "StartPipeline"
+            feature_files:
+              - "orchestration.feature"
+          - name: "DetectProjectState"
+            feature_files:
+              - "orchestration.feature"
+          - name: "PresentBuildChoice"
+            feature_files:
+              - "orchestration.feature"
+          - name: "ReportStatus"
+            feature_files:
+              - "orchestration.feature"
+          - name: "DispatchSurveyor"
+            feature_files:
+              - "orchestration.feature"
+          - name: "DispatchAppraiser"
+            feature_files:
+              - "orchestration.feature"
+          - name: "RunScenarioRefinement"
+            feature_files:
+              - "orchestration.feature"
+          - name: "DispatchSecurityAudit"
+            feature_files:
+              - "orchestration.feature"
+          - name: RunHousekeeping
+            feature_files:
+              - housekeeping.feature
+        events:
+          - name: "PipelineStarted"
+            payload_fields:
+              - "projectName"
+              - "detectedState"
+          - name: "ProjectStateDetected"
+            payload_fields:
+              - "hasBlueprint"
+              - "hasSourceCode"
+              - "isStale"
+          - name: "BuildChoicePresented"
+            payload_fields:
+              - "taskCount"
+              - "recommendation"
+              - "options"
+          - name: "SurveyorDispatched"
+            payload_fields:
+              - "mode"
+              - "targetProject"
+          - name: "PhaseTransitioned"
+            payload_fields:
+              - "fromPhase"
+              - "toPhase"
+          - name: "AppraiserDispatched"
+            payload_fields:
+              - "planFile"
+              - "audience"
+              - "detailLevel"
+          - name: "ScenarioRefinementCompleted"
+            payload_fields:
+              - "featureFilesReviewed"
+              - "refinementsApplied"
+          - name: "SecurityAuditCompleted"
+            payload_fields:
+              - "criticalIssues"
+              - "findings"
+        invariants:
+          - "Exactly one pipeline phase may be in_progress at a time"
+          - "The Foreman never explores the codebase directly — reads the
+            blueprint only"
+          - "Blueprint must be validated and stamped before any commit"
+    policies:
+      - name: "DispatchSurveyorOnMissingBlueprint"
+        triggered_by: "ProjectStateDetected"
+        issues_command: "DispatchSurveyor"
+      - name: "StartThreeAmigosAfterSurvey"
+        triggered_by: "PhaseTransitioned"
+        issues_command: "StartPipeline"
+    read_models: []
+    external_systems: []
+    domain_services: []
+    relationships:
+      - type: "customer-supplier"
+        target: "Discovery"
+        pattern: "Published Language"
+        via: "PhaseTransitioned event triggers Three Amigos"
+      - type: "customer-supplier"
+        target: "BlueprintManagement"
+        pattern: "Published Language"
+        via: "All phases read/write blueprint.yaml through the CLI"
 
-- name: "Discovery"
-  description: "Feature exploration through Three Amigos sessions. Product, Developer,
-    Testing, and optionally Frontend and Security perspectives collaborate via shared
-    notes (workbench/amigo-notes/) to produce an Example Map with rules, examples,
-    questions, and MoSCoW priorities. Crew roster in agent prompts enables awareness
-    of all participants. Contextual questions during agent wait times."
-  aggregates:
-  - name: "DiscoverySession"
-    root_entity: "DiscoverySession"
-    entities:
-    - "ExampleMap"
-    - "AmigoNotes"
-    value_objects:
-    - "BusinessRule"
-    - "Example"
-    - "MoSCoWPriority"
-    commands:
-    - name: "StartDiscoverySession"
-      feature_files:
-      - "discovery.feature"
-    - name: "RunQuickScan"
-      feature_files:
-      - "discovery.feature"
-    - name: "RunFullSession"
-      feature_files:
-      - "discovery.feature"
-    - name: "CaptureBacklogItem"
-      feature_files:
-      - "discovery.feature"
-    events:
-    - name: "DiscoverySessionStarted"
-      payload_fields:
-      - "featureDescription"
-      - "mode"
-    - name: "ExampleMapProduced"
-      payload_fields:
-      - "rules"
-      - "examples"
-      - "questions"
-    - name: "BacklogItemCaptured"
-      payload_fields:
-      - "title"
-      - "source"
-    invariants:
-    - "Discovery sessions read the blueprint as context, never explore codebase directly"
-    - "Full session mode dispatches parallel persona agents (3-5 depending on crew
-      roster) with persistent memory"
-    - "Quick scan mode uses a single AI embodying all three perspectives"
-    - "Frontend Amigo is added to crew when project has a frontend framework in tech_stack"
-    - "Security Amigo is added when feature touches auth, user input, sensitive data,
-      or external APIs"
-    - "Each agent prompt includes the full crew roster so agents know who else is
-      participating"
-  - name: "PersonaMemory"
-    root_entity: "PersonaMemory"
-    entities: []
-    value_objects:
-    - "PersonaType"
-    commands:
-    - name: "UpdatePersonaMemory"
-      feature_files:
-      - "discovery.feature"
-    events:
-    - name: "PersonaMemoryUpdated"
-      payload_fields:
-      - "personaType"
-      - "topicsLearned"
-    invariants:
-    - "Memory is organized by topic, not by date"
-    - "Memory files live at .storyline/personas/<name>.md for all five amigo types"
-    - "SubagentStop hook warns if persona finishes without updating memory"
-  policies:
-  - name: "ProduceExampleMapAfterDiscovery"
-    triggered_by: "DiscoverySessionStarted"
-    issues_command: "RunQuickScan"
-  read_models: []
-  external_systems: []
-  domain_services: []
-  relationships:
-  - type: "customer-supplier"
-    target: "Specification"
-    pattern: "Published Language"
-    via: "ExampleMapProduced feeds Mister Gherkin"
-  - type: "customer-supplier"
-    target: "Orchestration"
-    pattern: "Published Language"
-    via: "The Foreman dispatches discovery and receives completion"
+  - name: "Discovery"
+    description: "Feature exploration through Three Amigos sessions. Product,
+      Developer, Testing, and optionally Frontend and Security perspectives
+      collaborate via shared notes (workbench/amigo-notes/) to produce an
+      Example Map with rules, examples, questions, and MoSCoW priorities. Crew
+      roster in agent prompts enables awareness of all participants. Contextual
+      questions during agent wait times."
+    aggregates:
+      - name: "DiscoverySession"
+        root_entity: "DiscoverySession"
+        entities:
+          - "ExampleMap"
+          - "AmigoNotes"
+        value_objects:
+          - "BusinessRule"
+          - "Example"
+          - "MoSCoWPriority"
+        commands:
+          - name: "StartDiscoverySession"
+            feature_files:
+              - "discovery.feature"
+          - name: "RunQuickScan"
+            feature_files:
+              - "discovery.feature"
+          - name: "RunFullSession"
+            feature_files:
+              - "discovery.feature"
+          - name: "CaptureBacklogItem"
+            feature_files:
+              - "discovery.feature"
+        events:
+          - name: "DiscoverySessionStarted"
+            payload_fields:
+              - "featureDescription"
+              - "mode"
+          - name: "ExampleMapProduced"
+            payload_fields:
+              - "rules"
+              - "examples"
+              - "questions"
+          - name: "BacklogItemCaptured"
+            payload_fields:
+              - "title"
+              - "source"
+        invariants:
+          - "Discovery sessions read the blueprint as context, never explore
+            codebase directly"
+          - "Full session mode dispatches parallel persona agents (3-5 depending
+            on crew roster) with persistent memory"
+          - "Quick scan mode uses a single AI embodying all three perspectives"
+          - "Frontend Amigo is added to crew when project has a frontend
+            framework in tech_stack"
+          - "Security Amigo is added when feature touches auth, user input,
+            sensitive data, or external APIs"
+          - "Each agent prompt includes the full crew roster so agents know who
+            else is participating"
+      - name: "PersonaMemory"
+        root_entity: "PersonaMemory"
+        entities: []
+        value_objects:
+          - "PersonaType"
+        commands:
+          - name: "UpdatePersonaMemory"
+            feature_files:
+              - "discovery.feature"
+        events:
+          - name: "PersonaMemoryUpdated"
+            payload_fields:
+              - "personaType"
+              - "topicsLearned"
+        invariants:
+          - "Memory is organized by topic, not by date"
+          - "Memory files live at .storyline/personas/<name>.md for all five
+            amigo types"
+          - "SubagentStop hook warns if persona finishes without updating memory"
+    policies:
+      - name: "ProduceExampleMapAfterDiscovery"
+        triggered_by: "DiscoverySessionStarted"
+        issues_command: "RunQuickScan"
+    read_models: []
+    external_systems: []
+    domain_services: []
+    relationships:
+      - type: "customer-supplier"
+        target: "Specification"
+        pattern: "Published Language"
+        via: "ExampleMapProduced feeds Mister Gherkin"
+      - type: "customer-supplier"
+        target: "Orchestration"
+        pattern: "Published Language"
+        via: "The Foreman dispatches discovery and receives completion"
 
-- name: "Specification"
-  description: "Gherkin scenario formalization. Mister Gherkin takes Example Maps
-    from discovery and produces structured .feature files with declarative Given/When/Then
-    scenarios linked to commands in the blueprint."
-  aggregates:
-  - name: "FeatureFile"
-    root_entity: "FeatureFile"
-    entities:
-    - "Scenario"
-    - "Rule"
-    value_objects:
-    - "GherkinStep"
-    - "ScenarioTag"
-    commands:
-    - name: "FormalizeScenarios"
-      feature_files:
-      - "specification.feature"
-    - name: "LinkFeatureToCommand"
-      feature_files:
-      - "specification.feature"
-    - name: "RefineScenarios"
-      feature_files:
-      - "specification.feature"
-    events:
-    - name: "ScenariosFormalized"
-      payload_fields:
-      - "featureFile"
-      - "scenarioCount"
-      - "rulesCount"
-    - name: "FeatureLinkedToCommand"
-      payload_fields:
-      - "featureFile"
-      - "contextName"
-      - "commandName"
-    invariants:
-    - "Scenarios are written in declarative style — describe behavior, not UI clicks"
-    - "Every scenario is grouped under a Rule: block"
-    - "Feature files include @command:X tags for reverse traceability"
-    - "Mister Gherkin never writes scenarios without a discovery loop first"
-  policies: []
-  read_models: []
-  external_systems: []
-  domain_services: []
-  relationships:
-  - type: "customer-supplier"
-    target: "DomainModeling"
-    pattern: "Published Language"
-    via: "Feature files feed Sticky Storm for event discovery"
-  - type: "customer-supplier"
-    target: "Discovery"
-    pattern: "Published Language"
-    via: "Reads ExampleMap from .storyline/workbench/example-map.yaml"
+  - name: "Specification"
+    description: "Gherkin scenario formalization. Mister Gherkin takes Example Maps
+      from discovery and produces structured .feature files with declarative
+      Given/When/Then scenarios linked to commands in the blueprint."
+    aggregates:
+      - name: "FeatureFile"
+        root_entity: "FeatureFile"
+        entities:
+          - "Scenario"
+          - "Rule"
+        value_objects:
+          - "GherkinStep"
+          - "ScenarioTag"
+        commands:
+          - name: "FormalizeScenarios"
+            feature_files:
+              - "specification.feature"
+          - name: "LinkFeatureToCommand"
+            feature_files:
+              - "specification.feature"
+          - name: "RefineScenarios"
+            feature_files:
+              - "specification.feature"
+        events:
+          - name: "ScenariosFormalized"
+            payload_fields:
+              - "featureFile"
+              - "scenarioCount"
+              - "rulesCount"
+          - name: "FeatureLinkedToCommand"
+            payload_fields:
+              - "featureFile"
+              - "contextName"
+              - "commandName"
+        invariants:
+          - "Scenarios are written in declarative style — describe behavior, not
+            UI clicks"
+          - "Every scenario is grouped under a Rule: block"
+          - "Feature files include @command:X tags for reverse traceability"
+          - "Mister Gherkin never writes scenarios without a discovery loop
+            first"
+    policies: []
+    read_models: []
+    external_systems: []
+    domain_services: []
+    relationships:
+      - type: "customer-supplier"
+        target: "DomainModeling"
+        pattern: "Published Language"
+        via: "Feature files feed Sticky Storm for event discovery"
+      - type: "customer-supplier"
+        target: "Discovery"
+        pattern: "Published Language"
+        via: "Reads ExampleMap from .storyline/workbench/example-map.yaml"
 
-- name: "DomainModeling"
-  description: "Event Storming (Sticky Storm agent) and DDD modeling (Doctor Context
-    agent). Both are subagents dispatched by The Foreman, not standalone skills. They
-    discover domain events from scenarios, refine bounded context boundaries, add
-    invariants, relationships, and glossary terms to the blueprint."
-  aggregates:
-  - name: "EventStormSession"
-    root_entity: "EventStormSession"
-    entities: []
-    value_objects:
-    - "DomainEvent"
-    - "Command"
-    - "Policy"
-    - "Aggregate"
-    commands:
-    - name: "DiscoverEventsFromScenarios"
-      feature_files:
-      - "domain-modeling.feature"
-    - name: "RefineContextBoundaries"
-      feature_files:
-      - "domain-modeling.feature"
-    - name: "AddInvariantsAndRelationships"
-      feature_files:
-      - "domain-modeling.feature"
-    - name: "BuildGlossary"
-      feature_files:
-      - "domain-modeling.feature"
-    events:
-    - name: "EventsDiscovered"
-      payload_fields:
-      - "contextName"
-      - "eventNames"
-      - "commandNames"
-    - name: "ContextBoundariesRefined"
-      payload_fields:
-      - "contextName"
-      - "relationships"
-      - "invariants"
-    - name: "GlossaryTermAdded"
-      payload_fields:
-      - "term"
-      - "context"
-      - "meaning"
-    invariants:
-    - "Events and commands are discovered from scenarios, not from code"
-    - "Doctor Context reads the blueprint as its patient, never explores the codebase"
-    - "DDD patterns reference is available at references/ddd-patterns.md"
-  policies: []
-  read_models: []
-  external_systems: []
-  domain_services: []
-  relationships:
-  - type: "customer-supplier"
-    target: "Implementation"
-    pattern: "Published Language"
-    via: "Refined blueprint feeds The Onion's implementation planning"
-  - type: "customer-supplier"
-    target: "Specification"
-    pattern: "Published Language"
-    via: "Reads .feature files to discover events"
+  - name: "DomainModeling"
+    description: "Event Storming (Sticky Storm agent) and DDD modeling (Doctor
+      Context agent). Both are subagents dispatched by The Foreman, not
+      standalone skills. They discover domain events from scenarios, refine
+      bounded context boundaries, add invariants, relationships, and glossary
+      terms to the blueprint."
+    aggregates:
+      - name: "EventStormSession"
+        root_entity: "EventStormSession"
+        entities: []
+        value_objects:
+          - "DomainEvent"
+          - "Command"
+          - "Policy"
+          - "Aggregate"
+        commands:
+          - name: "DiscoverEventsFromScenarios"
+            feature_files:
+              - "domain-modeling.feature"
+          - name: "RefineContextBoundaries"
+            feature_files:
+              - "domain-modeling.feature"
+          - name: "AddInvariantsAndRelationships"
+            feature_files:
+              - "domain-modeling.feature"
+          - name: "BuildGlossary"
+            feature_files:
+              - "domain-modeling.feature"
+        events:
+          - name: "EventsDiscovered"
+            payload_fields:
+              - "contextName"
+              - "eventNames"
+              - "commandNames"
+          - name: "ContextBoundariesRefined"
+            payload_fields:
+              - "contextName"
+              - "relationships"
+              - "invariants"
+          - name: "GlossaryTermAdded"
+            payload_fields:
+              - "term"
+              - "context"
+              - "meaning"
+        invariants:
+          - "Events and commands are discovered from scenarios, not from code"
+          - "Doctor Context reads the blueprint as its patient, never explores
+            the codebase"
+          - "DDD patterns reference is available at references/ddd-patterns.md"
+    policies: []
+    read_models: []
+    external_systems: []
+    domain_services: []
+    relationships:
+      - type: "customer-supplier"
+        target: "Implementation"
+        pattern: "Published Language"
+        via: "Refined blueprint feeds The Onion's implementation planning"
+      - type: "customer-supplier"
+        target: "Specification"
+        pattern: "Published Language"
+        via: "Reads .feature files to discover events"
 
-- name: "Implementation"
-  description: "Outside-in TDD implementation. The Onion plans and executes implementation
-    from acceptance tests inward. Plans are persistent dated files in .storyline/plans/.
-    Includes scaffold.py for code generation, The Foreman's Crew mode for amigo-based
-    building, The Appraiser for triangulated estimation, and scenario refinement in
-    the post-build flow."
-  aggregates:
-  - name: "ImplementationPlan"
-    root_entity: "ImplementationPlan"
-    entities:
-    - "ImplementationTask"
-    value_objects:
-    - "TestLayer"
-    commands:
-    - name: "CreateImplementationPlan"
-      feature_files:
-      - "implementation.feature"
-    - name: "ExecuteTask"
-      feature_files:
-      - "implementation.feature"
-    - name: "ScaffoldFromBlueprint"
-      feature_files:
-      - "implementation.feature"
-    events:
-    - name: "ImplementationPlanCreated"
-      payload_fields:
-      - "taskCount"
-      - "filesTouched"
-    - name: "TaskCompleted"
-      payload_fields:
-      - "taskNumber"
-      - "testsGreen"
-    - name: "ScaffoldGenerated"
-      payload_fields:
-      - "language"
-      - "contextsGenerated"
-      - "aggregatesGenerated"
-    invariants:
-    - "Outside-in TDD: acceptance test first, then inner loop (unit test, implement,
-      refactor)"
-    - "Outer loop stays red while inner loop cycles"
-    - "scaffold.py supports TypeScript and Python code generation"
-    - "Scaffold reads blueprint.yaml or legacy domain-model.json"
-    - "Implementation plans are persistent dated files in .storyline/plans/YYYY-MM-DD-<feature>.md"
-    - "The Appraiser produces triangulated estimates using PERT, WBS, and T-Shirt
-      sizing"
-    - "Post-build flow includes as-built survey, optional security audit, and scenario
-      refinement by active amigos"
-  policies:
-  - name: "HandOffToForemanAfterPlan"
-    triggered_by: "ImplementationPlanCreated"
-    issues_command: "PresentBuildChoice"
-  read_models: []
-  external_systems: []
-  domain_services: []
-  relationships:
-  - type: "customer-supplier"
-    target: "Orchestration"
-    pattern: "Published Language"
-    via: "The Onion hands off to The Foreman after writing the plan"
-  - type: "customer-supplier"
-    target: "BlueprintManagement"
-    pattern: "Published Language"
-    via: "Scaffold reads blueprint.yaml for code generation"
+  - name: "Implementation"
+    description: "Outside-in TDD implementation. The Onion plans and executes
+      implementation from acceptance tests inward. Plans are persistent dated
+      files in .storyline/plans/. Includes scaffold.py for code generation, The
+      Foreman's Crew mode for amigo-based building, The Appraiser for
+      triangulated estimation, and scenario refinement in the post-build flow."
+    aggregates:
+      - name: "ImplementationPlan"
+        root_entity: "ImplementationPlan"
+        entities:
+          - "ImplementationTask"
+        value_objects:
+          - "TestLayer"
+        commands:
+          - name: "CreateImplementationPlan"
+            feature_files:
+              - "implementation.feature"
+          - name: "ExecuteTask"
+            feature_files:
+              - "implementation.feature"
+          - name: "ScaffoldFromBlueprint"
+            feature_files:
+              - "implementation.feature"
+        events:
+          - name: "ImplementationPlanCreated"
+            payload_fields:
+              - "taskCount"
+              - "filesTouched"
+          - name: "TaskCompleted"
+            payload_fields:
+              - "taskNumber"
+              - "testsGreen"
+          - name: "ScaffoldGenerated"
+            payload_fields:
+              - "language"
+              - "contextsGenerated"
+              - "aggregatesGenerated"
+        invariants:
+          - "Outside-in TDD: acceptance test first, then inner loop (unit test,
+            implement, refactor)"
+          - "Outer loop stays red while inner loop cycles"
+          - "scaffold.py supports TypeScript and Python code generation"
+          - "Scaffold reads blueprint.yaml or legacy domain-model.json"
+          - "Implementation plans are persistent dated files in
+            .storyline/plans/YYYY-MM-DD-<feature>.md"
+          - "The Appraiser produces triangulated estimates using PERT, WBS, and
+            T-Shirt sizing"
+          - "Post-build flow includes as-built survey, optional security audit,
+            and scenario refinement by active amigos"
+    policies:
+      - name: "HandOffToForemanAfterPlan"
+        triggered_by: "ImplementationPlanCreated"
+        issues_command: "PresentBuildChoice"
+    read_models: []
+    external_systems: []
+    domain_services: []
+    relationships:
+      - type: "customer-supplier"
+        target: "Orchestration"
+        pattern: "Published Language"
+        via: "The Onion hands off to The Foreman after writing the plan"
+      - type: "customer-supplier"
+        target: "BlueprintManagement"
+        pattern: "Published Language"
+        via: "Scaffold reads blueprint.yaml for code generation"
 
-- name: "BlueprintManagement"
-  description: "Blueprint lifecycle management via the Python CLI (scripts/blueprint.py).
-    Handles initialization, schema validation, referential integrity checks, version
-    stamping, and structural mutations (add-context, add-aggregate, add-event, add-command,
-    add-glossary, add-gap, add-question)."
-  aggregates:
-  - name: "Blueprint"
-    root_entity: "Blueprint"
-    entities:
-    - "BoundedContext"
-    - "AggregateDefinition"
-    - "EventDefinition"
-    - "CommandDefinition"
-    - "GapEntry"
-    - "QuestionEntry"
-    - "GlossaryEntry"
-    value_objects:
-    - "Severity"
-    - "QuestionStatus"
-    - "RelationshipType"
-    commands:
-    - name: "InitializeBlueprint"
-      feature_files:
-      - "blueprint-management.feature"
-    - name: "ValidateBlueprint"
-      feature_files:
-      - "blueprint-management.feature"
-    - name: "StampBlueprint"
-      feature_files:
-      - "blueprint-management.feature"
-    - name: "AddContext"
-      feature_files:
-      - "blueprint-management.feature"
-    - name: "AddAggregate"
-      feature_files:
-      - "blueprint-management.feature"
-    - name: "AddEvent"
-      feature_files:
-      - "blueprint-management.feature"
-    - name: "AddCommand"
-      feature_files:
-      - "blueprint-management.feature"
-    - name: "AddGlossaryTerm"
-      feature_files:
-      - "blueprint-management.feature"
-    - name: "AddGap"
-      feature_files:
-      - "blueprint-management.feature"
-    - name: "AddQuestion"
-      feature_files:
-      - "blueprint-management.feature"
-    - name: GenerateSummary
-      feature_files:
-      - blueprint-views.feature
-    - name: GenerateContextView
-      feature_files:
-      - blueprint-views.feature
-    events:
-    - name: "BlueprintInitialized"
-      payload_fields:
-      - "projectName"
-      - "createdAt"
-    - name: "BlueprintValidated"
-      payload_fields:
-      - "errorCount"
-      - "schemaErrors"
-      - "referentialErrors"
-      - "fileNotFoundErrors"
-    - name: "BlueprintStamped"
-      payload_fields:
-      - "version"
-      - "updatedAt"
-    - name: "ContextAdded"
-      payload_fields:
-      - "contextName"
-    - name: "AggregateAdded"
-      payload_fields:
-      - "contextName"
-      - "aggregateName"
-    invariants:
-    - "Blueprint init refuses if blueprint.yaml already exists"
-    - "Stamp validates before bumping version — never stamps an invalid blueprint"
-    - "Event names must be unique across ALL aggregates in the entire blueprint"
-    - "Policy triggered_by must reference an event in the same context"
-    - "Policy issues_command must reference a command in any context"
-    - "Relationship targets must reference existing bounded context names"
-    - "Gap and question affects must reference existing context names"
-    - "Glossary definition context must reference existing context or Shared Kernel"
-    - "Feature files referenced in commands must exist on disk"
-    - "CLI helpers use ruamel.yaml CommentedMap/CommentedSeq to preserve YAML formatting"
-    - "Init creates features/, workbench/, plans/, and backlog/ subdirectories"
-  policies: []
-  read_models: []
-  external_systems: []
-  domain_services: []
-  relationships:
-  - type: "open-host-service"
-    target: "Orchestration"
-    pattern: "CLI interface"
-    via: "bin/storyline wrapper provides the CLI that all skills invoke"
+  - name: "BlueprintManagement"
+    description: "Blueprint lifecycle management via the TypeScript CLI
+      (scripts/blueprint.ts). Handles initialization, schema validation,
+      referential integrity checks, version stamping, and structural mutations
+      (add-context, add-aggregate, add-event, add-command, add-glossary,
+      add-gap, add-question, archive). Also generates summary and context view
+      outputs for agent consumption."
+    aggregates:
+      - name: "Blueprint"
+        root_entity: "Blueprint"
+        entities:
+          - "BoundedContext"
+          - "AggregateDefinition"
+          - "EventDefinition"
+          - "CommandDefinition"
+          - "GapEntry"
+          - "QuestionEntry"
+          - "GlossaryEntry"
+        value_objects:
+          - "Severity"
+          - "QuestionStatus"
+          - "RelationshipType"
+        commands:
+          - name: "InitializeBlueprint"
+            feature_files:
+              - "blueprint-management.feature"
+          - name: "ValidateBlueprint"
+            feature_files:
+              - "blueprint-management.feature"
+          - name: "StampBlueprint"
+            feature_files:
+              - "blueprint-management.feature"
+          - name: "AddContext"
+            feature_files:
+              - "blueprint-management.feature"
+          - name: "AddAggregate"
+            feature_files:
+              - "blueprint-management.feature"
+          - name: "AddEvent"
+            feature_files:
+              - "blueprint-management.feature"
+          - name: "AddCommand"
+            feature_files:
+              - "blueprint-management.feature"
+          - name: "AddGlossaryTerm"
+            feature_files:
+              - "blueprint-management.feature"
+          - name: "AddGap"
+            feature_files:
+              - "blueprint-management.feature"
+          - name: "AddQuestion"
+            feature_files:
+              - "blueprint-management.feature"
+          - name: GenerateSummary
+            feature_files:
+              - blueprint-views.feature
+          - name: GenerateContextView
+            feature_files:
+              - blueprint-views.feature
+        events:
+          - name: "BlueprintInitialized"
+            payload_fields:
+              - "projectName"
+              - "createdAt"
+          - name: "BlueprintValidated"
+            payload_fields:
+              - "errorCount"
+              - "schemaErrors"
+              - "referentialErrors"
+              - "fileNotFoundErrors"
+          - name: "BlueprintStamped"
+            payload_fields:
+              - "version"
+              - "updatedAt"
+          - name: "ContextAdded"
+            payload_fields:
+              - "contextName"
+          - name: "AggregateAdded"
+            payload_fields:
+              - "contextName"
+              - "aggregateName"
+        invariants:
+          - "Blueprint init refuses if blueprint.yaml already exists"
+          - "Stamp validates before bumping version — never stamps an invalid
+            blueprint"
+          - "Event names must be unique across ALL aggregates in the entire
+            blueprint"
+          - "Policy triggered_by must reference an event in the same context"
+          - "Policy issues_command must reference a command in any context"
+          - "Relationship targets must reference existing bounded context names"
+          - "Gap and question affects must reference existing context names"
+          - "Glossary definition context must reference existing context or
+            Shared Kernel"
+          - "Feature files referenced in commands must exist on disk"
+          - "CLI helpers use the yaml npm package for YAML parsing and writing"
+          - "Init creates features/, workbench/, plans/, and backlog/
+            subdirectories"
+    policies: []
+    read_models: []
+    external_systems: []
+    domain_services: []
+    relationships:
+      - type: "open-host-service"
+        target: "Orchestration"
+        pattern: "CLI interface"
+        via: "bin/storyline wrapper provides the CLI that all skills invoke"
 
 glossary:
   Blueprint:
     definitions:
-    - context: "BlueprintManagement"
-      meaning: "The single YAML file (.storyline/blueprint.yaml) that serves as the
-        source of truth for the project's domain model, tech stack, bounded contexts,
-        gaps, and questions. All pipeline agents read and write this file."
+      - context: "BlueprintManagement"
+        meaning: "The single YAML file (.storyline/blueprint.yaml) that serves as the
+          source of truth for the project's domain model, tech stack, bounded
+          contexts, gaps, and questions. All pipeline agents read and write this
+          file."
   Bounded Context:
     definitions:
-    - context: "DomainModeling"
-      meaning: "A logical grouping of related domain concepts with explicit boundaries,
-        aggregates, events, commands, and relationships to other contexts."
+      - context: "DomainModeling"
+        meaning: "A logical grouping of related domain concepts with explicit
+          boundaries, aggregates, events, commands, and relationships to other
+          contexts."
   Feature File:
     definitions:
-    - context: "Specification"
-      meaning: "A .feature file in Gherkin format containing declarative Given/When/Then
-        scenarios grouped by Rule, stored in .storyline/features/."
+      - context: "Specification"
+        meaning: "A .feature file in Gherkin format containing declarative
+          Given/When/Then scenarios grouped by Rule, stored in
+          .storyline/features/."
   Example Map:
     definitions:
-    - context: "Discovery"
-      meaning: "The structured output of a Three Amigos session, stored as .storyline/workbench/example-map.yaml,
-        containing rules, examples, questions, and MoSCoW priorities."
+      - context: "Discovery"
+        meaning: "The structured output of a Three Amigos session, stored as
+          .storyline/workbench/example-map.yaml, containing rules, examples,
+          questions, and MoSCoW priorities."
   Persona Memory:
     definitions:
-    - context: "Discovery"
-      meaning: "Persistent markdown files in .storyline/personas/ where Three Amigos
-        persona agents store accumulated project knowledge across sessions."
+      - context: "Discovery"
+        meaning: "Persistent markdown files in .storyline/personas/ where Three Amigos
+          persona agents store accumulated project knowledge across sessions."
   Outside-in TDD:
     definitions:
-    - context: "Implementation"
-      meaning: "The London school TDD approach with a double loop: outer loop (acceptance
-        test from Gherkin) stays red while inner loop (unit test, implement, refactor)
-        cycles drive the design from outside in."
+      - context: "Implementation"
+        meaning: "The London school TDD approach with a double loop: outer loop
+          (acceptance test from Gherkin) stays red while inner loop (unit test,
+          implement, refactor) cycles drive the design from outside in."
   The Foreman:
     definitions:
-    - context: "Orchestration"
-      meaning: "The pipeline entry point and build director skill. Detects project
-        state, dispatches the right phase, and returns after The Onion to present
-        the build choice."
+      - context: "Orchestration"
+        meaning: "The pipeline entry point and build director skill. Detects project
+          state, dispatches the right phase, and returns after The Onion to
+          present the build choice."
   Three Amigos:
     definitions:
-    - context: "Discovery"
-      meaning: "A BDD discovery technique where Product, Developer, and Testing perspectives
-        explore a feature together before specification. Supports quick scan (single
-        AI) and full session (three parallel persona agents) modes."
+      - context: "Discovery"
+        meaning: "A BDD discovery technique where Product, Developer, and Testing
+          perspectives explore a feature together before specification. Supports
+          quick scan (single AI) and full session (three parallel persona
+          agents) modes."
   Mister Gherkin:
     definitions:
-    - context: "Specification"
-      meaning: "The BDD scenario formalization skill that converts Example Maps into
-        structured .feature files with declarative Gherkin scenarios."
+      - context: "Specification"
+        meaning: "The BDD scenario formalization skill that converts Example Maps into
+          structured .feature files with declarative Gherkin scenarios."
   Sticky Storm:
     definitions:
-    - context: "DomainModeling"
-      meaning: "The Event Storming agent (agents/sticky-storm.md) dispatched by The
-        Foreman to discover domain events, commands, policies, and aggregates from
-        Gherkin scenarios and write them into the blueprint."
+      - context: "DomainModeling"
+        meaning: "The Event Storming agent (agents/sticky-storm.md) dispatched by The
+          Foreman to discover domain events, commands, policies, and aggregates
+          from Gherkin scenarios and write them into the blueprint."
   Doctor Context:
     definitions:
-    - context: "DomainModeling"
-      meaning: "The DDD modeling agent (agents/doctor-context.md) dispatched by The
-        Foreman to refine bounded context boundaries, add invariants, relationships,
-        and glossary terms. References ddd-patterns.md for strategic patterns."
+      - context: "DomainModeling"
+        meaning: "The DDD modeling agent (agents/doctor-context.md) dispatched by The
+          Foreman to refine bounded context boundaries, add invariants,
+          relationships, and glossary terms. References ddd-patterns.md for
+          strategic patterns."
   The Onion:
     definitions:
-    - context: "Implementation"
-      meaning: "The outside-in TDD implementation skill that plans and executes from
-        acceptance tests inward, layer by layer."
+      - context: "Implementation"
+        meaning: "The outside-in TDD implementation skill that plans and executes from
+          acceptance tests inward, layer by layer."
   The Scout:
     definitions:
-    - context: "Orchestration"
-      meaning: "Phase 0 skill that reads the blueprint and captures feature ideas
-        into the backlog. Fills tech_stack if empty. No longer does full codebase
-        exploration — the blueprint is the source of truth."
+      - context: "Orchestration"
+        meaning: "Phase 0 skill that reads the blueprint and captures feature ideas into
+          the backlog. Fills tech_stack if empty. No longer does full codebase
+          exploration — the blueprint is the source of truth."
   Surveyor:
     definitions:
-    - context: "Orchestration"
-      meaning: "A subagent that reverse-engineers an existing codebase into blueprint.yaml
-        entries. Runs in full, incremental, or as-built mode."
+      - context: "Orchestration"
+        meaning: "A subagent that reverse-engineers an existing codebase into
+          blueprint.yaml entries. Runs in full, incremental, or as-built mode."
   Scaffold:
     definitions:
-    - context: "Implementation"
-      meaning: "Python script (skills/the-onion/scripts/scaffold.py) that generates
-        TypeScript or Python directory structure and skeleton files from the blueprint's
-        bounded contexts and aggregates."
+      - context: "Implementation"
+        meaning: "Python script (skills/the-onion/scripts/scaffold.py) that generates
+          TypeScript or Python directory structure and skeleton files from the
+          blueprint's bounded contexts and aggregates."
   Stamp:
     definitions:
-    - context: "BlueprintManagement"
-      meaning: "The operation of validating the blueprint then incrementing meta.version
-        and updating meta.updated_at. Required before every git commit of blueprint.yaml."
+      - context: "BlueprintManagement"
+        meaning: "The operation of validating the blueprint then incrementing
+          meta.version and updating meta.updated_at. Required before every git
+          commit of blueprint.yaml."
   The Crew:
     definitions:
-    - context: "Orchestration"
-      meaning: "A build mode where the Three Amigos persona agents from the discovery
-        session become implementation partners: Developer Amigo builds, Testing Amigo
-        reviews, Product Amigo validates."
+      - context: "Orchestration"
+        meaning: "A build mode where the Three Amigos persona agents from the discovery
+          session become implementation partners: Developer Amigo builds,
+          Testing Amigo reviews, Product Amigo validates."
   Backlog:
     definitions:
-    - context: "Orchestration"
-      meaning: "Pre-pipeline feature ideas stored as individual markdown files in
-        .storyline/backlog/. Each file contains the raw idea, initial context from
-        the blueprint, and open questions."
+      - context: "Orchestration"
+        meaning: "Pre-pipeline feature ideas stored as individual markdown files in
+          .storyline/backlog/. Each file contains the raw idea, initial context
+          from the blueprint, and open questions."
   Hook:
     definitions:
-    - context: "Orchestration"
-      meaning: "Claude Code lifecycle hooks defined in hooks/hooks.json that run on
-        SessionStart (install deps, show blueprint status), PostToolUse (auto-validate
-        on blueprint edits), and SubagentStop (check persona memory updates for all
-        five amigo types)."
+      - context: "Orchestration"
+        meaning: "Claude Code lifecycle hooks defined in hooks/hooks.json that run on
+          SessionStart (install deps, show blueprint status), PostToolUse
+          (auto-validate on blueprint edits), and SubagentStop (check persona
+          memory updates for all five amigo types)."
   The Appraiser:
     definitions:
-    - context: "Implementation"
-      meaning: "Triangulated work estimation skill (skills/the-appraiser/) that dispatches
-        three sub-agents in parallel (PERT, WBS, T-Shirt Sizing) and consolidates
-        their results into a single estimation report. Reads plans from .storyline/plans/."
+      - context: "Implementation"
+        meaning: "Triangulated work estimation skill (skills/the-appraiser/) that
+          dispatches three sub-agents in parallel (PERT, WBS, T-Shirt Sizing)
+          and consolidates their results into a single estimation report. Reads
+          plans from .storyline/plans/."
   Security Amigo:
     definitions:
-    - context: "Discovery"
-      meaning: "Security specialist agent (agents/security-amigo.md) that joins Three
-        Amigos sessions when a feature touches auth, user input, sensitive data, or
-        external APIs. Also performs post-build security audits. Has persistent persona
-        memory."
+      - context: "Discovery"
+        meaning: "Security specialist agent (agents/security-amigo.md) that joins Three
+          Amigos sessions when a feature touches auth, user input, sensitive
+          data, or external APIs. Also performs post-build security audits. Has
+          persistent persona memory."
   Frontend Amigo:
     definitions:
-    - context: "Discovery"
-      meaning: "UI/UX and frontend perspective agent (agents/frontend-amigo.md) that
-        joins Three Amigos sessions when the project has a frontend framework in tech_stack.
-        Analyzes component architecture, user interactions, accessibility, and design
-        systems. Has persistent persona memory."
+      - context: "Discovery"
+        meaning: "UI/UX and frontend perspective agent (agents/frontend-amigo.md) that
+          joins Three Amigos sessions when the project has a frontend framework
+          in tech_stack. Analyzes component architecture, user interactions,
+          accessibility, and design systems. Has persistent persona memory."
   Workbench:
     definitions:
-    - context: "Orchestration"
-      meaning: "The .storyline/workbench/ directory containing transient phase documents
-        (example-map.yaml, events-raw.md, amigo-notes/, estimates/) that are replaced
-        each pipeline run. Old versions live in git history."
+      - context: "Orchestration"
+        meaning: "The .storyline/workbench/ directory containing transient phase
+          documents (example-map.yaml, events-raw.md, amigo-notes/, estimates/)
+          that are replaced each pipeline run. Old versions live in git
+          history."
   Plans:
     definitions:
-    - context: "Implementation"
-      meaning: "The .storyline/plans/ directory containing persistent dated implementation
-        plan files (YYYY-MM-DD-<feature>.md). Each feature has its own plan file that
-        survives across sessions. Multiple plans can coexist."
+      - context: "Implementation"
+        meaning: "The .storyline/plans/ directory containing persistent dated
+          implementation plan files (YYYY-MM-DD-<feature>.md). Each feature has
+          its own plan file that survives across sessions. Multiple plans can
+          coexist."
   Crew Roster:
     definitions:
-    - context: "Discovery"
-      meaning: "A list of active amigo agents included in every agent prompt during
-        full session mode so each agent knows who else is participating. Built dynamically
-        based on tech_stack and feature characteristics (always core three, optionally
-        Frontend and Security)."
+      - context: "Discovery"
+        meaning: "A list of active amigo agents included in every agent prompt during
+          full session mode so each agent knows who else is participating. Built
+          dynamically based on tech_stack and feature characteristics (always
+          core three, optionally Frontend and Security)."
 
   Blueprint Summary:
     definitions:
-    - context: BlueprintManagement
-      meaning: A compact CLI-generated overview of the blueprint showing meta, 
-        tech stack, context names with descriptions, aggregate names, 
-        relationships, and glossary — used as default read for most agents
+      - context: BlueprintManagement
+        meaning: A compact CLI-generated overview of the blueprint showing meta, tech
+          stack, context names with descriptions, aggregate names,
+          relationships, and glossary — used as default read for most agents
   Blueprint View:
     definitions:
-    - context: BlueprintManagement
-      meaning: A CLI-generated filtered view of a single bounded context 
-        including its full detail plus relationship targets and relevant 
-        glossary terms — used for targeted agent work
+      - context: BlueprintManagement
+        meaning: A CLI-generated filtered view of a single bounded context including its
+          full detail plus relationship targets and relevant glossary terms —
+          used for targeted agent work
   Housekeeping:
     definitions:
-    - context: Orchestration
-      meaning: 'The mandatory final step of every pipeline phase: validate blueprint,
-        stamp if valid, optionally clean up consumed workbench artifacts. Enforced
-        via todo steps and PostToolUse hooks.'
+      - context: Orchestration
+        meaning: 'The mandatory final step of every pipeline phase: validate blueprint,
+          stamp if valid, optionally clean up consumed workbench artifacts.
+          Enforced via todo steps and PostToolUse hooks.'
 gaps:
-- id: "GAP-001"
-  description: "No automated test coverage for scaffold.py — only blueprint.py has
-    tests (scripts/test_blueprint.py with 18 tests)"
-  severity: "important"
-  affects:
-  - "Implementation"
-- id: "GAP-002"
-  description: "Resolved — Sticky Storm and Doctor Context are now agents only (agents/sticky-storm.md,
-    agents/doctor-context.md), dispatched by The Foreman. No more dual definitions."
-  severity: "nice_to_know"
-  affects:
-  - "DomainModeling"
-- id: "GAP-003"
-  description: "No integration tests verifying the full pipeline flow from Foreman
-    through all phases"
-  severity: "nice_to_know"
-  affects:
-  - "Orchestration"
-- id: "GAP-004"
-  description: "The Onion SKILL.md references a double-loop TDD workflow but there
-    is no automated verification that implementation follows outside-in order"
-  severity: "nice_to_know"
-  affects:
-  - "Implementation"
-- id: "GAP-005"
-  description: "PostToolUse hook for blueprint auto-validation parses JSON from tool_input
-    but error handling is minimal — malformed input could silently fail"
-  severity: "nice_to_know"
-  affects:
-  - "BlueprintManagement"
-- id: "GAP-006"
-  description: "SessionStart hook installs ruamel.yaml via pip3 into plugin data dir
-    but does not pin the version beyond >=0.17 — risk of breaking changes"
-  severity: "nice_to_know"
-  affects:
-  - "BlueprintManagement"
-- id: "GAP-007"
-  description: "blueprint.py created_at validation checks for non-empty string but
-    does not validate ISO 8601 date format"
-  severity: "nice_to_know"
-  affects:
-  - "BlueprintManagement"
+  - id: "GAP-001"
+    description: "No automated test coverage for scaffold.py — only blueprint.ts has
+      tests (scripts/test-blueprint.ts with 30 tests)"
+    severity: "important"
+    affects:
+      - "Implementation"
+  - id: "GAP-002"
+    description: "Resolved — Sticky Storm and Doctor Context are now agents only
+      (agents/sticky-storm.md, agents/doctor-context.md), dispatched by The
+      Foreman. No more dual definitions."
+    severity: "nice_to_know"
+    affects:
+      - "DomainModeling"
+  - id: "GAP-003"
+    description: "No integration tests verifying the full pipeline flow from Foreman
+      through all phases"
+    severity: "nice_to_know"
+    affects:
+      - "Orchestration"
+  - id: "GAP-004"
+    description: "The Onion SKILL.md references a double-loop TDD workflow but there
+      is no automated verification that implementation follows outside-in order"
+    severity: "nice_to_know"
+    affects:
+      - "Implementation"
+  - id: "GAP-005"
+    description: "PostToolUse hook for blueprint auto-validation parses JSON from
+      tool_input but error handling is minimal — malformed input could silently
+      fail"
+    severity: "nice_to_know"
+    affects:
+      - "BlueprintManagement"
+  - id: "GAP-006"
+    description: "Resolved — SessionStart hook now installs yaml + tsx via npm into
+      plugin data dir with exact versions pinned in package-lock.json"
+    severity: "nice_to_know"
+    affects:
+      - "BlueprintManagement"
+  - id: "GAP-007"
+    description: "Resolved — blueprint.ts validates created_at with explicit ISO
+      8601 regex check"
+    severity: "nice_to_know"
+    affects:
+      - "BlueprintManagement"
+  - id: "GAP-008"
+    description: "bin/storyline relies on a node_modules symlink created by the
+      SessionStart hook — if CLAUDE_PLUGIN_DATA is not set on first run, the
+      symlink is not created and the CLI fails until the next session"
+    severity: "nice_to_know"
+    affects:
+      - "BlueprintManagement"
 
 questions:
-- id: "Q-001"
-  question: "Should skills/sticky-storm and skills/doctor-context exist as dedicated
-    SKILL.md files instead of only agent .md files, given they are invoked as skills
-    in the pipeline flow?"
-  severity: "important"
-  raised_during: "Surveyor"
-  affects:
-  - "DomainModeling"
-  status: "resolved"
-  answer: "They are agents only (agents/sticky-storm.md, agents/doctor-context.md),
-    dispatched by The Foreman as subagents. No standalone skills needed."
-- id: "Q-002"
-  question: "Is the Security Amigo intended to be dispatched automatically by The
-    Foreman for all features, or only when explicitly triggered by the user?"
-  severity: "nice_to_know"
-  raised_during: "Surveyor"
-  affects:
-  - "Orchestration"
-  status: "open"
+  - id: "Q-001"
+    question: "Should skills/sticky-storm and skills/doctor-context exist as
+      dedicated SKILL.md files instead of only agent .md files, given they are
+      invoked as skills in the pipeline flow?"
+    severity: "important"
+    raised_during: "Surveyor"
+    affects:
+      - "DomainModeling"
+    status: "resolved"
+    answer: "They are agents only (agents/sticky-storm.md,
+      agents/doctor-context.md), dispatched by The Foreman as subagents. No
+      standalone skills needed."
+  - id: "Q-002"
+    question: "Is the Security Amigo intended to be dispatched automatically by The
+      Foreman for all features, or only when explicitly triggered by the user?"
+    severity: "nice_to_know"
+    raised_during: "Surveyor"
+    affects:
+      - "Orchestration"
+    status: "open"

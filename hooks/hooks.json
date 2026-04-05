@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "if [ -n \"${CLAUDE_PLUGIN_DATA:-}\" ]; then diff -q \"${CLAUDE_PLUGIN_ROOT}/package.json\" \"${CLAUDE_PLUGIN_DATA}/package.json\" >/dev/null 2>&1 || (cp \"${CLAUDE_PLUGIN_ROOT}/package.json\" \"${CLAUDE_PLUGIN_DATA}/package.json\" && cd \"${CLAUDE_PLUGIN_DATA}\" && npm install --silent 2>&1 | tail -1) || rm -f \"${CLAUDE_PLUGIN_DATA}/package.json\"; fi"
+            "command": "if [ -n \"${CLAUDE_PLUGIN_DATA:-}\" ] && [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ]; then diff -q \"${CLAUDE_PLUGIN_ROOT}/package.json\" \"${CLAUDE_PLUGIN_DATA}/package.json\" >/dev/null 2>&1 || (cp \"${CLAUDE_PLUGIN_ROOT}/package.json\" \"${CLAUDE_PLUGIN_DATA}/package.json\" && cd \"${CLAUDE_PLUGIN_DATA}\" && npm install --silent 2>&1 | tail -1) || rm -f \"${CLAUDE_PLUGIN_DATA}/package.json\"; [ -d \"${CLAUDE_PLUGIN_DATA}/node_modules\" ] && [ ! -e \"${CLAUDE_PLUGIN_ROOT}/node_modules\" ] && ln -s \"${CLAUDE_PLUGIN_DATA}/node_modules\" \"${CLAUDE_PLUGIN_ROOT}/node_modules\" || true; fi"
           },
           {
             "type": "command",
