@@ -816,17 +816,17 @@ function cmdInit(args: { project: string }, cwd: string) {
 
   const dir = join(cwd, ".storyline");
   mkdirSync(dir, { recursive: true });
-  for (const subdir of ["features", "workbench", "plans", "backlog"]) {
+  for (const subdir of ["features", "workbench", "changesets", "backlog"]) {
     mkdirSync(join(dir, subdir), { recursive: true });
   }
 
-  const todayStr = today();
+  const isoNow = nowIso();
 
   const doc = new Document({
     meta: {
       project: args.project,
-      created_at: todayStr,
-      updated_at: todayStr,
+      created_at: isoNow,
+      updated_at: isoNow,
       version: 1,
     },
     tech_stack: {},
