@@ -17,7 +17,7 @@ In full session mode, the persona AGENTS explore the code, not you.
 </HARD-GATE>
 
 <TOOL-REQUIREMENTS>
-**ALWAYS use TaskCreate for todos** — create ALL todos from the todo-actions block upfront before starting any work.
+**ALWAYS use TodoWrite for todos** — write ALL todos from the todo-actions block upfront before starting any work.
 
 **ALWAYS use AskUserQuestion for every decision** — session mode choice, story size check, NFR probe, MoSCoW decisions, and any open question must be presented as MCQ via the AskUserQuestion tool. Never ask in plain text. Fetch with ToolSearch if needed:
 ```
