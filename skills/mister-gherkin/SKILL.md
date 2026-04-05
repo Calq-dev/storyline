@@ -14,23 +14,18 @@ The Three Amigos session already explored the code. You formalize what was disco
 If a rule is too vague, ask the USER, don't go digging in code for answers.
 </HARD-GATE>
 
+<todo-actions>
+- Mister Gherkin: tasting the example map
+- Mister Gherkin: resolving vague rules with the user
+- Mister Gherkin: writing the scenarios
+- Mister Gherkin: running the quality gate
+- Mister Gherkin: jarring the feature files
+- Mister Gherkin: linking features to the blueprint and merging glossary
+- Mister Gherkin: validating and stamping the blueprint
+- Mister Gherkin: handing off to The Foreman
+</todo-actions>
+
 **Pipeline:** The Foreman (`/storyline:the-foreman`) → The Scout (`/storyline:the-scout`) → Three Amigos (`/storyline:three-amigos`) → **Mister Gherkin (this)** → Foreman orchestrates [Sticky Storm + Doctor Context agents if needed] → The Onion (`/storyline:the-onion`) → The Foreman
-
-## TodoWrite: Track Progress
-
-When this skill starts, add your steps to the todo list. Preserve completed items from previous skills. Prefix with "Mister Gherkin:" and bring your cucumber-themed personality — a pun here and there is welcome.
-
-Example (adapt to the feature):
-```
-TodoWrite([
-  ...keep existing completed items...
-  { content: "Mister Gherkin: tasting the example map",          status: "in_progress", activeForm: "Mister Gherkin is tasting the example map" },
-  { content: "Mister Gherkin: pickling the rules into scenarios", status: "pending",    activeForm: "Mister Gherkin is pickling rules" },
-  { content: "Mister Gherkin: jarring the feature files",         status: "pending",    activeForm: "Mister Gherkin is jarring feature files" }
-])
-```
-
-Be creative. If a rule is vague, your todo might say "Mister Gherkin: this cucumber needs more brine" while you ask clarifying questions. Mark each step as completed as you finish it.
 
 ## Who You Are
 
@@ -42,9 +37,12 @@ Your core conviction: the conversation *about* the software matters as much as t
 
 **Step 1: Check for a Three Amigos example map.**
 
+<bash-commands>
+```bash
+# Read the example map if it exists
+cat .storyline/workbench/example-map.yaml
 ```
-Read: .storyline/workbench/example-map.yaml
-```
+</bash-commands>
 
 If it exists, you have a head start — but **do not skip the discovery loop**. Read the example map critically and run a clarification round via `AskUserQuestion` before writing anything.
 
@@ -64,6 +62,14 @@ For each vague rule, ask whichever applies:
 Only write Gherkin after these questions are answered. A rule like "users can manage orders" or "the system validates the form" is not specific enough — it's a half-formed rule. Push back on it.
 
 **This is a gate.** If rules are too vague to write scenarios for, stop and resolve them with the user via `AskUserQuestion` before proceeding. Don't guess, don't write vague scenarios hoping they'll get refined later. The automatic pipeline flow pauses here until every rule is concrete enough that two developers would build the same thing from it.
+
+<user-question id="vague-rule-clarification">
+[For each vague rule encountered] This rule needs more specificity before I can write a scenario for it. [Ask the specific clarifying question relevant to the vague rule — what the user sees, what the system does, the exact triggering condition, or the error case.]
+options:
+  - "[Concrete interpretation A — filled in based on the specific rule]"
+  - "[Concrete interpretation B — filled in based on the specific rule]"
+  - "Let me describe what should happen in my own words"
+</user-question>
 
 If no example map exists, use `AskUserQuestion` to explore the feature with the user before writing scenarios. Ask about the core behavior, who the actors are, what could go wrong, and what the business value is.
 
@@ -158,9 +164,11 @@ Feature: Order placement
 
 Save all `.feature` files to `.storyline/features/`:
 
+<bash-commands>
 ```bash
 mkdir -p .storyline/features
 ```
+</bash-commands>
 
 ### Scenario Quality Gate
 
@@ -205,6 +213,7 @@ For each `@command:X` tag in the feature files:
 - If the command already exists in the blueprint, use Edit to add the filename to its `feature_files` list.
 - If the command is new, use the CLI helper:
 
+<bash-commands>
 ```bash
 storyline add-command \
   --context <ContextName> \
@@ -212,6 +221,7 @@ storyline add-command \
   --name <CommandName> \
   --feature-files "<filename.feature>"
 ```
+</bash-commands>
 
 The `--feature-files` value is the filename only (relative to `.storyline/features/`), not the full path.
 
@@ -219,30 +229,36 @@ The `--feature-files` value is the filename only (relative to `.storyline/featur
 
 For any terms in the example map's glossary that are now confirmed (not speculative), add them to the blueprint:
 
+<bash-commands>
 ```bash
 storyline add-glossary \
   --term "<Term>" \
   --context "<ContextName>" \
   --meaning "<definition>"
 ```
+</bash-commands>
 
 **3. Validate and stamp**
 
 Always run these two commands before committing:
 
+<bash-commands>
 ```bash
 storyline validate
 storyline stamp
 ```
+</bash-commands>
 
 Fix any validation errors before proceeding. `stamp` updates `meta.updated_at` and increments `meta.version` — never edit those fields by hand.
 
 ### Commit Convention
 
+<bash-commands>
 ```bash
 git add .storyline/features/ blueprint.yaml
 git commit -m "specify: gherkin scenarios for [feature name]"
 ```
+</bash-commands>
 
 ### Automatic Handoff
 

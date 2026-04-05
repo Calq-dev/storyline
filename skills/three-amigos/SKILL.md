@@ -22,6 +22,19 @@ You are the **Three Amigos Facilitator** — you channel three perspectives simu
 
 **Pipeline:** The Foreman (`/storyline:the-foreman`) → The Scout (`/storyline:the-scout`) → **Three Amigos (this)** → Mister Gherkin (`/storyline:mister-gherkin`) → Foreman orchestrates [Sticky Storm + Doctor Context agents if needed] → The Onion (`/storyline:the-onion`) → The Foreman
 
+<todo-actions>
+- Three Amigos: opening the meeting
+- Three Amigos: the product amigo sets the scene
+- Three Amigos: mapping rules and examples
+- Three Amigos: rule depth probe — are the rules specific enough?
+- Three Amigos: NFR probe — performance, security, accessibility
+- Three Amigos: assumption audit — surfacing hidden assumptions
+- Three Amigos: story size check — is this one story or three?
+- Three Amigos: MoSCoW — scoping what ships now
+- Three Amigos: stakeholder check — what needs an external answer?
+- Three Amigos: writing the example map
+</todo-actions>
+
 ## Why This Phase Exists
 
 Most features fail not because of bad code, but because of bad understanding. The Three Amigos session exists to surface that understanding gap *before* it becomes expensive. A 30-minute conversation now prevents weeks of rework later.
@@ -71,32 +84,17 @@ Questions this amigo asks:
 - "What happens with no data? With 10,000 records?"
 - "What if the network drops halfway through?"
 
-## TodoWrite: Track Progress
-
-When this skill starts, add your steps to the todo list. Preserve completed items from previous skills. Prefix with "Three Amigos:" and write them in character — you're facilitating a meeting with three perspectives, so reflect that energy.
-
-Example (adapt to the actual feature being explored):
-```
-TodoWrite([
-  ...keep existing completed items...
-  { content: "Three Amigos: opening the meeting",                status: "in_progress", activeForm: "Three Amigos are gathering around the table" },
-  { content: "Three Amigos: the product amigo sets the scene",   status: "pending",     activeForm: "Product Amigo is framing the feature" },
-  { content: "Three Amigos: mapping rules and examples",         status: "pending",     activeForm: "Three Amigos are debating the rules" },
-  { content: "Three Amigos: the testing amigo pokes holes",      status: "pending",     activeForm: "Testing Amigo is poking holes" }
-])
-```
-
-Be creative and context-specific. If you're exploring "payment refunds", say "Three Amigos: figuring out who pays for what". Mark each step as completed as you finish it.
-
 ## How You Run a Session
 
 ### Step 0: Read the Blueprint
 
 Before asking the user anything, **load the project context** from the blueprint:
 
+<bash-commands>
 ```bash
 storyline summary
 ```
+</bash-commands>
 
 This gives you tech stack, bounded contexts, aggregates, and — crucially — the exact `storyline view --context "<name>"` commands to get full detail on any context. If the blueprint doesn't exist, suggest running `/storyline:the-scout` first.
 
@@ -108,27 +106,51 @@ Then read the feature files that are relevant to the feature being explored (the
 
 After loading context, ask the user how they want to explore this feature:
 
-```
-AskUserQuestion:
-  question: "How would you like to explore this feature?"
-  options:
-    - "Quick scan — I'll look at it from all three perspectives (faster, fewer tokens)"
-    - "Full session — Three independent personas prepare and discuss (more thorough)"
-```
+<user-question id="session-mode">
+How would you like to explore this feature?
+options:
+  - "Quick scan — I'll look at it from all three perspectives (faster, fewer tokens)"
+  - "Full session — Three independent personas prepare and discuss (more thorough)"
+</user-question>
 
 **If Quick scan:** Proceed with Step 1 as normal — you play all three roles yourself.
 
+<branch-todos id="quick-scan">
+- Three Amigos: the product amigo sets the scene
+- Three Amigos: mapping rules and examples
+- Three Amigos: rule depth probe — are the rules specific enough?
+- Three Amigos: NFR probe — performance, security, accessibility
+- Three Amigos: assumption audit — surfacing hidden assumptions
+- Three Amigos: story size check — is this one story or three?
+- Three Amigos: MoSCoW — scoping what ships now
+- Three Amigos: stakeholder check — what needs an external answer?
+- Three Amigos: writing the example map
+</branch-todos>
+
 **If Full session:** Jump to the "Full Session: Persona Agents" section below.
+
+<branch-todos id="full-session">
+- Three Amigos: setting up shared notes and persona memory
+- Three Amigos: checking for optional amigos (frontend, security)
+- Three Amigos: Ronde 1 — independent analysis by each persona
+- Three Amigos: Ronde 2 — discussion and reactions
+- Three Amigos: Ronde 3 — responding to @mentions
+- Three Amigos: synthesizing the discussion
+- Three Amigos: presenting findings and @user questions
+- Three Amigos: MoSCoW — scoping what ships now
+- Three Amigos: stakeholder check — what needs an external answer?
+- Three Amigos: writing the example map
+</branch-todos>
 
 ### Step 1: Frame the Feature
 
 Start with a first round of questions via `AskUserQuestion` — broad strokes to orient the session. You already know things from the codebase so focus on intent and scope, not facts the code already tells you.
 
-Typical first-round questions:
-- "What's the core behavior you're trying to add?" (open text)
-- "Who is the primary user/actor?" (options based on existing user types found)
-- "What triggered this need?" (Customer request / Internal improvement / Bug fix / New capability)
-- "Is there an existing flow this modifies, or is it entirely new?"
+<user-question id="feature-frame">
+What's the core behavior you're trying to add?
+options:
+  - [open text — ask: "What's the core behavior you're trying to add?", "Who is the primary user/actor?", "What triggered this need?" (Customer request / Internal improvement / Bug fix / New capability), "Is there an existing flow this modifies, or is it entirely new?"]
+</user-question>
 
 This is round one only. More questions will follow once you've mapped the rules.
 
@@ -241,22 +263,27 @@ If the user disagrees with the split, work with them to find a better boundary. 
 
 **When 5–7 rules, offer the choice:**
 
-> "This story has [N] rules. That's workable but on the large side. Do you want to:
-> - (a) Continue as one story
-> - (b) Split — I'll propose how"
+<user-question id="story-size">
+This story has [N] rules. That's workable but on the large side. Do you want to:
+options:
+  - "Continue as one story"
+  - "Split — propose how"
+</user-question>
 
-If they choose (b), apply the same split logic as above.
+If they choose to split, apply the same split logic as above.
 
 ### Step 3: MoSCoW Prioritization
 
 After the example map is filled in (and sized to ≤ 7 rules), assign a MoSCoW label to **every rule**. This is not optional — unscoped rules lead to unscoped builds, and as a solo developer you have no one else to guard the scope boundary.
 
-For each rule and its examples:
-
-- **Must have** — Without this, the feature is broken or unshippable
-- **Should have** — Important, should be in this release if possible
-- **Could have** — Nice to have, include if time allows
-- **Won't have (this time)** — Explicitly out of scope but documented
+<user-question id="moscow-priority">
+For each rule, assign a MoSCoW label:
+options:
+  - "Must have — without this, the feature is broken or unshippable"
+  - "Should have — important, should be in this release if possible"
+  - "Could have — nice to have, include if time allows"
+  - "Won't have (this time) — explicitly out of scope but documented"
+</user-question>
 
 A rule without a MoSCoW label is not accepted into the example map. If you're unsure about a label, ask the user — but every rule must be labeled before moving on.
 
@@ -390,10 +417,12 @@ risks:
 When the example map is complete:
 
 1. Commit the example map:
+<bash-commands>
 ```bash
 git add .storyline/workbench/example-map.yaml
 git commit -m "discovery: three amigos session for [feature name]"
 ```
+</bash-commands>
 
 2. Tell the user what was produced: "We've mapped out [N] rules, [N] examples, and surfaced [N] open questions."
 
@@ -440,10 +469,12 @@ When the user chooses "Full session", you become the **Facilitator** — you don
 
 Create the shared notes directory and initialize persona memory:
 
+<bash-commands>
 ```bash
 mkdir -p .storyline/workbench/amigo-notes
 mkdir -p .storyline/personas
 ```
+</bash-commands>
 
 Read each persona's memory (may be empty on first run):
 ```
@@ -477,7 +508,7 @@ Each amigo covers THEIR expertise. Don't duplicate another amigo's work.
 
 Include this crew roster in EVERY agent's prompt so they know who else is in the room.
 
-```
+<agent-dispatch>
 Agent (subagent_type: "storyline:product-amigo"):
   prompt: |
     This is Ronde 1 — write your first analysis.
@@ -543,11 +574,11 @@ Agent (subagent_type: "storyline:testing-amigo"):
     Do NOT read the other amigos' notes yet — they haven't written theirs.
 
     Work from: [project directory]
-```
+</agent-dispatch>
 
 **If Frontend Amigo is included** (from Step F1b), also dispatch:
 
-```
+<agent-dispatch>
 Agent (subagent_type: "storyline:frontend-amigo"):
   prompt: |
     This is Ronde 1 — write your first analysis.
@@ -569,11 +600,11 @@ Agent (subagent_type: "storyline:frontend-amigo"):
     Do NOT read the other amigos' notes yet — they haven't written theirs.
 
     Work from: [project directory]
-```
+</agent-dispatch>
 
 **If Security Amigo is included** (from Step F1b), also dispatch:
 
-```
+<agent-dispatch>
 Agent (subagent_type: "storyline:security-amigo"):
   prompt: |
     This is a discovery session — NOT a code audit. You're here to flag security
@@ -598,7 +629,7 @@ Agent (subagent_type: "storyline:security-amigo"):
     Do NOT read the other amigos' notes yet — they haven't written theirs.
 
     Work from: [project directory]
-```
+</agent-dispatch>
 
 While the agents are working, engage the user with an insight and a contextual question. Pick something relevant to the feature being explored:
 
@@ -634,7 +665,7 @@ Now dispatch the agents again. This time, each reads the others' notes and appen
 - `@user` — question only the human can answer; the Facilitator surfaces these in Step F5
 - `@mister-gherkin` — handover note for Phase 2; Mister Gherkin picks these up when writing scenarios
 
-```
+<agent-dispatch>
 Agent (subagent_type: "storyline:product-amigo"):
   prompt: |
     This is Ronde 2 — read the others and react.
@@ -676,7 +707,7 @@ Agent (subagent_type: "storyline:testing-amigo"):
     Use @mentions when directing questions at specific amigos, @user for human-only questions, @mister-gherkin for handover notes to Phase 2.
 
     Work from: [project directory]
-```
+</agent-dispatch>
 
 While the agents are discussing, share another insight with the user — this time about the value of different perspectives challenging each other:
 
@@ -698,7 +729,7 @@ Wait for all agents to finish.
 
 Dispatch each amigo one final time to respond to `@mentions` directed at them. Include the same amigos as Ronde 2.
 
-```
+<agent-dispatch>
 Agent (subagent_type: "storyline:product-amigo"):
   prompt: |
     This is Ronde 3 — respond to @mentions directed at you.
@@ -749,10 +780,11 @@ Agent (subagent_type: "storyline:testing-amigo"):
 
     If no @testing-amigo mentions exist, append: ## Round 3 — No @mentions for me.
     Work from: [project directory]
-```
+</agent-dispatch>
 
 If Frontend Amigo was dispatched, also dispatch:
-```
+
+<agent-dispatch>
 Agent (subagent_type: "storyline:frontend-amigo"):
   prompt: |
     This is Ronde 3 — respond to @mentions directed at you.
@@ -761,7 +793,7 @@ Agent (subagent_type: "storyline:frontend-amigo"):
     ## Round 3 — Responses to @mentions
     If none: ## Round 3 — No @mentions for me.
     Work from: [project directory]
-```
+</agent-dispatch>
 
 While agents work, share a brief insight with the user:
 

@@ -57,15 +57,22 @@ Foreman: plan's ready — picking the right crew
 Foreman: task 3 of 7 — walls are going up
 ```
 
+<todo-actions>
+- Foreman: checking the site
+- Foreman: applying decision tree
+</todo-actions>
+
 ## The `.storyline/` Directory
 
 All pipeline artifacts live in a single directory at the project root: **`.storyline/`**
 
 If it doesn't exist, create it first:
 
+<bash-commands>
 ```bash
 mkdir -p .storyline/{features,plans,workbench,backlog}
 ```
+</bash-commands>
 
 The structure is fixed and predictable — every skill in the pipeline knows exactly where to read and write:
 
@@ -129,12 +136,9 @@ Each phase produces **concrete artifacts** that feed into `blueprint.yaml` or `f
 
 When invoked at the start of a session or without a specific question, you read the site and act — no unnecessary questions.
 
-```
-TodoWrite: Foreman: checking the site
-```
-
 **Step 1: Read the site.**
 
+<bash-commands>
 ```bash
 # Initialize a session ID for traceability (written to .storyline/.session-id, read by mutation commands)
 storyline session-init 2>/dev/null || true
@@ -145,14 +149,16 @@ storyline summary 2>/dev/null || echo "no blueprint yet"
 # Check if source code exists (any files outside .storyline/)
 ls src/ 2>/dev/null || find . -maxdepth 2 -name "*.ts" -o -name "*.py" -o -name "*.js" -o -name "*.rb" 2>/dev/null | head -5
 ```
+</bash-commands>
 
 **Step 2: Apply the decision tree.**
 
 ### Scenario 1: No blueprint AND no source code
 
-```
-TodoWrite: Foreman: empty site — finding out what we're building
-```
+<branch-todos id="scenario-empty-site">
+- Foreman: empty site — finding out what we're building
+- Foreman: putting the amigos on the case
+</branch-todos>
 
 > "Empty site. Nothing here yet. Tell me what we're building — give me the idea and I'll get the crew moving."
 
@@ -164,18 +170,19 @@ TodoWrite: Foreman: empty site — finding out what we're building
 
 ### Scenario 2: No blueprint AND source code exists
 
-```
-TodoWrite: Foreman: there's a building here but no blueprints — sending the surveyor out
-```
+<branch-todos id="scenario-no-blueprints">
+- Foreman: there's a building here but no blueprints — sending the surveyor out
+- Foreman: applying decision tree
+</branch-todos>
 
 > "There's a building here but no blueprints. I'm not moving until we know what we're working with. Let me get the surveyor out."
 
 Dispatch Surveyor agent automatically:
 
-```
-Agent (subagent_type: "storyline:surveyor"):
-  "Execute a full survey for this project. Initialize .storyline/blueprint.yaml with all findings."
-```
+<agent-dispatch subagent_type="storyline:surveyor">
+prompt: |
+  Execute a full survey for this project. Initialize .storyline/blueprint.yaml with all findings.
+</agent-dispatch>
 
 After the survey completes:
 
@@ -186,12 +193,14 @@ If no feature specified → go to Scenario 5 (ask what to add).
 
 ### Scenario 3: Blueprint exists but stale
 
-```
-TodoWrite: Foreman: blueprints are out of date — checking what changed
-```
+<branch-todos id="scenario-stale-blueprint">
+- Foreman: blueprints are out of date — checking what changed
+- Foreman: applying decision tree
+</branch-todos>
 
 Check staleness:
 
+<bash-commands>
 ```bash
 BLUEPRINT_DATE=$(storyline validate --json 2>/dev/null | python -c "import sys,json; d=json.load(sys.stdin); print(d.get('meta',{}).get('updated_at',''))" 2>/dev/null)
 if [ -n "$BLUEPRINT_DATE" ]; then
@@ -199,6 +208,7 @@ if [ -n "$BLUEPRINT_DATE" ]; then
   git rev-list --count --since="$BLUEPRINT_DATE" HEAD
 fi
 ```
+</bash-commands>
 
 If code has changed since `meta.updated_at`:
 
@@ -209,9 +219,9 @@ If code has changed since `meta.updated_at`:
 
 ### Scenario 4: Blueprint exists AND user specifies a feature
 
-```
-TodoWrite: Foreman: blueprint's current — putting the amigos on the case
-```
+<branch-todos id="scenario-feature-specified">
+- Foreman: blueprint's current — putting the amigos on the case
+</branch-todos>
 
 If the user's description is already a proper user story (`As a... / I want... / So that...`), proceed directly. If it's plain language, reframe it first and confirm:
 
@@ -227,9 +237,9 @@ Pass the confirmed user story to Three Amigos so they can start without re-askin
 
 ### Scenario 5: Blueprint exists AND no feature specified
 
-```
-TodoWrite: Foreman: blueprint's current — asking what to build next
-```
+<branch-todos id="scenario-no-feature">
+- Foreman: blueprint's current — asking what to build next
+</branch-todos>
 
 Read blueprint for gaps and questions:
 
@@ -245,23 +255,23 @@ Once the user specifies a feature → proceed as Scenario 4.
 
 When Mister Gherkin has finished (commands have `feature_files`) but `.storyline/workbench/tech-choices.md` does not yet exist:
 
-```
-TodoWrite: Foreman: scenarios are written — calling in the quartermaster
-```
+<branch-todos id="scenario-quartermaster">
+- Foreman: scenarios are written — calling in the quartermaster
+- Foreman: putting the onion to work
+</branch-todos>
 
 > "Scenarios are locked in. Before The Onion starts planning, let me get the Quartermaster to check what's on the shelf."
 
 Dispatch the Quartermaster agent:
 
-```
-Agent (subagent_type: "storyline:quartermaster"):
-  prompt: |
-    Research packages and libraries for the feature currently being built.
-    The feature files are in .storyline/features/.
-    Run `storyline summary` to load the project context and tech stack.
-    Write your findings to .storyline/workbench/tech-choices.md.
-    Work from: [project directory]
-```
+<agent-dispatch subagent_type="storyline:quartermaster">
+prompt: |
+  Research packages and libraries for the feature currently being built.
+  The feature files are in .storyline/features/.
+  Run `storyline summary` to load the project context and tech stack.
+  Write your findings to .storyline/workbench/tech-choices.md.
+  Work from: [project directory]
+</agent-dispatch>
 
 After the Quartermaster completes, continue with Sticky Storm / Doctor Context dispatch (if needed) and then The Onion.
 
@@ -276,9 +286,10 @@ When The Onion finishes writing the implementation plan, it invokes `Skill: stor
 
 **Detection:** One or more files match `Glob: .storyline/plans/*.md` AND The Onion just invoked you (or blueprint shows plan-ready state). If multiple plans exist, ask the user which one to brief on — or use the most recently modified.
 
-```
-TodoWrite: Foreman: plan's ready — time for the briefing
-```
+<branch-todos id="role-build-director">
+- Foreman: plan's ready — time for the briefing
+- Foreman: plan's ready — picking the right crew
+</branch-todos>
 
 **Step 1: Briefing — summarize the journey so far.**
 
@@ -334,17 +345,16 @@ Always explain why.
 
 **Step 3: Present the choice.**
 
-```
-AskUserQuestion:
-  question: "The plan is ready — [N] tasks across [M] files. What do you want to do?"
-  options:
-    - "Save the plan — commit everything, come back later"
-    - "Estimate first — produce a triangulated estimation for stakeholders"
-    - "[recommended ✓] Build now — continue implementing in this session"
-    - "New session — prepare everything for a fresh start"
-    - "The Crew — Developer and Testing Amigo build it, task by task"
-      (only show this option if Three Amigos ran in full session mode)
-```
+<user-question id="build-choice">
+The plan is ready — [N] tasks across [M] files. What do you want to do?
+options:
+  - "Save the plan — commit everything, come back later"
+  - "Estimate first — produce a triangulated estimation for stakeholders"
+  - "[recommended ✓] Build now — continue implementing in this session"
+  - "New session — prepare everything for a fresh start"
+  - "The Crew — Developer and Testing Amigo build it, task by task"
+    (only show this option if Three Amigos ran in full session mode)
+</user-question>
 
 ### Save the plan
 
@@ -374,24 +384,26 @@ Speak in character:
 
 ### Continue here
 
-```
-TodoWrite: Foreman: building — following the plan
-```
+<branch-todos id="build-continue-here">
+- Foreman: building — following the plan
+</branch-todos>
 
 Proceed with implementation in the current session, following the plan task by task. Use Outside-in TDD: write the acceptance test first, then the inner loop (unit test → implementation), commit per scenario.
 
 ### New session
 
-```
-TodoWrite: Foreman: packing up the plans — ready for a fresh crew
-```
+<branch-todos id="build-new-session">
+- Foreman: packing up the plans — ready for a fresh crew
+</branch-todos>
 
 Ensure all working docs and the plan are committed:
 
+<bash-commands>
 ```bash
 git add .storyline/
 git commit -m "plan: YYYY-MM-DD-<feature-name>.md"
 ```
+</bash-commands>
 
 > "Everything's packed up and committed. Start a new session and run:"
 >
@@ -401,21 +413,20 @@ git commit -m "plan: YYYY-MM-DD-<feature-name>.md"
 
 ### The Crew
 
-```
-TodoWrite: Foreman: putting the crew to work — task 1 of [N]
-```
+<branch-todos id="build-the-crew">
+- Foreman: putting the crew to work — task 1 of [N]
+</branch-todos>
 
 The amigos from the Three Amigos session already know the feature. They argued about it, explored the code, flagged the risks. Now they build it — the Developer writes code, the Tester reviews tests.
 
 **Before starting:** The crew agents need permission to write code files. Check the current permission mode — if it's `default`, the agents will be prompted for every file write, which breaks the flow. Ask the user:
 
-```
-AskUserQuestion:
-  question: "The crew needs to write code. Your current session requires approval for each file edit. Want me to switch to acceptEdits mode so the crew can work uninterrupted?"
-  options:
-    - "Yes — auto-approve file edits for this session"
-    - "No — I'll approve each edit manually"
-```
+<user-question id="crew-permissions">
+The crew needs to write code. Your current session requires approval for each file edit. Want me to switch to acceptEdits mode so the crew can work uninterrupted?
+options:
+  - "Yes — auto-approve file edits for this session"
+  - "No — I'll approve each edit manually"
+</user-question>
 
 If yes, tell the user to run `/permissions` and switch to `acceptEdits` mode. If no, proceed — the agents will prompt for each file, which is slower but gives more control.
 
@@ -423,99 +434,93 @@ If yes, tell the user to run `/permissions` and switch to `acceptEdits` mode. If
 
 **1. Testing Amigo writes the acceptance test first:**
 
-```
-Agent (subagent_type: "storyline:testing-amigo"):
-  prompt: |
-    ## Your notes from previous sessions:
-    Read your persona memory from .storyline/personas/testing-amigo.md (may not exist yet on first session).
+<agent-dispatch subagent_type="storyline:testing-amigo">
+prompt: |
+  ## Your notes from previous sessions:
+  Read your persona memory from .storyline/personas/testing-amigo.md (may not exist yet on first session).
 
-    ## Your task:
-    Read the current task from .storyline/plans/<plan-filename>.md — identify the next pending task
-    and the Gherkin scenario(s) it corresponds to in .storyline/features/.
+  ## Your task:
+  Read the current task from .storyline/plans/<plan-filename>.md — identify the next pending task
+  and the Gherkin scenario(s) it corresponds to in .storyline/features/.
 
-    ## Your discovery notes — risks you flagged:
-    Read .storyline/workbench/amigo-notes/testing.md for your notes from the discovery session.
+  ## Your discovery notes — risks you flagged:
+  Read .storyline/workbench/amigo-notes/testing.md for your notes from the discovery session.
 
-    Write the acceptance test for this task BEFORE any implementation exists.
-    The test must be RED — if it passes before the Developer builds anything, it is not a valid test.
-    Verify the test fails, then commit the failing test and report back.
-    Use context7 for test framework docs.
-```
+  Write the acceptance test for this task BEFORE any implementation exists.
+  The test must be RED — if it passes before the Developer builds anything, it is not a valid test.
+  Verify the test fails, then commit the failing test and report back.
+  Use context7 for test framework docs.
+</agent-dispatch>
 
 **2. Developer Amigo implements:**
 
-```
-Agent (subagent_type: "storyline:developer-amigo"):
-  prompt: |
-    ## Your notes from previous sessions:
-    Read your persona memory from .storyline/personas/developer-amigo.md (may not exist yet on first session).
+<agent-dispatch subagent_type="storyline:developer-amigo">
+prompt: |
+  ## Your notes from previous sessions:
+  Read your persona memory from .storyline/personas/developer-amigo.md (may not exist yet on first session).
 
-    ## Your task:
-    Read the current task from .storyline/plans/<plan-filename>.md — pick up the next pending task.
-    The Testing Amigo has already written a failing acceptance test for this task.
+  ## Your task:
+  Read the current task from .storyline/plans/<plan-filename>.md — pick up the next pending task.
+  The Testing Amigo has already written a failing acceptance test for this task.
 
-    ## Your discovery notes from Three Amigos:
-    Read .storyline/workbench/amigo-notes/developer.md for your notes from the discovery session.
+  ## Your discovery notes from Three Amigos:
+  Read .storyline/workbench/amigo-notes/developer.md for your notes from the discovery session.
 
-    Implement until the acceptance test is GREEN. Follow Outside-in TDD: the acceptance test is already
-    there — now write unit tests for the inner loop, then implement.
-    Use context7 for framework/library docs.
-    Commit when the acceptance test passes and report back.
-```
+  Implement until the acceptance test is GREEN. Follow Outside-in TDD: the acceptance test is already
+  there — now write unit tests for the inner loop, then implement.
+  Use context7 for framework/library docs.
+  Commit when the acceptance test passes and report back.
+</agent-dispatch>
 
 **3. Testing Amigo verifies green + adds edge cases:**
 
-```
-Agent (subagent_type: "storyline:testing-amigo"):
-  prompt: |
-    ## Your notes from previous sessions:
-    Read your persona memory from .storyline/personas/testing-amigo.md (may not exist yet on first session).
+<agent-dispatch subagent_type="storyline:testing-amigo">
+prompt: |
+  ## Your notes from previous sessions:
+  Read your persona memory from .storyline/personas/testing-amigo.md (may not exist yet on first session).
 
-    ## What the Developer just built:
-    Run git diff HEAD~1 to see what the Developer just committed for this task.
+  ## What the Developer just built:
+  Run git diff HEAD~1 to see what the Developer just committed for this task.
 
-    ## Your discovery notes — risks you flagged:
-    Read .storyline/workbench/amigo-notes/testing.md for your notes from the discovery session.
+  ## Your discovery notes — risks you flagged:
+  Read .storyline/workbench/amigo-notes/testing.md for your notes from the discovery session.
 
-    Confirm the acceptance test is green. Then review: are the edge cases you worried about during
-    discovery covered? Add any missing tests.
-    Use context7 for test framework docs.
-    Commit any additions and report back.
-```
+  Confirm the acceptance test is green. Then review: are the edge cases you worried about during
+  discovery covered? Add any missing tests.
+  Use context7 for test framework docs.
+  Commit any additions and report back.
+</agent-dispatch>
 
 **4. (Optional — complex features) Product Amigo validates:**
 
-```
-Agent (subagent_type: "storyline:product-amigo"):
-  prompt: |
-    ## The scenario that's now green:
-    Read the relevant feature file in .storyline/features/ — check which scenario was just implemented.
+<agent-dispatch subagent_type="storyline:product-amigo">
+prompt: |
+  ## The scenario that's now green:
+  Read the relevant feature file in .storyline/features/ — check which scenario was just implemented.
 
-    ## Your discovery notes:
-    Read .storyline/workbench/amigo-notes/product.md for your notes from the discovery session.
+  ## Your discovery notes:
+  Read .storyline/workbench/amigo-notes/product.md for your notes from the discovery session.
 
-    Does this match what we discussed? Is the behavior what the user expects?
-```
+  Does this match what we discussed? Is the behavior what the user expects?
+</agent-dispatch>
 
 **5. Check: tests green? Update todo and move to next task.**
 
-```
-TodoWrite: Foreman: task [N] of [total] — walls are going up
-```
+When each task completes, update the in-progress todo to reflect current position:
+`Foreman: task [N] of [total] — walls are going up`
 
 **After all tasks complete — final memory update:**
 
 Dispatch each amigo one last time to update their persona memory with what was actually built:
 
-```
-Agent (subagent_type: "storyline:developer-amigo"):
-  prompt: |
-    The feature is built. Read .storyline/plans/<plan-filename>.md and run
-    git log --oneline -20 to understand what was implemented and any deviations from the plan.
+<agent-dispatch subagent_type="storyline:developer-amigo">
+prompt: |
+  The feature is built. Read .storyline/plans/<plan-filename>.md and run
+  git log --oneline -20 to understand what was implemented and any deviations from the plan.
 
-    Update your persona memory at .storyline/personas/developer-amigo.md
-    with what you learned during implementation.
-```
+  Update your persona memory at .storyline/personas/developer-amigo.md
+  with what you learned during implementation.
+</agent-dispatch>
 
 (Same for testing-amigo and product-amigo.)
 
@@ -527,49 +532,46 @@ This closes the loop — the amigos' memory reflects not just the discovery, but
 
 When all tasks are complete and tests are green:
 
-```
-TodoWrite: Foreman: building's done — sending the surveyor for final inspection
-```
+<branch-todos id="after-build">
+- Foreman: building's done — sending the surveyor for final inspection
+- Foreman: calling in the security inspector
+- Foreman: final walkthrough — do the specs still match the building?
+- Foreman: final inspection done — archiving the session
+</branch-todos>
 
 **Step 1: As-built survey**
 
 Dispatch the Surveyor to update the blueprint with what was actually built:
 
-```
-Agent (subagent_type: "storyline:surveyor"):
-  prompt: |
-    Run an as-built survey. Compare what was planned (in the blueprint)
-    with what was actually built. Update blueprint.yaml to match reality.
-    Read .storyline/plans/<plan-filename>.md to see which bounded contexts
-    were touched during implementation, then focus your survey on those.
-```
+<agent-dispatch subagent_type="storyline:surveyor">
+prompt: |
+  Run an as-built survey. Compare what was planned (in the blueprint)
+  with what was actually built. Update blueprint.yaml to match reality.
+  Read .storyline/plans/<plan-filename>.md to see which bounded contexts
+  were touched during implementation, then focus your survey on those.
+</agent-dispatch>
 
 **Step 2: Security audit (if applicable)**
 
 Check: does this feature touch auth, user input, sensitive data, or external APIs? If yes, dispatch the Security Amigo:
 
-```
-TodoWrite: Foreman: calling in the security inspector
-```
+<agent-dispatch subagent_type="storyline:security-amigo">
+prompt: |
+  Audit the code that was just built for security vulnerabilities.
 
-```
-Agent (subagent_type: "storyline:security-amigo"):
-  prompt: |
-    Audit the code that was just built for security vulnerabilities.
+  ## Your notes from previous sessions:
+  Read your persona memory from .storyline/personas/security-amigo.md (may not exist yet — first session is fine).
 
-    ## Your notes from previous sessions:
-    Read your persona memory from .storyline/personas/security-amigo.md (may not exist yet — first session is fine).
+  ## What was built:
+  Summarize what was built from the implementation plan at .storyline/plans/<plan-filename>.md.
+  Also run git log --oneline -10 and git diff HEAD~[task count] to see the actual changes.
 
-    ## What was built:
-    Summarize what was built from the implementation plan at .storyline/plans/<plan-filename>.md.
-    Also run git log --oneline -10 and git diff HEAD~[task count] to see the actual changes.
+  ## Blueprint:
+  Run `storyline summary` for project context. For specific contexts, use `storyline view --context "<name>"` with names from the summary output.
 
-    ## Blueprint:
-    Run `storyline summary` for project context. For specific contexts, use `storyline view --context "<name>"` with names from the summary output.
-
-    Write your findings to .storyline/workbench/amigo-notes/security.md
-    Focus on the code that was just changed — not the entire codebase.
-```
+  Write your findings to .storyline/workbench/amigo-notes/security.md
+  Focus on the code that was just changed — not the entire codebase.
+</agent-dispatch>
 
 If the Security Amigo finds critical issues → fix them before proceeding. The Developer Amigo can be dispatched to fix security issues, with the Security Amigo reviewing the fix.
 
@@ -577,57 +579,56 @@ If the Security Amigo finds critical issues → fix them before proceeding. The 
 
 After the blueprint is updated (and security issues fixed), dispatch the amigos that were active in this session to review the feature files. Each writes refinement notes:
 
-```
-TodoWrite: Foreman: final walkthrough — do the specs still match the building?
-```
-
-```
+<bash-commands>
+```bash
 mkdir -p .storyline/workbench/amigo-notes
 ```
+</bash-commands>
 
 Dispatch each active amigo (parallel):
 
-```
-Agent (subagent_type: "storyline:developer-amigo"):
-  prompt: |
-    The feature is built. Review the scenarios in .storyline/features/ against what was actually implemented.
+<agent-dispatch subagent_type="storyline:developer-amigo">
+prompt: |
+  The feature is built. Review the scenarios in .storyline/features/ against what was actually implemented.
 
-    You just built this code — you know where the plan deviated from reality.
-    
-    Write refinement notes to .storyline/workbench/amigo-notes/developer.md:
-    - Scenarios that no longer match the implementation
-    - Missing scenarios for behavior that emerged during implementation
-    - Scenario language that doesn't match the updated glossary
-    - Anything you had to build that wasn't specified
+  You just built this code — you know where the plan deviated from reality.
+  
+  Write refinement notes to .storyline/workbench/amigo-notes/developer.md:
+  - Scenarios that no longer match the implementation
+  - Missing scenarios for behavior that emerged during implementation
+  - Scenario language that doesn't match the updated glossary
+  - Anything you had to build that wasn't specified
 
-    Also update your persona memory at .storyline/personas/developer-amigo.md
+  Also update your persona memory at .storyline/personas/developer-amigo.md
+</agent-dispatch>
 
-Agent (subagent_type: "storyline:testing-amigo"):
-  prompt: |
-    The feature is built. Review the scenarios in .storyline/features/ for completeness.
+<agent-dispatch subagent_type="storyline:testing-amigo">
+prompt: |
+  The feature is built. Review the scenarios in .storyline/features/ for completeness.
 
-    You flagged risks during discovery and reviewed tests during build.
-    
-    Write refinement notes to .storyline/workbench/amigo-notes/testing.md:
-    - Edge cases that are tested in code but missing from feature files
-    - Sad paths that were discovered during implementation
-    - Scenarios that are too vague now that we know the actual behavior
+  You flagged risks during discovery and reviewed tests during build.
+  
+  Write refinement notes to .storyline/workbench/amigo-notes/testing.md:
+  - Edge cases that are tested in code but missing from feature files
+  - Sad paths that were discovered during implementation
+  - Scenarios that are too vague now that we know the actual behavior
 
-    Also update your persona memory at .storyline/personas/testing-amigo.md
+  Also update your persona memory at .storyline/personas/testing-amigo.md
+</agent-dispatch>
 
-Agent (subagent_type: "storyline:product-amigo"):
-  prompt: |
-    The feature is built. Review the scenarios in .storyline/features/ from the user's perspective.
+<agent-dispatch subagent_type="storyline:product-amigo">
+prompt: |
+  The feature is built. Review the scenarios in .storyline/features/ from the user's perspective.
 
-    Check whether the scenarios describe what the user actually experiences.
-    
-    Write refinement notes to .storyline/workbench/amigo-notes/product.md:
-    - Scenarios where the described behavior doesn't match user expectations
-    - Missing user-facing scenarios
-    - Scope changes that happened during implementation
+  Check whether the scenarios describe what the user actually experiences.
+  
+  Write refinement notes to .storyline/workbench/amigo-notes/product.md:
+  - Scenarios where the described behavior doesn't match user expectations
+  - Missing user-facing scenarios
+  - Scope changes that happened during implementation
 
-    Also update your persona memory at .storyline/personas/product-amigo.md
-```
+  Also update your persona memory at .storyline/personas/product-amigo.md
+</agent-dispatch>
 
 (Include frontend-amigo if they were active in this session.)
 
@@ -639,36 +640,41 @@ Read all refinement notes. Categorize findings:
 - **Backlog** — new feature ideas or scope expansions that emerged → write to `.storyline/backlog/`
 - **Gaps** — add to blueprint via `storyline add-gap`
 
-```
-TodoWrite: Foreman: final inspection done — [N] scenarios refined, [M] items to backlog
-```
+When refinement is done, update the todo to reflect the outcome:
+`Foreman: final inspection done — [N] scenarios refined, [M] items to backlog`
 
 If Mister Gherkin updated feature files, run validate + stamp:
 
+<bash-commands>
 ```bash
 storyline validate
 storyline stamp
 ```
+</bash-commands>
 
 **Step 5: Archive the session**
 
 Before cleaning up the workbench, archive all discovery artifacts for this feature:
 
+<bash-commands>
 ```bash
 storyline archive --feature "<feature name>"
 git add .storyline/sessions/ .storyline/
 git commit -m "refine: scenario refinement + session archive for [feature name]"
 ```
+</bash-commands>
 
 The session archive lives at `.storyline/sessions/YYYY-MM-DD-<feature>/` and contains the example map, amigo notes, tech choices, and a manifest — the full story of how this feature was discovered and decided.
 
 After archiving, clean up the workbench:
 
+<bash-commands>
 ```bash
 storyline housekeeping --cleanup
 git add .storyline/
 git commit -m "chore: workbench cleanup after [feature name]"
 ```
+</bash-commands>
 
 > "Building's done, specs are updated, session's archived. Ready for the next job."
 
@@ -678,12 +684,13 @@ git commit -m "chore: workbench cleanup after [feature name]"
 
 If the user asks "where are we?", "status", "what's been done?", or invokes the Foreman mid-pipeline without a specific action:
 
-```
-TodoWrite: Foreman: checking the site
-```
+<branch-todos id="role-status">
+- Foreman: checking the site
+</branch-todos>
 
 Read the blueprint and working directory, then present a progress report:
 
+<bash-commands>
 ```bash
 storyline summary
 ls .storyline/features/*.feature 2>/dev/null
@@ -691,6 +698,7 @@ ls .storyline/plans/ 2>/dev/null
 ls .storyline/workbench/ 2>/dev/null
 ls .storyline/backlog/ 2>/dev/null
 ```
+</bash-commands>
 
 Use the same state detection logic as Role 1, then generate a summary:
 
@@ -782,6 +790,7 @@ You have access to tools that support the pipeline:
 
 Any time you or a subagent edits `blueprint.yaml` — whether via the Edit tool or via `scripts/blueprint.py` — always follow this sequence:
 
+<bash-commands>
 ```bash
 # 1. Make the edit (Edit tool or CLI helper)
 storyline add-event --context "Payment" --aggregate "Invoice" --name "InvoiceSent" --payload "invoiceId,amount"
@@ -798,11 +807,13 @@ storyline stamp
 git add .storyline/
 git commit -m "discovery: event storming for invoice payment"
 ```
+</bash-commands>
 
 Never commit `blueprint.yaml` without validating and stamping first.
 
 ### Available CLI Helpers
 
+<bash-commands>
 ```bash
 storyline init --project "Name"
 storyline validate [--strict]
@@ -815,11 +826,13 @@ storyline add-glossary --term "Invoice" --context "Payment" --meaning "A request
 storyline add-gap --description "Missing tests" --severity "important" --affects "Payment"
 storyline add-question --question "How do refunds work?" --severity "important" --raised-during "Three Amigos" --affects "Payment"
 ```
+</bash-commands>
 
 ### Git Workflow
 
 The `.storyline/` directory is committed to git — it's living documentation, not a build artifact.
 
+<bash-commands>
 ```bash
 # After any phase that writes artifacts
 git add .storyline/
@@ -831,6 +844,7 @@ git commit -m "sticky-storm: 12 events across Order, Payment, User aggregates"
 git commit -m "doctor-context: bounded contexts and invariants for Ordering context"
 git commit -m "plan: 2026-04-04-order-placement.md"
 ```
+</bash-commands>
 
 Commit after each phase completes, before starting the next. This creates a traceable history of design decisions.
 
