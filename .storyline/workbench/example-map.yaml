@@ -1,0 +1,129 @@
+feature: "Blueprint CLI — Structural Mutation Commands"
+story: "As a pipeline agent or skill author, I want CLI commands for add-relationship, add-invariant, add-policy, and resolve-question so that structured blueprint mutations are safe and consistent without risking YAML corruption from manual edits."
+session_date: "2026-04-05"
+participants:
+  - "Product (AI-facilitated, quick scan)"
+  - "Developer"
+  - "Testing"
+
+codebase_context:
+  existing_models:
+    - "bounded_contexts[].relationships[]"
+    - "bounded_contexts[].aggregates[].invariants[]"
+    - "bounded_contexts[].policies[]"
+    - "questions[].status / .answer"
+  related_features:
+    - "blueprint-management.feature"
+  technical_notes: "Follows existing cmdAddGap / cmdAddEvent pattern in scripts/blueprint.ts. resolve-question is an update operation, not an insert."
+
+rules:
+  - id: "R1"
+    description: "add-relationship --context X --type T --target Y --via '...' appends an entry to that context's relationships[]"
+    priority: "must-have"
+    examples:
+      - id: "R1-E1"
+        name: "Add a customer-supplier relationship"
+        context: "BlueprintManagement context exists, no relationship to Orchestration yet"
+        action: "storyline add-relationship --context BlueprintManagement --type customer-supplier --target Orchestration --via 'CLI provides mutation helpers'"
+        outcome: "Relationship entry appended; validate passes"
+        type: "happy-path"
+      - id: "R1-E2"
+        name: "Context not found"
+        context: "Context 'Payments' does not exist in the blueprint"
+        action: "storyline add-relationship --context Payments --type customer-supplier --target Ordering --via '...'"
+        outcome: "Error: context 'Payments' not found — exit code 1"
+        type: "sad-path"
+
+  - id: "R2"
+    description: "add-invariant --context X --aggregate Y --invariant '...' appends to that aggregate's invariants[]"
+    priority: "must-have"
+    examples:
+      - id: "R2-E1"
+        name: "Add an invariant to an existing aggregate"
+        context: "BlueprintManagement context has Blueprint aggregate"
+        action: "storyline add-invariant --context BlueprintManagement --aggregate Blueprint --invariant 'Every gap must have at least one affected context'"
+        outcome: "Invariant appended; validate passes"
+        type: "happy-path"
+      - id: "R2-E2"
+        name: "Aggregate not found in context"
+        context: "Context exists but aggregate 'Invoice' does not"
+        action: "storyline add-invariant --context BlueprintManagement --aggregate Invoice --invariant '...'"
+        outcome: "Error: aggregate 'Invoice' not found in context 'BlueprintManagement' — exit code 1"
+        type: "sad-path"
+
+  - id: "R3"
+    description: "add-policy --context X --name Y --triggered-by Z --issues-command W appends to that context's policies[]"
+    priority: "must-have"
+    examples:
+      - id: "R3-E1"
+        name: "Add a policy to an existing context"
+        context: "Orchestration context exists with PipelineStarted event and StartPipeline command"
+        action: "storyline add-policy --context Orchestration --name 'StartOnBlueprintInit' --triggered-by 'BlueprintInitialized' --issues-command 'StartPipeline'"
+        outcome: "Policy appended; validate passes"
+        type: "happy-path"
+      - id: "R3-E2"
+        name: "triggered-by event not in context"
+        context: "Orchestration context does not have 'OrderPlaced' event"
+        action: "storyline add-policy --context Orchestration --name 'NotifyOnOrder' --triggered-by 'OrderPlaced' --issues-command 'StartPipeline'"
+        outcome: "Error: event 'OrderPlaced' not found in context 'Orchestration' — exit code 1"
+        type: "sad-path"
+      - id: "R3-E3"
+        name: "issues-command not found in any context"
+        context: "No context has 'SendEmail' command"
+        action: "storyline add-policy --context Orchestration --name 'Notify' --triggered-by 'PipelineStarted' --issues-command 'SendEmail'"
+        outcome: "Error: command 'SendEmail' not found in any context — exit code 1"
+        type: "sad-path"
+
+  - id: "R4"
+    description: "resolve-question --id Q-001 --answer '...' sets status: resolved and writes the answer field"
+    priority: "must-have"
+    examples:
+      - id: "R4-E1"
+        name: "Resolve an open question"
+        context: "Q-002 exists with status: open"
+        action: "storyline resolve-question --id Q-002 --answer 'Security Amigo is only dispatched when feature touches auth or PII'"
+        outcome: "Q-002.status set to resolved, Q-002.answer written; validate passes"
+        type: "happy-path"
+      - id: "R4-E2"
+        name: "Question ID not found"
+        context: "Q-999 does not exist in the blueprint"
+        action: "storyline resolve-question --id Q-999 --answer '...'"
+        outcome: "Error: question 'Q-999' not found — exit code 1"
+        type: "sad-path"
+      - id: "R4-E3"
+        name: "Resolving an already-resolved question"
+        context: "Q-001 already has status: resolved"
+        action: "storyline resolve-question --id Q-001 --answer 'Updated answer'"
+        outcome: "Warning printed, answer updated, status stays resolved"
+        type: "edge-case"
+
+  - id: "R5"
+    description: "All commands fail with a clear, actionable error message if the target entity does not exist"
+    priority: "must-have"
+    examples: []
+
+  - id: "R6"
+    description: "resolve-question on an already-resolved question warns but still updates the answer"
+    priority: "should-have"
+    examples: []
+
+questions: []
+
+assumptions:
+  - id: "A1"
+    assumption: "add-policy validates triggered-by against events in the same context (matching existing blueprint validation rule)"
+    confidence: "high"
+    consequence_if_wrong: "add-policy would allow invalid policies that fail at validate time instead of at insertion time"
+  - id: "A2"
+    assumption: "add-policy validates issues-command against commands in any context (not just the same context)"
+    confidence: "high"
+    consequence_if_wrong: "cross-context policies would be rejected incorrectly"
+
+glossary_candidates: []
+
+risks:
+  technical:
+    - "resolve-question is an update, not an insert — needs different node-finding logic than the other three commands"
+  scope:
+    - "None — all four commands are well-bounded and follow the existing pattern"
+  knowledge_gaps: []
