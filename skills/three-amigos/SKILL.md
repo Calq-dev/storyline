@@ -432,7 +432,7 @@ Don't force all steps in one go. If the user is still fuzzy on the feature, stay
 
 ## Full Session: Persona Agents
 
-> **Let op:** De persona-agents delen dezelfde onderliggende kennisbasis. De "meningsverschillen" die ze genereren zijn geconstrueerde variaties, geen echte informatieasymmetrie tussen mensen met verschillende belangen. Gebruik full session mode voor diepere structurering van complexe features — niet als vervanging voor echte multidisciplinaire input.
+> **Note:** The persona agents share the same underlying knowledge base. The "disagreements" they generate are constructed variations, not genuine information asymmetry between people with different interests. Use full session mode for deeper structuring of complex features — not as a substitute for real multidisciplinary input.
 
 When the user chooses "Full session", you become the **Facilitator** — you don't play the three roles yourself. Instead, you dispatch three independent persona agents who each explore the feature, discuss via shared notes, and then you synthesize their findings.
 
@@ -711,9 +711,9 @@ Agent (subagent_type: "storyline:product-amigo"):
     Find every instance of @product-amigo. For each one, append a focused response to
     .storyline/workbench/amigo-notes/product.md using the heading:
 
-    ## Ronde 3 — Reacties op @mentions
+    ## Round 3 — Responses to @mentions
 
-    If no @product-amigo mentions exist, append: ## Ronde 3 — Geen @mentions voor mij.
+    If no @product-amigo mentions exist, append: ## Round 3 — No @mentions for me.
     Work from: [project directory]
 
 Agent (subagent_type: "storyline:developer-amigo"):
@@ -728,9 +728,9 @@ Agent (subagent_type: "storyline:developer-amigo"):
     Find every instance of @developer-amigo. For each one, append a focused response to
     .storyline/workbench/amigo-notes/developer.md using the heading:
 
-    ## Ronde 3 — Reacties op @mentions
+    ## Round 3 — Responses to @mentions
 
-    If no @developer-amigo mentions exist, append: ## Ronde 3 — Geen @mentions voor mij.
+    If no @developer-amigo mentions exist, append: ## Round 3 — No @mentions for me.
     Work from: [project directory]
 
 Agent (subagent_type: "storyline:testing-amigo"):
@@ -745,9 +745,9 @@ Agent (subagent_type: "storyline:testing-amigo"):
     Find every instance of @testing-amigo. For each one, append a focused response to
     .storyline/workbench/amigo-notes/testing.md using the heading:
 
-    ## Ronde 3 — Reacties op @mentions
+    ## Round 3 — Responses to @mentions
 
-    If no @testing-amigo mentions exist, append: ## Ronde 3 — Geen @mentions voor mij.
+    If no @testing-amigo mentions exist, append: ## Round 3 — No @mentions for me.
     Work from: [project directory]
 ```
 
@@ -758,8 +758,8 @@ Agent (subagent_type: "storyline:frontend-amigo"):
     This is Ronde 3 — respond to @mentions directed at you.
     Read all amigo notes. Find every instance of @frontend-amigo.
     Append responses to .storyline/workbench/amigo-notes/frontend.md under:
-    ## Ronde 3 — Reacties op @mentions
-    If none: ## Ronde 3 — Geen @mentions voor mij.
+    ## Round 3 — Responses to @mentions
+    If none: ## Round 3 — No @mentions for me.
     Work from: [project directory]
 ```
 
@@ -800,7 +800,7 @@ Build a concept example-map by:
 
 Present the synthesized concept example-map to the user:
 
-"De drie amigos hebben hun huiswerk gedaan en elkaars werk besproken. Hier is wat ze gevonden hebben:"
+"The three amigos have done their homework and discussed each other's work. Here's what they found:"
 
 Show:
 - The proposed rules (with which persona surfaced them)
@@ -814,12 +814,12 @@ The amigo notes files in `.storyline/workbench/amigo-notes/` are the meeting min
 **Surface @user questions** — if any `@user` mentions were found in Step F4, present them now before continuing:
 
 ```
-De amigos hebben een paar vragen voor jou die zij niet kunnen beantwoorden:
+The amigos have a few questions only you can answer:
 
 1. [quote the @user mention, who raised it, in which context]
 2. ...
 
-Beantwoord wat je kunt — ik verwerk de antwoorden in de example map.
+Answer what you can — I'll incorporate your answers into the example map.
 ```
 
 **Note @mister-gherkin handovers** — if any `@mister-gherkin` mentions exist, include them as context when invoking Mister Gherkin in Step F6. Pass them as: "The amigos left these notes for you: [list]".
