@@ -467,6 +467,63 @@ test("generatePython: infrastructure __init__.py exists (payment/infrastructure/
 // Integration tests — printSummary (Phase-2, RED until implemented)
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Integration tests — value objects (TypeScript + Python)
+// ---------------------------------------------------------------------------
+
+/**
+ * Payment/Invoice model that includes a value object (Money).
+ * Used to exercise the value object file generation paths in both generators.
+ */
+const FIXTURE_PAYMENT_INVOICE_WITH_VO = {
+  bounded_contexts: [
+    {
+      name: "Payment",
+      aggregates: [
+        {
+          name: "Invoice",
+          root_entity: "Invoice",
+          value_objects: ["Money"],
+          events: [],
+          commands: [],
+        },
+      ],
+    },
+  ],
+};
+
+test("generateTypescript: value object file exists and contains 'export class Money'", () => {
+  const d = tmp();
+
+  generateTypescript(FIXTURE_PAYMENT_INVOICE_WITH_VO, d);
+
+  const filePath = join(d, "payment", "domain", "money.ts");
+  assert.ok(existsSync(filePath), `Expected ${filePath} to exist`);
+  const content = readFileSync(filePath, "utf-8");
+  assert.ok(
+    content.includes("export class Money"),
+    `Expected 'export class Money' in value object file, got:\n${content}`,
+  );
+});
+
+test("generatePython: value object file exists and contains 'class Money'", () => {
+  const d = tmp();
+
+  generatePython(FIXTURE_PAYMENT_INVOICE_WITH_VO, d);
+
+  const filePath = join(d, "payment", "domain", "money.py");
+  assert.ok(existsSync(filePath), `Expected ${filePath} to exist`);
+  const content = readFileSync(filePath, "utf-8");
+  assert.ok(
+    content.includes("class Money"),
+    `Expected 'class Money' in value object file, got:\n${content}`,
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Integration tests — printSummary (Phase-2, RED until implemented)
+// ---------------------------------------------------------------------------
+
 test("printSummary: output contains all four expected lines", () => {
   const d = tmp();
 
