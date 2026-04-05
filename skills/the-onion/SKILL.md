@@ -332,7 +332,31 @@ tests/acceptance/steps/checkout_steps.ts
 tests/acceptance/steps/checkout_steps.py
 ```
 
-### Step 4: Run the Failing Acceptance Test
+### Step 3b: Check for Reusable Step Definitions
+
+Before writing new step definitions, check if any existing step definitions already match or partially match the steps in the current scenario. Duplicated step definitions are a top BDD anti-pattern — they create fragile coupling where a change in one domain breaks scenarios in another.
+
+```bash
+# Find existing step definition files
+```
+```
+Glob: tests/acceptance/steps/**/*
+Grep: pattern="Given|When|Then" path="tests/acceptance/steps/"
+```
+
+For each step in the new scenario:
+- **Exact match exists** → reuse it, don't create a duplicate
+- **Similar match exists** (same intent, different wording) → consider generalizing the existing step with a regex or expression parameter, or align the scenario wording to match the existing step
+- **No match** → write a new step definition
+
+Report: "Step reuse check: [N] steps reused from existing definitions, [N] new steps written."
+
+### Step 4: Run the Failing Acceptance Test (Red-Phase Gate)
+
+<HARD-GATE>
+This is not optional. The acceptance test MUST fail before you write implementation code.
+A test that has never failed proves nothing — it could be wired wrong, matching the wrong step, or asserting nothing meaningful. The red phase is how you verify the test actually tests something.
+</HARD-GATE>
 
 ```bash
 # TypeScript/Cucumber.js
@@ -345,7 +369,14 @@ behave features/checkout.feature --tags=first-scenario
 mvn test -Dcucumber.filter.tags="@first-scenario"
 ```
 
-It should fail — that's the point. The failure tells you what to build first. Read the error message and use it to decide what to implement next.
+**Verify the failure is meaningful:**
+1. The test must fail for the **right reason** — a missing implementation, not a syntax error or misconfigured step
+2. The error message should point to the behavior that needs implementing (e.g., "function not found", "expected X but got undefined")
+3. If the test passes immediately, something is wrong — investigate before proceeding. Either the step definitions are wired incorrectly (matching a different step), or the behavior already exists
+
+**If the test passes when it shouldn't:** Stop. Do not proceed to implementation. Diagnose why — the step definitions may be too loosely matched, or a previous implementation already covers this case. Report this to the user.
+
+Only after confirming a meaningful failure, proceed to implementation.
 
 ### Step 5: Work Inward — Inner Loop TDD
 
@@ -428,7 +459,32 @@ npx cucumber-js features/checkout.feature
 
 If it doesn't pass, the failure message tells you exactly what's missing. Fix it with another inner loop cycle.
 
-### Step 7b: Outside-In Verification
+### Step 7b: Outer-Loop Refactoring (mandatory)
+
+The inner loop has its own refactoring step, but outer-loop refactoring is equally important and often skipped. Now that the acceptance test is green and the feature works end-to-end, step back and look at the bigger picture.
+
+**Refactoring checklist:**
+1. **Cross-scenario duplication** — Do multiple scenarios share similar setup or assertion logic? Extract into shared helpers or a Background block.
+2. **Step definition bloat** — Are step definitions doing too much? Each step should delegate to application code, not contain business logic itself.
+3. **Naming alignment** — Do class names, method names, and variables match the glossary in the blueprint? If the code says `createPurchase()` but the glossary says "Order", rename now while the test suite protects you.
+4. **Test readability** — Can someone unfamiliar with the codebase read the acceptance test output and understand what the system does? If not, improve scenario titles and step wording.
+5. **Dead code** — Did the implementation leave behind any scaffolding, TODOs, or commented-out code? Remove it.
+
+The green test suite is your safety net — refactor confidently. Run the full suite after refactoring to confirm nothing broke:
+
+```bash
+# Run full acceptance suite, not just the current scenario
+npx cucumber-js features/
+# or: behave features/ / mvn test
+```
+
+Commit the refactoring separately from the feature implementation:
+```bash
+git add .
+git commit -m "refactor: clean up after [scenario name] implementation"
+```
+
+### Step 7c: Outside-In Verification
 
 Before committing, verify you actually followed outside-in TDD:
 

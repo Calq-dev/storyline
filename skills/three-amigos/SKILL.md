@@ -197,7 +197,29 @@ For each vague rule, ask whichever of these applies:
 
 The goal: every rule must be specific enough that two developers would build the same thing from it.
 
-### Step 2c: Assumption Audit
+### Step 2c: Non-Functional Requirements Probe (mandatory)
+
+After probing the rules, systematically check for non-functional requirements (NFRs) that could become bugs if discovered late. For each category below, ask whether it applies to this feature — don't assume it doesn't just because nobody mentioned it.
+
+| Category | Probe Questions |
+|---|---|
+| **Performance** | What's the expected response time? How many concurrent users? What data volumes? What happens under load? |
+| **Security** | Does this handle user input? Sensitive data (PII, payments)? Auth/authz boundaries? What's the attack surface? |
+| **Accessibility** | Does this have a UI? WCAG compliance level? Screen reader support? Keyboard navigation? |
+| **Resilience** | What if an external dependency is down? Network timeout? Partial failure? How does the user recover? |
+| **Data integrity** | What consistency guarantees? Eventual or strong? What if two users act simultaneously? |
+| **Observability** | What needs logging? What metrics matter? How would you debug this in production? |
+
+For each applicable NFR:
+- Add it as a rule in the example map with priority `should-have` or `must-have`
+- Add at least one concrete example (e.g., "Given 1000 concurrent users adding to cart, When the system is under load, Then response time stays under 500ms")
+- If the NFR is uncertain, add it as a question with `severity: important`
+
+NFRs that surface here become `@nfr` tagged scenarios in Mister Gherkin, ensuring they're tested — not just documented.
+
+**Not every feature has NFR concerns.** If none of the categories apply (e.g., a simple config change), state that explicitly and move on. The goal is to ask, not to invent requirements.
+
+### Step 2d: Assumption Audit
 
 After the Rule Depth Probe, the facilitator asks explicitly:
 
@@ -211,7 +233,7 @@ The goal is to surface hidden assumptions before they calcify into bugs. For eac
 
 These are captured in an `assumptions:` section in `workbench/example-map.yaml`, alongside the existing `questions:` section. Assumptions with `confidence: low` or `confidence: medium` that have significant consequences should be converted to questions and given a severity.
 
-### Step 2d: Story Readiness & Size Check
+### Step 2e: Story Readiness & Size Check
 
 Before prioritizing, count the 🔵 rules in the example map and apply this gate:
 
@@ -339,6 +361,17 @@ rules:
     description: "Orders over €100 qualify for free shipping"
     priority: "should-have"
     examples: []
+  - id: "NFR1"
+    description: "Order placement responds within 500ms under normal load"
+    priority: "should-have"
+    nfr_category: "performance"   # performance | security | accessibility | resilience | data-integrity | observability
+    examples:
+      - id: "NFR1-E1"
+        name: "Order placement under peak load"
+        context: "100 concurrent users placing orders"
+        action: "Each user submits an order"
+        outcome: "95th percentile response time stays under 500ms"
+        type: "nfr"
 
 questions:
   - id: "Q1"
