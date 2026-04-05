@@ -136,6 +136,9 @@ TodoWrite: Foreman: checking the site
 **Step 1: Read the site.**
 
 ```bash
+# Initialize a session ID for traceability (written to .storyline/.session-id, read by mutation commands)
+storyline session-init 2>/dev/null || true
+
 # Check for blueprint — summary also lists available view commands per context
 storyline summary 2>/dev/null || echo "no blueprint yet"
 
