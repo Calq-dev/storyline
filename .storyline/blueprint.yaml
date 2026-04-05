@@ -1,14 +1,15 @@
 meta:
   project: Storyline
   created_at: '2026-04-04'
-  updated_at: '2026-04-05T18:27:14.701Z'
-  version: 14
+  updated_at: '2026-04-05T19:04:42.754Z'
+  version: 17
 tech_stack:
   language: "TypeScript, Markdown, Bash, YAML"
   framework: "Claude Code Plugin SDK"
   runtime: "Node.js 18+ via tsx (ESM), Claude Code CLI (claude.ai/code)"
   package_manager: "npm"
-  test_framework: "node:test (scripts/test-blueprint.ts, 30 tests)"
+  test_framework: "node:test (scripts/test-blueprint.ts, 60 tests;
+    scripts/test-changeset.ts, 14 tests)"
   key_dependencies:
     - name: "yaml"
       version: "^2.7.0"
@@ -353,6 +354,7 @@ bounded_contexts:
           - name: "ScaffoldFromBlueprint"
             feature_files:
               - "implementation.feature"
+              - "scaffold.feature"
         events:
           - name: "ImplementationPlanCreated"
             payload_fields:
@@ -727,20 +729,19 @@ glossary:
           are added, modified, or removed. Paths use bracket-notation
           (bounded_contexts[Name].aggregates[Name]...). Validated against the
           live blueprint during storyline changeset validate.
+  Functional equivalence:
+    definitions:
+      - context: Implementation
+        meaning: Same file paths, same class names, same directory structure —
+          whitespace and comment wording may differ
 gaps:
   - id: "GAP-001"
-    description: "No automated test coverage for scaffold.py — only blueprint.ts has
-      tests (scripts/test-blueprint.ts with 30 tests)"
+    description: "No automated test coverage for scaffold.py — blueprint.ts has 60
+      tests (test-blueprint.ts) and changeset.ts has 14 tests
+      (test-changeset.ts), but scaffold.py has none"
     severity: "important"
     affects:
       - "Implementation"
-  - id: "GAP-002"
-    description: "Resolved — Sticky Storm and Doctor Context are now agents only
-      (agents/sticky-storm.md, agents/doctor-context.md), dispatched by The
-      Foreman. No more dual definitions."
-    severity: "nice_to_know"
-    affects:
-      - "DomainModeling"
   - id: "GAP-003"
     description: "No integration tests verifying the full pipeline flow from Foreman
       through all phases"
@@ -757,18 +758,6 @@ gaps:
     description: "PostToolUse hook for blueprint auto-validation parses JSON from
       tool_input but error handling is minimal — malformed input could silently
       fail"
-    severity: "nice_to_know"
-    affects:
-      - "BlueprintManagement"
-  - id: "GAP-006"
-    description: "Resolved — SessionStart hook now installs yaml + tsx via npm into
-      plugin data dir with exact versions pinned in package-lock.json"
-    severity: "nice_to_know"
-    affects:
-      - "BlueprintManagement"
-  - id: "GAP-007"
-    description: "Resolved — blueprint.ts validates created_at with explicit ISO
-      8601 regex check"
     severity: "nice_to_know"
     affects:
       - "BlueprintManagement"
