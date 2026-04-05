@@ -80,5 +80,6 @@ Feature: Blueprint CLI — Structural Mutation Commands
       Given the blueprint has a resolved question "Q-001" with an existing answer
       When question "Q-001" is resolved again with a new answer
       Then a warning is shown that "Q-001" was already resolved
+      And the warning includes when "Q-001" was first resolved
       And question "Q-001" has the new answer
       And the blueprint passes validation
