@@ -10,7 +10,7 @@
 
 import { test, afterEach } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, writeFileSync, rmSync, existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -22,6 +22,9 @@ import {
   extractEventNames,
   extractCommandNames,
   loadModel,
+  generateTypescript,
+  generatePython,
+  printSummary,
 } from "./scaffold.ts";
 
 // ---------------------------------------------------------------------------
@@ -233,4 +236,270 @@ test("root_entity fallback: aggregate without root_entity falls back to aggregat
   // The caller pattern: aggregate.root_entity ?? aggregate.name
   const rootEntityName = aggregate.root_entity ?? aggregate.name;
   assert.equal(rootEntityName, "Receipt", "root_entity fallback should return aggregate.name");
+});
+
+// ---------------------------------------------------------------------------
+// Phase-2 fixtures
+// ---------------------------------------------------------------------------
+
+/**
+ * Minimal Payment/Invoice model with one event (InvoiceSent, invoiceId + amount)
+ * and one command (SendInvoice). Used by generateTypescript and generatePython tests.
+ */
+const FIXTURE_PAYMENT_INVOICE = {
+  bounded_contexts: [
+    {
+      name: "Payment",
+      aggregates: [
+        {
+          name: "Invoice",
+          root_entity: "Invoice",
+          events: [
+            { name: "InvoiceSent", payload_fields: ["invoiceId", "amount"] },
+          ],
+          commands: [
+            { name: "SendInvoice", feature_files: ["invoicing.feature"] },
+          ],
+        },
+      ],
+    },
+  ],
+};
+
+/**
+ * Minimal Billing/Receipt model with no events and no commands.
+ * Used to test the intentional divergence: application/ is NOT created
+ * when there are no commands.
+ */
+const FIXTURE_BILLING_RECEIPT_EMPTY = {
+  bounded_contexts: [
+    {
+      name: "Billing",
+      aggregates: [
+        {
+          name: "Receipt",
+          root_entity: "Receipt",
+          events: [],
+          commands: [],
+        },
+      ],
+    },
+  ],
+};
+
+// ---------------------------------------------------------------------------
+// Integration tests — generateTypescript (Phase-2, RED until implemented)
+// ---------------------------------------------------------------------------
+
+test("generateTypescript: aggregate root file exists and contains 'export class Invoice'", () => {
+  const d = tmp();
+
+  generateTypescript(FIXTURE_PAYMENT_INVOICE, d);
+
+  const filePath = join(d, "payment", "domain", "invoice.ts");
+  assert.ok(existsSync(filePath), `Expected ${filePath} to exist`);
+  const content = readFileSync(filePath, "utf-8");
+  assert.ok(
+    content.includes("export class Invoice"),
+    `Expected 'export class Invoice' in invoice.ts, got:\n${content}`,
+  );
+});
+
+test("generateTypescript: event file exists and contains correct interface and readonly fields", () => {
+  const d = tmp();
+
+  generateTypescript(FIXTURE_PAYMENT_INVOICE, d);
+
+  const filePath = join(d, "payment", "domain", "events", "invoice-sent.ts");
+  assert.ok(existsSync(filePath), `Expected ${filePath} to exist`);
+  const content = readFileSync(filePath, "utf-8");
+  assert.ok(
+    content.includes("interface InvoiceSent"),
+    `Expected 'interface InvoiceSent' in event file, got:\n${content}`,
+  );
+  assert.ok(
+    content.includes("readonly invoiceId"),
+    `Expected 'readonly invoiceId' in event file, got:\n${content}`,
+  );
+  assert.ok(
+    content.includes("readonly amount"),
+    `Expected 'readonly amount' in event file, got:\n${content}`,
+  );
+});
+
+test("generateTypescript: command handler file exists and contains 'class SendInvoiceHandler'", () => {
+  const d = tmp();
+
+  generateTypescript(FIXTURE_PAYMENT_INVOICE, d);
+
+  const filePath = join(
+    d,
+    "payment",
+    "application",
+    "send-invoice-handler.ts",
+  );
+  assert.ok(existsSync(filePath), `Expected ${filePath} to exist`);
+  const content = readFileSync(filePath, "utf-8");
+  assert.ok(
+    content.includes("class SendInvoiceHandler"),
+    `Expected 'class SendInvoiceHandler' in handler file, got:\n${content}`,
+  );
+});
+
+test("generateTypescript: repository interface file exists and contains 'interface InvoiceRepository'", () => {
+  const d = tmp();
+
+  generateTypescript(FIXTURE_PAYMENT_INVOICE, d);
+
+  const filePath = join(d, "payment", "domain", "invoice-repository.ts");
+  assert.ok(existsSync(filePath), `Expected ${filePath} to exist`);
+  const content = readFileSync(filePath, "utf-8");
+  assert.ok(
+    content.includes("interface InvoiceRepository"),
+    `Expected 'interface InvoiceRepository' in repository file, got:\n${content}`,
+  );
+});
+
+test("generateTypescript: in-memory repository file exists and contains 'class InMemoryInvoiceRepository'", () => {
+  const d = tmp();
+
+  generateTypescript(FIXTURE_PAYMENT_INVOICE, d);
+
+  const filePath = join(
+    d,
+    "payment",
+    "infrastructure",
+    "in-memory-invoice-repository.ts",
+  );
+  assert.ok(existsSync(filePath), `Expected ${filePath} to exist`);
+  const content = readFileSync(filePath, "utf-8");
+  assert.ok(
+    content.includes("class InMemoryInvoiceRepository"),
+    `Expected 'class InMemoryInvoiceRepository' in in-memory repository file, got:\n${content}`,
+  );
+});
+
+test("generateTypescript: empty aggregate — domain root file exists (billing/domain/receipt.ts)", () => {
+  const d = tmp();
+
+  generateTypescript(FIXTURE_BILLING_RECEIPT_EMPTY, d);
+
+  const filePath = join(d, "billing", "domain", "receipt.ts");
+  assert.ok(existsSync(filePath), `Expected ${filePath} to exist`);
+});
+
+test("generateTypescript: empty aggregate — repository file exists (billing/domain/receipt-repository.ts)", () => {
+  const d = tmp();
+
+  generateTypescript(FIXTURE_BILLING_RECEIPT_EMPTY, d);
+
+  const filePath = join(d, "billing", "domain", "receipt-repository.ts");
+  assert.ok(existsSync(filePath), `Expected ${filePath} to exist`);
+});
+
+test("generateTypescript: empty aggregate — application/ dir does NOT exist (intentional divergence from Python)", () => {
+  const d = tmp();
+
+  generateTypescript(FIXTURE_BILLING_RECEIPT_EMPTY, d);
+
+  const appDir = join(d, "billing", "application");
+  assert.ok(
+    !existsSync(appDir),
+    `Expected billing/application/ to NOT exist when aggregate has no commands, but it was created`,
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Integration tests — generatePython (Phase-2, RED until implemented)
+// ---------------------------------------------------------------------------
+
+test("generatePython: domain aggregate file exists and contains 'class Invoice'", () => {
+  const d = tmp();
+
+  generatePython(FIXTURE_PAYMENT_INVOICE, d);
+
+  const filePath = join(d, "payment", "domain", "invoice.py");
+  assert.ok(existsSync(filePath), `Expected ${filePath} to exist`);
+  const content = readFileSync(filePath, "utf-8");
+  assert.ok(
+    content.includes("class Invoice"),
+    `Expected 'class Invoice' in invoice.py, got:\n${content}`,
+  );
+});
+
+test("generatePython: context-level __init__.py exists (payment/__init__.py)", () => {
+  const d = tmp();
+
+  generatePython(FIXTURE_PAYMENT_INVOICE, d);
+
+  const filePath = join(d, "payment", "__init__.py");
+  assert.ok(existsSync(filePath), `Expected ${filePath} to exist`);
+});
+
+test("generatePython: domain __init__.py exists (payment/domain/__init__.py)", () => {
+  const d = tmp();
+
+  generatePython(FIXTURE_PAYMENT_INVOICE, d);
+
+  const filePath = join(d, "payment", "domain", "__init__.py");
+  assert.ok(existsSync(filePath), `Expected ${filePath} to exist`);
+});
+
+test("generatePython: application __init__.py exists (payment/application/__init__.py)", () => {
+  const d = tmp();
+
+  generatePython(FIXTURE_PAYMENT_INVOICE, d);
+
+  const filePath = join(d, "payment", "application", "__init__.py");
+  assert.ok(existsSync(filePath), `Expected ${filePath} to exist`);
+});
+
+test("generatePython: infrastructure __init__.py exists (payment/infrastructure/__init__.py)", () => {
+  const d = tmp();
+
+  generatePython(FIXTURE_PAYMENT_INVOICE, d);
+
+  const filePath = join(d, "payment", "infrastructure", "__init__.py");
+  assert.ok(existsSync(filePath), `Expected ${filePath} to exist`);
+});
+
+// ---------------------------------------------------------------------------
+// Integration tests — printSummary (Phase-2, RED until implemented)
+// ---------------------------------------------------------------------------
+
+test("printSummary: output contains all four expected lines", () => {
+  const d = tmp();
+
+  // Capture stdout by temporarily replacing process.stdout.write
+  const chunks: string[] = [];
+  const originalWrite = process.stdout.write.bind(process.stdout);
+  process.stdout.write = (chunk: string | Uint8Array, ...args: any[]): boolean => {
+    chunks.push(typeof chunk === "string" ? chunk : chunk.toString());
+    return true;
+  };
+
+  try {
+    printSummary(FIXTURE_PAYMENT_INVOICE, d);
+  } finally {
+    process.stdout.write = originalWrite;
+  }
+
+  const output = chunks.join("");
+
+  assert.ok(
+    output.includes("Scaffold generated"),
+    `Expected 'Scaffold generated' in output, got:\n${output}`,
+  );
+  assert.ok(
+    output.includes("Bounded contexts: 1"),
+    `Expected 'Bounded contexts: 1' in output, got:\n${output}`,
+  );
+  assert.ok(
+    output.includes("Aggregates: 1"),
+    `Expected 'Aggregates: 1' in output, got:\n${output}`,
+  );
+  assert.ok(
+    output.includes("Next step: write your first acceptance test!"),
+    `Expected 'Next step: write your first acceptance test!' in output, got:\n${output}`,
+  );
 });
