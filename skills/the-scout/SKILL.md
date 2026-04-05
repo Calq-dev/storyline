@@ -236,13 +236,27 @@ Each phase reads `blueprint.yaml` first (cheap, already done), then does a targe
 
 When the blueprint is read and ideas are captured, guide the user:
 
-"I've read the blueprint and captured [N] ideas in the backlog. Here's what I recommend:"
+"I've read the blueprint and captured [N] ideas in the backlog."
 
-- If there are backlog items ready: "Pick a feature and run `/storyline:three-amigos` to explore it with the Three Amigos."
-- If questions need answering first: "The [feature] idea has some open questions. Want to discuss those before starting a Three Amigos session?"
-- If the project is brand new: "Clean slate! Tell me what you want to build, and I'll create a backlog item and kick off a Three Amigos session."
+If multiple backlog items exist, present them as MCQ so the user can pick their next move:
 
-Or: "Run `/storyline:the-foreman` to see the full pipeline status."
+```
+AskUserQuestion:
+  question: "Here's what's in the backlog. What do you want to work on first?"
+  options:
+    - "[recommended ✓] [Feature A] — [one-line summary, why recommended: most valuable / least risky / unblocks others]"
+    - "[Feature B] — [one-line summary]"
+    - "[Feature C] — [one-line summary] ⚠️ has open questions"
+    - "Something else — I have a different idea"
+```
+
+Build the options from the actual backlog files. The `[recommended ✓]` marker goes on the item that seems most valuable or has the fewest blockers. Items with open questions get a ⚠️ marker so the user knows they'll need to resolve something before Three Amigos can fully complete.
+
+If there's only one item, skip the MCQ and confirm directly: "Ready to explore [Feature] with the Three Amigos?"
+
+If questions need answering first: "The [feature] idea has some open questions. Want to discuss those before starting a Three Amigos session?"
+
+If the project is brand new: "Clean slate! Tell me what you want to build."
 
 ### Commit Convention
 

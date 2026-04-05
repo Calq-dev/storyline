@@ -62,21 +62,28 @@ Match the tone to the results. If estimates diverge wildly, show that tension. I
 
 ## Step 0: Gather Preferences
 
-Ask the user via AskUserQuestion (or infer from context):
+Ask the user via a single `AskUserQuestion` that combines the key choices. Don't ask 4 separate questions — that feels like a form, not a conversation. Bundle the most important decisions into one MCQ and infer the rest.
 
-1. **Audience** — who reads this?
-   - `executive` — high-level, visual, minimal jargon
-   - `technical` — detailed, task breakdowns, dependencies
-   - `hybrid` — executive summary + technical appendix (default)
+```
+AskUserQuestion:
+  question: "Who is this estimate for and how detailed should it be?"
+  options:
+    - "[recommended ✓] Standard for the team — 3-5 pages, all three frameworks, person-days"
+    - "Quick for me — 1 page, T-shirt sizes with PERT range"
+    - "Comprehensive for stakeholders — full WBS, risk analysis, Gantt chart"
+    - "Executive summary — high-level, visual, minimal jargon"
+```
 
-2. **Detail level**:
-   - `quick` — ~1 page, T-shirt sizes with PERT range
-   - `standard` — 3-5 pages, all three frameworks (default)
-   - `comprehensive` — 8+ pages, full WBS, risk analysis
+From the user's choice, infer the full preference set:
 
-3. **Units**: story points, person-days, person-hours, calendar weeks, cost
+| Choice | Audience | Detail | Units | Language |
+|---|---|---|---|---|
+| Standard for the team | `technical` | `standard` | `person-days` | conversation language |
+| Quick for me | `technical` | `quick` | `person-days` | conversation language |
+| Comprehensive for stakeholders | `hybrid` | `comprehensive` | `person-days` | conversation language |
+| Executive summary | `executive` | `standard` | `calendar weeks` | conversation language |
 
-4. **Language**: default to conversation language
+If the user needs a different unit (story points, person-hours, cost), they'll say so — don't front-load that question. Default to person-days and adjust if asked.
 
 ## Step 1: Dispatch Three Sub-Agents
 

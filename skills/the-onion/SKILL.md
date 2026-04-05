@@ -282,9 +282,21 @@ The Foreman will read the plan and ask the user how they want to build. Do not s
 
 ### Step 2: Choose the First Scenario
 
-The implementation plan already defines the execution order, but confirm with the user:
+The implementation plan defines the execution order, but let the user confirm or adjust. Present the top scenarios as MCQ with the recommended walking skeleton marked:
 
-"Based on the blueprint, I recommend starting with '[scenario name]' — it's the simplest path through the core domain and will establish [key components]. Here's the full sequence I'm proposing: [list from plan]. Does this order make sense?"
+```
+AskUserQuestion:
+  question: "Here's the build order from the plan. Which scenario do you want to start with?"
+  options:
+    - "[recommended ✓] '[Scenario A]' — walking skeleton, establishes [key components]"
+    - "'[Scenario B]' — [why someone might start here instead]"
+    - "'[Scenario C]' — [what this establishes]"
+    - "Different order — let me explain what I'd prefer"
+```
+
+Build the options from the implementation plan's scenario execution order. The `[recommended ✓]` is always the walking skeleton — the simplest end-to-end path. Include the top 3-4 scenarios; the rest can follow in plan order once the first is chosen.
+
+If the user picks "different order", ask which scenario and why — their reasoning may reveal a constraint the plan missed.
 
 ### Step 3: Generate Step Definitions
 

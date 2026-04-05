@@ -237,7 +237,21 @@ For each applicable NFR:
 
 NFRs that surface here become `@nfr` tagged scenarios in Mister Gherkin, ensuring they're tested — not just documented.
 
-**Not every feature has NFR concerns.** If none of the categories apply (e.g., a simple config change), state that explicitly and move on. The goal is to ask, not to invent requirements.
+**Not every feature has NFR concerns.** Before probing, present the categories that seem relevant based on the feature and let the user confirm:
+
+```
+AskUserQuestion:
+  question: "Based on this feature, these non-functional areas might matter. Which ones should we explore?"
+  options:
+    - "[recommended ✓] Performance — [one-line reason why it seems relevant]"
+    - "Security — [one-line reason]"
+    - "Resilience — [one-line reason]"
+    - "None of these — skip NFR probing"
+```
+
+Only include categories that plausibly apply — don't list all 6 for a simple CRUD feature. The `[recommended ✓]` marker goes on the category you think matters most. If none apply (e.g., a simple config change), say so and offer a single "Skip" option.
+
+After the user selects, probe only the chosen categories. This prevents inventing requirements while ensuring the user explicitly considered and dismissed NFR concerns.
 
 ### Step 2d: Assumption Audit
 
@@ -281,13 +295,18 @@ Each proposed story should be independently releasable — not a technical slice
 
 If the user disagrees with the split, work with them to find a better boundary. But do not proceed with ≥ 8 rules in a single story.
 
-**When 5–7 rules, offer the choice:**
+**When 5–7 rules, offer the choice as MCQ:**
 
-> "This story has [N] rules. That's workable but on the large side. Do you want to:
-> - (a) Continue as one story
-> - (b) Split — I'll propose how"
+```
+AskUserQuestion:
+  question: "This story has [N] rules — workable but on the large side. How do you want to proceed?"
+  options:
+    - "Continue as one story — I'm comfortable with the scope"
+    - "Split it — propose how to break it into smaller stories"
+    - "Let me see the rules first — show me the list before I decide"
+```
 
-If they choose (b), apply the same split logic as above.
+If they choose "split", apply the same split logic as ≥ 8 rules above. If they choose "see the rules", present the rule list with IDs, then re-ask.
 
 ### Step 3: MoSCoW Prioritization
 
@@ -452,17 +471,28 @@ git commit -m "discovery: three amigos session for [feature name]"
 
 3. **Hard gate on critical questions:** Check `example-map.yaml` for questions with `severity: critical` that have no `best_guess` field (or an empty one). If any exist, **do not proceed to Mister Gherkin automatically**. Instead:
 
-   Present the critical questions to the developer and require an explicit choice for each:
+   Present each critical question as a separate `AskUserQuestion` with MCQ options. Walk through them one at a time — don't dump all questions at once.
 
-   > "Before we can write scenarios, these critical questions need a resolution:"
-   >
-   > **[Q1]** — [why it matters]
-   > Choose:
-   > - (a) Answer it now — provide the answer and I'll update the example map
-   > - (b) Make an explicit assumption — I'll document it as `best_guess` and add it to `assumptions:` with `confidence: low`
-   > - (c) Declare this story not ready — stop here and come back when you have the answer
+   > "Before we can write scenarios, [N] critical questions need a resolution. Let's walk through them."
 
-   Only after all critical questions have been resolved (option a or b), or the story has been declared not ready (option c), does the gate open. Option (c) ends the session cleanly — no handoff to Mister Gherkin.
+   For each question:
+
+   ```
+   AskUserQuestion:
+     question: "[Q1 text] — [why it matters, one sentence]"
+     options:
+       - "I know the answer — [let me type it]"
+       - "Make an assumption — document it as low-confidence and move on"
+       - "This story isn't ready — stop here, I need to ask [who_can_answer]"
+   ```
+
+   If they choose "I know the answer", follow up with an open-ended question to capture the answer, then update the example map.
+
+   If they choose "Make an assumption", ask what the assumption should be, then add it to `assumptions:` with `confidence: low`.
+
+   If they choose "not ready" for any question, the session ends cleanly — commit the example map, but don't hand off to Mister Gherkin. The user can come back when they have the answer.
+
+   Only after all critical questions are resolved (answered or assumed) does the gate open.
 
 4. **Otherwise, automatically invoke Mister Gherkin** to formalize the example map into `.feature` files:
 ```
