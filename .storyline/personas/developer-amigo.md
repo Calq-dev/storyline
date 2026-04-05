@@ -57,20 +57,26 @@ The view does NOT need to be referentially complete -- it's a read-aid for conte
 
 Only Sticky Storm and Doctor Context truly need the complete blueprint.
 
-## scaffold.ts Port (CS-2026-04-05-scaffold-ts-port)
+## scaffold.ts Port (CS-2026-04-05-scaffold-ts-port) — COMPLETE
 
-- Phase-1 complete: `scripts/scaffold.ts` exists with `toSnakeCase`, `toKebabCase`, `extractEventNames`, `extractCommandNames`, `loadModel`
-- Phase-2 complete: `generateTypescript`, `generatePython`, `printSummary` implemented — all 31 tests green (commit f3e9ebc)
-- Phase-3 complete: `main()` implemented, `bin/storyline scaffold` dispatcher added, CLI integration tests in `scripts/test-scaffold.ts` — all 36 tests green
-- Phase-4 complete: `scaffold.py` and empty `skills/the-onion/scripts/` deleted, CLAUDE.md updated, blueprint invariant/glossary/context-description updated, GAP-001 removed, test_framework count updated to 36 tests (commit a266afe)
-- `loadModel` uses the `yaml` npm package (`parse` from `"yaml"`) — same dependency already used by `blueprint.ts` via `parseDocument`/`stringify`
-- `toSnakeCase` inserts `_` before every uppercase letter at position > 0, then lowercases: `InvoiceID` → `invoice_i_d` (documented actual behaviour, not normalised)
-- `loadModel` throws `Error` (never `process.exit`) so unit tests can call it directly without killing the runner — changeset constraint enforced
-- `scripts/test-scaffold.ts` imports from `"./scaffold.ts"` (bare .ts extension — tsx resolves this correctly)
-- Key TS divergence from Python: `generateTypescript` skips `application/` AND `infrastructure/` when aggregate has no commands — Python always creates them; this is an intentional improvement
-- `generatePython` always creates all four `__init__.py` files (context, domain, application, infrastructure) regardless of commands — matches Python original
-- `printSummary` uses `process.stdout.write` (not `console.log`) — test suite intercepts `process.stdout.write` directly
-- Template literals (backtick strings) work cleanly as a direct port of Python f-strings for multi-line file content
+- All 36 tests green; `scaffold.py` deleted; `bin/storyline scaffold` dispatcher live
+- `loadModel` uses `yaml` npm package (`parse` from `"yaml"`) — same dep as `blueprint.ts`
+- `toSnakeCase` inserts `_` before every uppercase letter at position > 0: `InvoiceID` → `invoice_i_d`
+- `loadModel` throws `Error` (never `process.exit`) — unit tests call it directly safely
+- Key TS divergence: `generateTypescript` skips `application/` + `infrastructure/` when aggregate has no commands; `generatePython` always creates all four layers — intentional and tested
+- `printSummary` uses `process.stdout.write`, not `console.log` — test suite intercepts at that level
+- Both generators accept `events_produced`/`commands_handled` as aliases for `events`/`commands` (legacy JSON backwards compatibility)
+- Both generators embed invariant comments and commented-out import stubs in generated files
+- `--lang` is validated before `loadModel` is called — prevents filesystem side-effects on bad input
+
+### Spec gaps found during post-implementation review (see workbench/amigo-notes/developer.md)
+
+- Value object generation (TS + Python) — tested in test-scaffold.ts, not in scaffold.feature
+- Python divergence on empty-aggregate behavior — no Gherkin scenario documents it
+- Sad-path: invalid `--lang` argument — not in the spec
+- `printSummary` fourth line ("Next step: write your first acceptance test!") — tested, not specified
+- Python event and command handler file generation — no Gherkin scenarios
+- Feature-file references in TS handler docblocks — implementation detail, not specified
 
 ### ESM/tsx module execution pattern (critical for this codebase)
 

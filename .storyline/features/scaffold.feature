@@ -64,20 +64,21 @@ Feature: Scaffold from Blueprint
       And the file contains "class Invoice"
 
     @command:ScaffoldFromBlueprint
-    Scenario: Python context includes __init__.py files
+    Scenario: Python context includes __init__.py files in all layers
       When the scaffold runs for Python output
       Then a file exists at "payment/__init__.py"
       And a file exists at "payment/domain/__init__.py"
       And a file exists at "payment/application/__init__.py"
+      And a file exists at "payment/infrastructure/__init__.py"
 
   Rule: scaffold loads both YAML and JSON model formats
 
     @command:ScaffoldFromBlueprint
-    Scenario: Scaffold loads a YAML blueprint
-      Given a blueprint.yaml file with at least one bounded context
+    Scenario: Scaffold loads a YAML model file
+      Given a YAML model file with exactly one bounded context
       When the scaffold runs for TypeScript output
       Then the scaffold completes successfully
-      And the summary reports the correct number of contexts
+      And the summary reports "Bounded contexts: 1"
 
     @command:ScaffoldFromBlueprint
     Scenario: Scaffold loads a legacy JSON model
@@ -93,6 +94,7 @@ Feature: Scaffold from Blueprint
       Then the output contains "Scaffold generated"
       And the output contains "Bounded contexts: 1"
       And the output contains "Aggregates: 1"
+      And the output contains "Next step: write your first acceptance test!"
 
     @sad-path @command:ScaffoldFromBlueprint
     Scenario: Missing model file gives a clear error message

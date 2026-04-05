@@ -1,0 +1,188 @@
+feature: "Port scaffold.py to TypeScript with test coverage"
+story: "As a plugin-contributor I want scaffold to be written in TypeScript with tests so that code generation is consistent with the rest of the codebase and I can trust it works correctly"
+session_date: "2026-04-05"
+participants:
+  - "Product (AI-facilitated, quick scan)"
+  - "Developer (AI-facilitated, quick scan)"
+  - "Testing (AI-facilitated, quick scan)"
+
+codebase_context:
+  existing_models:
+    - "Blueprint (scripts/blueprint.ts)"
+    - "Changeset (scripts/changeset.ts)"
+  related_features:
+    - "implementation.feature"
+  technical_notes: >
+    scaffold.py lives in skills/the-onion/scripts/scaffold.py and generates
+    TypeScript or Python directory scaffolding from blueprint.yaml.
+    It uses ruamel.yaml for YAML parsing. The rest of the codebase uses the
+    yaml npm package (already installed). blueprint.ts and changeset.ts in
+    scripts/ are the model to follow. Tests use node:test.
+    A previous plan already noted this migration:
+    .storyline/plans/2026-04-05-blueprint-views-and-housekeeping.md
+
+rules:
+  - id: "R1"
+    description: "scaffold.ts exposes identical CLI as scaffold.py — --model, --output, --lang typescript|python"
+    priority: "must-have"
+    examples:
+      - id: "R1-E1"
+        name: "TypeScript scaffold via CLI"
+        context: "A blueprint.yaml exists at .storyline/blueprint.yaml"
+        action: "bin/storyline scaffold --model .storyline/blueprint.yaml --output src/ --lang typescript"
+        outcome: "Directory structure created under src/, summary printed"
+        type: "happy-path"
+      - id: "R1-E2"
+        name: "Python scaffold via CLI"
+        context: "A blueprint.yaml exists"
+        action: "bin/storyline scaffold --model .storyline/blueprint.yaml --output src/ --lang python"
+        outcome: "Python directory structure with __init__.py files created"
+        type: "happy-path"
+      - id: "R1-E3"
+        name: "Missing model file gives clear error"
+        context: "No blueprint.yaml at the given path"
+        action: "bin/storyline scaffold --model missing.yaml --output src/ --lang typescript"
+        outcome: "Error message: 'Model file not found: missing.yaml', exit code 1"
+        type: "sad-path"
+
+  - id: "R2"
+    description: "YAML input is parsed using the yaml npm package (already a dependency)"
+    priority: "must-have"
+    examples:
+      - id: "R2-E1"
+        name: "Loads a valid blueprint.yaml"
+        context: "A valid blueprint.yaml with bounded_contexts"
+        action: "loadModel('blueprint.yaml') is called"
+        outcome: "Returns parsed object with bounded_contexts array"
+        type: "happy-path"
+
+  - id: "R3"
+    description: "JSON input is supported for legacy backwards compatibility"
+    priority: "must-have"
+    examples:
+      - id: "R3-E1"
+        name: "Loads legacy domain-model.json"
+        context: "A legacy domain-model.json file with bounded_contexts"
+        action: "loadModel('domain-model.json') is called"
+        outcome: "Returns parsed object, same shape as YAML result"
+        type: "happy-path"
+
+  - id: "R4"
+    description: "TypeScript scaffold output is functionally equivalent to current Python output — same file paths, same class names, same directory structure"
+    priority: "must-have"
+    examples:
+      - id: "R4-E1"
+        name: "Aggregate root file generated"
+        context: "Blueprint has context 'Payment' with aggregate 'Invoice'"
+        action: "generateTypescript(model, tmpDir)"
+        outcome: "File exists at payment/domain/invoice.ts with class Invoice"
+        type: "happy-path"
+      - id: "R4-E2"
+        name: "Event file generated with payload fields"
+        context: "Invoice aggregate has event 'InvoiceSent' with payload fields invoiceId, amount"
+        action: "generateTypescript(model, tmpDir)"
+        outcome: "File at payment/domain/events/invoice-sent.ts with interface InvoiceSent containing invoiceId and amount"
+        type: "happy-path"
+      - id: "R4-E3"
+        name: "Command handler generated"
+        context: "Invoice aggregate has command 'SendInvoice'"
+        action: "generateTypescript(model, tmpDir)"
+        outcome: "File at payment/application/send-invoice-handler.ts with class SendInvoiceHandler"
+        type: "happy-path"
+      - id: "R4-E4"
+        name: "Empty aggregate (no events, no commands)"
+        context: "Blueprint has aggregate with no events or commands"
+        action: "generateTypescript(model, tmpDir)"
+        outcome: "Aggregate root and repository files generated, no event or handler files"
+        type: "edge-case"
+
+  - id: "R5"
+    description: "Python scaffold output is functionally equivalent to current Python output"
+    priority: "must-have"
+    examples:
+      - id: "R5-E1"
+        name: "Python aggregate root generated"
+        context: "Blueprint has context 'Payment' with aggregate 'Invoice'"
+        action: "generatePython(model, tmpDir)"
+        outcome: "File at payment/domain/invoice.py with dataclass Invoice, __init__.py files present"
+        type: "happy-path"
+
+  - id: "R6"
+    description: "Tests use node:test and cover all utility functions and both generators via integration tests on a tmp directory"
+    priority: "must-have"
+    examples:
+      - id: "R6-E1"
+        name: "toSnakeCase converts PascalCase"
+        context: "Unit test"
+        action: "toSnakeCase('PipelineSession')"
+        outcome: "Returns 'pipeline_session'"
+        type: "happy-path"
+      - id: "R6-E2"
+        name: "toKebabCase converts PascalCase"
+        context: "Unit test"
+        action: "toKebabCase('PipelineSession')"
+        outcome: "Returns 'pipeline-session'"
+        type: "happy-path"
+      - id: "R6-E3"
+        name: "extractEventNames handles both string and object formats"
+        context: "Unit test"
+        action: "extractEventNames([{name: 'OrderPlaced', payload_fields: []}, 'OrderShipped'])"
+        outcome: "Returns ['OrderPlaced', 'OrderShipped']"
+        type: "happy-path"
+      - id: "R6-E4"
+        name: "Integration test cleans up tmp dir after each test"
+        context: "Each test creates a tmp dir"
+        action: "Test runs, asserts files, tmp dir removed in teardown"
+        outcome: "No leftover files after test suite"
+        type: "happy-path"
+
+  - id: "R7"
+    description: "scaffold.py is deleted and CLAUDE.md updated to reference scripts/scaffold.ts"
+    priority: "must-have"
+    examples:
+      - id: "R7-E1"
+        name: "No Python file remains after port"
+        context: "After the port is complete"
+        action: "ls skills/the-onion/scripts/"
+        outcome: "Directory is empty or removed"
+        type: "happy-path"
+
+  - id: "R8"
+    description: "scaffold.ts lives in scripts/ and is exposed via bin/storyline scaffold"
+    priority: "should-have"
+    examples:
+      - id: "R8-E1"
+        name: "Scaffold command appears in storyline usage"
+        context: "After implementation"
+        action: "bin/storyline (no args)"
+        outcome: "Usage output includes 'scaffold --model X --output Y --lang Z'"
+        type: "happy-path"
+
+questions: []
+
+assumptions:
+  - id: "A1"
+    assumption: "The yaml npm package can load blueprint.yaml without ruamel-specific features"
+    confidence: "high"
+    consequence_if_wrong: "Would need a different YAML library — but blueprint.ts already proves this works"
+  - id: "A2"
+    assumption: "No users are calling scaffold.py directly outside the plugin"
+    confidence: "high"
+    consequence_if_wrong: "Breaking change for external callers — low risk, it is plugin-internal"
+  - id: "A3"
+    assumption: "skills/the-onion/SKILL.md does not reference scaffold.py — verified: no references found"
+    confidence: "high"
+    consequence_if_wrong: "Skill would reference a deleted file"
+
+glossary_candidates:
+  - term: "Scaffold"
+    definition: "TypeScript CLI (scripts/scaffold.ts) that generates directory structure and skeleton files from blueprint.yaml — replaces the former scaffold.py"
+  - term: "Functional equivalence"
+    definition: "Same file paths, same class names, same directory structure — whitespace and comment wording may differ"
+
+risks:
+  technical:
+    - "tmp dir cleanup in tests must be robust — use try/finally to avoid leftover files"
+    - "bin/storyline scaffold follows same switch/case pattern as changeset subcommands"
+  scope:
+    - "Python scaffold generation tested at file-existence level only — not Python-syntax validated"

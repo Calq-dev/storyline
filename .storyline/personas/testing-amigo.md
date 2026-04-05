@@ -36,20 +36,33 @@
 - Ronde 2 is sequential read-react — no concurrency risk here
 - Crew mode is sequential (Developer then Testing) — but blueprint could change between the two
 
-## scaffold.ts Port (CS-2026-04-05-scaffold-ts-port)
+## scaffold.ts Port (CS-2026-04-05-scaffold-ts-port) — COMPLETE
 
-- Phase-1 complete (2026-04-05): `scripts/scaffold.ts` exports all 9 functions — toSnakeCase, toKebabCase, extractEventNames, extractCommandNames, loadModel, generateTypescript, generatePython, printSummary, main
-- Phase-2 RED tests committed (2026-04-05): 14 new tests in `scripts/test-scaffold.ts` (tests 18-31), all failing with "not yet implemented (phase-2)"; phase-1 tests (1-17) remain green
-- Phase-2/3 stubs throw `Error("...not yet implemented (phase-N)")` — correct, non-fatal for test runner
-- `root_entity` fallback is implemented at the caller level (`aggregate.root_entity ?? aggregate.name`), NOT inside `loadModel` — `loadModel` is a plain deserialiser
-- Original 16 tests passed; I added test 17 for the missing root_entity fallback acceptance criterion
-- Pattern to watch: acceptance criteria that say "falls back to X when absent" are commonly skipped. Always cross-check each criterion against the test list explicitly
-- `toSnakeCase('InvoiceID')` → `'invoice_i_d'` — actual behaviour documented, not normalised; this is a known rough edge, not a bug
-- `printSummary` stdout capture pattern: reassign `process.stdout.write` in try/finally, restore in finally; collects string chunks; works even if printSummary throws (finally block restores)
-- Intentional Python divergence: generatePython always creates application/ (Python convention); generateTypescript skips it when aggregate has no commands — tested explicitly with a `!existsSync` assertion
-- Fixture pattern used: in-memory JS objects (not YAML strings) for generateTypescript/generatePython tests — no file I/O for the model, only for the output dir
-- Phase-2 review (2026-04-05): Developer's 31 tests covered all acceptance criteria EXCEPT value objects — both generators have a `value_objects` loop that was untested; added tests 32-33 (FIXTURE_PAYMENT_INVOICE_WITH_VO with `value_objects: ["Money"]`); suite now 33/33 green
-- Pattern confirmed: acceptance criteria that say "generates X for each Y" are commonly tested only for the happy-path list; sub-lists (value_objects inside aggregates) are skipped. Always fixture-stub sub-lists explicitly.
+- Port complete (2026-04-05): 35 tests green, scaffold.py deleted, bin/storyline scaffold live
+- `root_entity` fallback is at the caller level (`aggregate.root_entity ?? aggregate.name`), NOT inside `loadModel` — loadModel is a plain deserialiser
+- `toSnakeCase('InvoiceID')` → `'invoice_i_d'` — documented rough edge, not a bug
+- Intentional Python divergence: generatePython always creates application/ AND infrastructure/; generateTypescript skips both when aggregate has no commands
+- `printSummary` outputs 4 lines; stdout capture via process.stdout.write reassignment in try/finally
+- Fixture pattern: in-memory JS objects for generator tests (no file I/O for model), mkdtemp dirs for output (cleaned in afterEach)
+- CLI end-to-end uses real `.storyline/blueprint.yaml` as model — integration-risk if blueprint grows significantly
+
+## scaffold.feature Gaps Logged (2026-04-05)
+
+Post-port review found 12 gaps between feature file and implementation:
+1. Value object scenarios missing for both TypeScript and Python (Background declares it, no scenario asserts the file)
+2. root_entity fallback not specified in any scenario
+3. `billing/infrastructure/` skip not asserted in the no-commands TypeScript scenario (only application/ is checked)
+4. Python always-creates-infrastructure/ divergence has no scenario (opposite of TS behaviour)
+5. printSummary scenario missing 4th output line ("Next step: write your first acceptance test!")
+6. No sad-path scenario for invalid --lang value
+7. No sad-path scenario for missing --output argument
+8. No sad-path scenario for malformed YAML model
+9. "Scaffold loads a YAML blueprint" scenario uses real blueprint — count assertion is non-deterministic
+10. Python __init__.py scenario missing infrastructure/__init__.py
+11. toSnakeCase acronym behaviour undocumented in feature file
+12. No idempotency scenario (running scaffold twice on same output dir)
+
+Full notes at `.storyline/workbench/amigo-notes/testing.md`.
 
 ## CLI Subprocess Testing Patterns
 
@@ -60,8 +73,9 @@
 - `result.stdout + result.stderr` for combined output checks — `bin/storyline` writes usage to stderr.
 - The `find` binary via spawnSync is a safe way to enumerate generated files without shell glob expansion.
 - Each CLI test that writes output gets its own `tmp()` dir cleaned up in `afterEach`.
-- CLI happy-path test uses the real `.storyline/blueprint.yaml` as a model file — this means the test is sensitive to blueprint schema changes. Flag as integration risk if blueprint context count changes dramatically (generates many files, slower test).
-- The no-args usage test: exit code must be non-zero AND output must contain `scaffold --model`. Checking only the string without the exit code is insufficient — a bug could write the right text and still exit 0.
+- CLI happy-path test uses the real `.storyline/blueprint.yaml` as a model file — integration risk if blueprint context count changes dramatically (more files generated, slower test; count assertions become non-deterministic).
+- The no-args usage test: always assert exit code non-zero AND expected string. Checking only the string is insufficient — a bug could write the right text and exit 0.
+- `main()` uses `parseArgs` with `strict: false` — unknown flags are silently ignored, NOT rejected. This is a design choice that prevents the "unexpected flag" failure mode but also means flag typos (e.g. `--modle`) produce no error, just a missing-value usage error.
 
 ## Things To Watch Out For
 - Any solution that relies on agent discipline (prompt instructions alone) will fail in long sessions. Already proven by the housekeeping problem.

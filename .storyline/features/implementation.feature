@@ -45,7 +45,7 @@ Feature: Outside-in TDD Implementation
 
     Scenario: Generating TypeScript scaffold
       Given a blueprint with bounded contexts and aggregates
-      When scaffold.py runs with --lang typescript
+      When scaffold.ts runs with --lang typescript
       Then it generates domain/, application/, and infrastructure/ directories
       And creates aggregate root classes with invariant comments
       And creates event interfaces with payload fields
@@ -54,7 +54,7 @@ Feature: Outside-in TDD Implementation
 
     Scenario: Generating Python scaffold
       Given a blueprint with bounded contexts and aggregates
-      When scaffold.py runs with --lang python
+      When scaffold.ts runs with --lang python
       Then it generates the same layered structure using Python conventions
       And uses dataclasses for aggregates, events, and value objects
       And creates __init__.py files for proper module structure
