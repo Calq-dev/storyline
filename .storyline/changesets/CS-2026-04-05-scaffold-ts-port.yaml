@@ -1,0 +1,211 @@
+meta:
+  id: CS-2026-04-05-scaffold-ts-port
+  title: "Port scaffold.py to TypeScript with test coverage"
+  blueprint_version: 17
+  created_at: 2026-04-05T19:06:42.934Z
+  status: draft
+
+goal: >
+  Port skills/the-onion/scripts/scaffold.py to scripts/scaffold.ts using only
+  existing dependencies (yaml, node:fs, node:util parseArgs). Expose via
+  bin/storyline scaffold. Delete scaffold.py. Add test coverage in
+  scripts/test-scaffold.ts using node:test and integration tests on a tmp
+  directory. Update CLAUDE.md, blueprint invariants, and Scaffold glossary term
+  to reflect the new location.
+
+constraints:
+  - "No new npm packages — yaml, node:fs, node:path, node:util are sufficient"
+  - "Output must be functionally equivalent to the Python version (same file paths, same class names)"
+  - "Tests use node:test and the same tmp-dir pattern as test-blueprint.ts and test-changeset.ts"
+  - "bin/storyline scaffold follows the same dispatcher pattern as bin/storyline changeset"
+  - "Error paths in scaffold.ts throw Error (caught by main() which calls process.exit) — never call process.exit() directly in loadModel or generators, so unit tests can call functions directly without killing the test runner"
+  - "Each integration test gets its own unique tmp dir via mkdtempSync — no shared output dirs between tests"
+
+# ---------------------------------------------------------------------------
+# Component inventory
+# ---------------------------------------------------------------------------
+# scripts/scaffold.ts          — main module (port of scaffold.py)
+#   loadModel(path)            — reads YAML or JSON, returns parsed object; throws Error on missing file
+#   toSnakeCase(name)          — PascalCase → snake_case
+#   toKebabCase(name)          — PascalCase → kebab-case
+#   extractEventNames(events)  — normalises string|object[] → string[]
+#   extractCommandNames(cmds)  — normalises string|object[] → string[]
+#   generateTypescript(model, outputDir) — writes TS directory scaffold
+#   generatePython(model, outputDir)     — writes Python directory scaffold
+#   printSummary(model, outputDir)       — prints context/aggregate counts
+#   main()                     — CLI entry point (parseArgs, dispatch, catches errors → process.exit)
+#
+# scripts/test-scaffold.ts     — node:test suite
+#   Unit tests: toSnakeCase, toKebabCase, extractEventNames, extractCommandNames
+#   Integration tests: generateTypescript, generatePython (on mkdtempSync dirs)
+#   Integration tests: loadModel YAML + JSON
+#   Integration tests: loadModel missing file (calls function directly, catches thrown Error)
+#   Integration tests: printSummary output
+#
+# bin/storyline                — add 'scaffold' elif branch (3 lines: elif/shift/exec)
+# CLAUDE.md                   — update scaffold path reference to scripts/scaffold.ts
+# skills/the-onion/scripts/   — delete scaffold.py; remove empty directory
+# blueprint.yaml invariants   — update "scaffold.py" → "scaffold.ts"
+# blueprint.yaml glossary     — update Scaffold term: "TypeScript module (scripts/scaffold.ts)"
+
+# ---------------------------------------------------------------------------
+# Dependency graph
+# ---------------------------------------------------------------------------
+# test-scaffold.ts
+#   → scaffold.ts (all exported functions)
+#   → node:fs, node:os, node:path (built-ins for tmp dir)
+#   → node:test (built-in runner)
+#
+# scaffold.ts
+#   → yaml (npm, already installed)
+#   → node:fs, node:path, node:util (built-ins)
+#
+# bin/storyline
+#   → scaffold.ts (via tsx execution)
+#
+# Within phase-3: wire bin/storyline dispatcher BEFORE writing CLI integration tests
+
+# ---------------------------------------------------------------------------
+# Intentional divergence from Python version
+# ---------------------------------------------------------------------------
+# The Python version creates application/ directory unconditionally
+# (os.makedirs(app_dir, exist_ok=True)) even when an aggregate has no commands.
+# scaffold.ts deliberately skips creating application/ when commands is empty.
+# This is a behaviour improvement, not a bug. Tests assert the new behaviour.
+
+phases:
+  - id: phase-1
+    title: "Write scripts/scaffold.ts — utility functions and model loading"
+    type: addition
+    touches:
+      add: []
+      modify: []
+    files_created:
+      - "scripts/scaffold.ts"
+    acceptance_criteria:
+      - "scripts/scaffold.ts exists and exports toSnakeCase, toKebabCase, extractEventNames, extractCommandNames, loadModel, generateTypescript, generatePython, printSummary"
+      - "toSnakeCase('PipelineSession') returns 'pipeline_session'"
+      - "toKebabCase('PipelineSession') returns 'pipeline-session'"
+      - "extractEventNames handles both {name: '...'} objects and plain strings in the same array"
+      - "extractCommandNames handles both {name: '...'} objects and plain strings in the same array"
+      - "loadModel() reads YAML via yaml.parse and returns a parsed JS object"
+      - "loadModel() reads JSON via JSON.parse and returns a parsed JS object"
+      - "loadModel() throws an Error with message containing 'Model file not found' when file does not exist"
+      - "aggregate.root_entity falls back to aggregate.name when root_entity is absent"
+    test_strategy:
+      unit_tests:
+        - "toSnakeCase('PipelineSession') → 'pipeline_session'"
+        - "toSnakeCase('InvoiceID') → 'invoice_i_d' (document actual output, not assumed behaviour)"
+        - "toKebabCase('PipelineSession') → 'pipeline-session'"
+        - "extractEventNames — array with mixed string and {name, payload_fields} objects → string[]"
+        - "extractCommandNames — array with mixed string and {name, feature_files} objects → string[]"
+      integration_tests:
+        - "loadModel YAML — fixture YAML with one bounded context, assert result.bounded_contexts.length === 1"
+        - "loadModel JSON — fixture JSON with one bounded context, assert result.bounded_contexts.length === 1"
+        - "loadModel missing file — call loadModel('nonexistent.yaml'), assert thrown Error message contains 'Model file not found'"
+
+  - id: phase-2
+    title: "Write TypeScript and Python scaffold generators"
+    type: addition
+    touches:
+      add: []
+      modify: []
+    files_modified:
+      - "scripts/scaffold.ts"
+    acceptance_criteria:
+      - "generateTypescript creates payment/domain/invoice.ts with 'export class Invoice'"
+      - "generateTypescript creates payment/domain/events/invoice-sent.ts with 'interface InvoiceSent', 'readonly invoiceId', and 'readonly amount'"
+      - "generateTypescript creates payment/application/send-invoice-handler.ts with 'class SendInvoiceHandler'"
+      - "generateTypescript creates payment/domain/invoice-repository.ts with 'interface InvoiceRepository'"
+      - "generateTypescript creates payment/infrastructure/in-memory-invoice-repository.ts with 'class InMemoryInvoiceRepository'"
+      - "generateTypescript skips application/ and infrastructure/ when aggregate has no commands (intentional divergence from Python version)"
+      - "generateTypescript still creates domain root and repository files for command-less aggregates"
+      - "generatePython creates payment/domain/invoice.py with 'class Invoice'"
+      - "generatePython creates payment/__init__.py, payment/domain/__init__.py, payment/application/__init__.py, payment/infrastructure/__init__.py"
+      - "printSummary outputs 'Scaffold generated in <outputDir>', 'Bounded contexts: N', 'Aggregates: N', 'Next step: write your first acceptance test!'"
+    test_strategy:
+      integration_tests:
+        - "generateTypescript happy path — minimal model fixture in mkdtempSync dir, assert file existence and content strings for all file types"
+        - "generateTypescript event payload fields — InvoiceSent event with invoiceId + amount, assert 'readonly invoiceId' in event file"
+        - "generateTypescript empty aggregate — model with no events/commands: assert root.ts and repository.ts exist, assert no application/ dir"
+        - "generateTypescript empty aggregate — assert billing/domain/receipt-repository.ts exists (repository always generated)"
+        - "generatePython happy path — minimal model fixture, assert invoice.py exists and contains 'class Invoice'"
+        - "generatePython __init__.py — assert all four __init__.py files exist (context, domain, application, infrastructure)"
+        - "printSummary — capture stdout via process.stdout intercept or child_process, assert all four output lines"
+
+  - id: phase-3
+    title: "Expose via bin/storyline scaffold and write test suite"
+    type: addition
+    touches:
+      add: []
+      modify: []
+    files_modified:
+      - "bin/storyline"
+    files_created:
+      - "scripts/test-scaffold.ts"
+    notes: >
+      Wire the bin/storyline dispatcher FIRST (add the elif branch for 'scaffold'),
+      then write the CLI integration tests — the end-to-end test depends on the
+      dispatcher being present.
+    acceptance_criteria:
+      - "bin/storyline scaffold --model .storyline/blueprint.yaml --output <tmpdir> --lang typescript exits 0 and creates at least one .ts file"
+      - "bin/storyline scaffold --model missing.yaml --output /tmp/x --lang typescript exits non-zero and stderr contains 'Model file not found'"
+      - "bin/storyline (no args) usage output includes 'scaffold --model'"
+      - "scripts/test-scaffold.ts exists and all tests pass: npx tsx --test scripts/test-scaffold.ts"
+      - "each test creates its own mkdtempSync dir; all tmp dirs cleaned up via afterEach/finally"
+    test_strategy:
+      integration_tests:
+        - "CLI end-to-end: spawn bin/storyline scaffold on .storyline/blueprint.yaml, assert exit 0 and at least one .ts file created"
+        - "CLI error: spawn bin/storyline scaffold with missing.yaml, assert non-zero exit and error message in stderr"
+
+  - id: phase-4
+    title: "Delete scaffold.py and update all references"
+    type: removal
+    touches:
+      modify:
+        - path: "bounded_contexts[Implementation].aggregates[ImplementationPlan].invariants"
+          description: "Replace 'scaffold.py supports TypeScript and Python code generation' with 'scaffold.ts supports TypeScript and Python code generation'"
+    files_deleted:
+      - "skills/the-onion/scripts/scaffold.py"
+      - ".storyline/backlog/scaffold-tests.md"
+    files_modified:
+      - "CLAUDE.md"
+      - ".storyline/blueprint.yaml"
+    acceptance_criteria:
+      - "skills/the-onion/scripts/scaffold.py does not exist"
+      - "skills/the-onion/scripts/ directory is removed (it is now empty)"
+      - "CLAUDE.md references scripts/scaffold.ts, not scaffold.py"
+      - "Blueprint invariant updated: 'scaffold.ts supports TypeScript and Python code generation'"
+      - "Blueprint Scaffold glossary term updated to: 'TypeScript module (scripts/scaffold.ts) that generates TypeScript or Python directory structure and skeleton files from the blueprint'"
+      - ".storyline/backlog/scaffold-tests.md deleted (feature is complete)"
+      - "bin/storyline validate passes"
+      - "bin/storyline stamp — blueprint version incremented"
+
+migration_strategy: >
+  No data migration needed. This is a pure code port + cleanup.
+  scaffold.py can be deleted after phase-3 tests pass — there is no
+  production dependency that could be broken mid-migration.
+
+# Scenario execution order (walking skeleton first):
+# 1. TypeScript aggregate root generated (R4-E1) — simplest TS generation path
+# 2. TypeScript event file with payload fields (R4-E2)
+# 3. TypeScript command handler (R4-E3)
+# 4. TypeScript repository interface + in-memory (R4-E4, R4-E5)
+# 5. Empty aggregate edge case (R4-E6)
+# 6. Python aggregate root generated (R5-E1)
+# 7. Python __init__.py files (R5-E2)
+# 8. YAML loading (R2-E1)
+# 9. JSON loading (R3-E1)
+# 10. CLI summary output (R1-E1 + R1-E2)
+# 11. Missing model error (R1-E3)
+# 12. scaffold.ts exists / scaffold.py gone (R7)
+# 13. bin/storyline usage includes scaffold (R8)
+
+completion_criteria:
+  - "npx tsx --test scripts/test-scaffold.ts — all tests green"
+  - "bin/storyline validate — blueprint valid"
+  - "skills/the-onion/scripts/scaffold.py — does not exist"
+  - "scripts/scaffold.ts — exists and is executable via tsx"
+  - "bin/storyline scaffold --model .storyline/blueprint.yaml --output /tmp/x --lang typescript — exits 0"
+
+open_questions: []
