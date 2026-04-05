@@ -135,3 +135,19 @@ test("changeset_init_creates_changesets_dir", () => {
 
   assert.ok(existsSync(join(d, ".storyline", "changesets")), "changesets/ should be created");
 });
+
+// ---------------------------------------------------------------------------
+// Test 5: init refuses when different title produces the same slug
+// ---------------------------------------------------------------------------
+test("changeset_init_refuses_slug_collision_from_different_title", () => {
+  const d = tmp();
+  initProject(d);
+
+  runChangeset(["init", "--title", "Add Payment Context"], d);
+  // "Add-Payment-Context" produces the same slug: "add-payment-context"
+  const result = runChangeset(["init", "--title", "Add-Payment-Context"], d);
+
+  assert.notEqual(result.exitCode, 0, "Slug collision should be refused");
+  assert.ok((result.stderr + result.stdout).toLowerCase().includes("already exists"),
+    `Expected 'already exists' in error:\n${result.stderr}\n${result.stdout}`);
+});

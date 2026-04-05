@@ -174,7 +174,7 @@ function cmdInit(args: { title: string }, cwd: string) {
   const filePath = join(changesetsDir, filename);
 
   if (existsSync(filePath)) {
-    console.error(`Error: Changeset ${filename} already exists. Edit it directly or use a different title.`);
+    console.error(`Error: Changeset ${filename} already exists (slug: '${slug}'). Edit it directly or use a title that produces a different slug.`);
     process.exit(1);
   }
 
