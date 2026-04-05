@@ -1,7 +1,7 @@
 ---
 name: the-foreman
 description: |
-  **The Foreman — Pipeline Entry Point & Build Director**: The central coordinator for the BDD pipeline. Invoke explicitly as the-foreman or foreman, when asked "check the site", "where are we", "what's the pipeline status", or when The Onion hands off after completing implementation. This is the main entry point for the storyline plugin. Reads .storyline/blueprint.yaml as the single source of truth.
+  **The Foreman — Pipeline Entry Point & Build Director**: The central coordinator for the BDD pipeline. Invoke explicitly as the-foreman or foreman, when asked "check the site", "where are we", "what's the pipeline status", or when The Onion hands off after completing implementation. This is the main entry point for the storyline plugin. Runs `storyline summary` as the single source of truth.
 argument-hint: "[feature description | @backlog-file.md | build [plan-name]]"
 ---
 
@@ -17,7 +17,7 @@ If invoked with arguments, handle these cases:
 
 <HARD-GATE>
 Do NOT explore the codebase. Do NOT use Explore, Glob, Grep, or Read on source code.
-The blueprint IS your codebase context. Read `.storyline/blueprint.yaml` — that's it.
+The blueprint IS your codebase context. Run `storyline summary` — that's it.
 If no blueprint exists, dispatch the Surveyor. Never explore code yourself.
 </HARD-GATE>
 
@@ -99,20 +99,20 @@ project-root/
 
 **`backlog/`** is pre-pipeline — ideas not yet worked through any phase. When ready, they enter the pipeline via Three Amigos.
 
-There is no `archive/` directory. Git history *is* the archive.
+**`sessions/`** contains completed session bundles — one directory per finished feature with the full discovery package: example map, amigo notes, tech choices, and a manifest. These are permanent and committed.
 
 ## The Pipeline
 
 ```
-The Foreman       The Scout           Phase 1: THREE       Phase 2: MISTER      Phase 3: STICKY       Phase 4: DOCTOR       Phase 5: THE ONION
-(Entry Point)     (Capture Ideas)     AMIGOS (Discover)    GHERKIN (Specify)    STORM (Event Storm)   CONTEXT (Model)       (Plan) → The Foreman
-                                                                                                                             (Build Director)
+The Foreman       The Scout           Phase 1: THREE       Phase 2: MISTER      QUARTERMASTER        Phase 3: STICKY       Phase 4: DOCTOR       Phase 5: THE ONION
+(Entry Point)     (Capture Ideas)     AMIGOS (Discover)    GHERKIN (Specify)    (Tech Research)      STORM (Event Storm)   CONTEXT (Model)       (Plan) → The Foreman
+                                                                                                                                                   (Build Director)
 
 .storyline/
-blueprint.yaml ──→ backlog/        ──→ workbench/         ──→ features/        ──→ blueprint.yaml    ──→ blueprint.yaml    ──→ plans/
-(tech_stack,        *.md                example-map.yaml      *.feature              (events,              (bounded_contexts,    YYYY-MM-DD-<feature>.md
- bounded_contexts,                                                                    commands)             invariants,
- gaps)                                                                                                      relationships)
+blueprint.yaml ──→ backlog/        ──→ workbench/         ──→ features/        ──→ workbench/        ──→ blueprint.yaml    ──→ blueprint.yaml    ──→ plans/
+(tech_stack,        *.md                example-map.yaml      *.feature              tech-choices.md        (events,              (bounded_contexts,    YYYY-MM-DD-<feature>.md
+ bounded_contexts,                                                                                           commands)             invariants,
+ gaps)                                                                                                                             relationships)
 ```
 
 Each phase produces **concrete artifacts** that feed into `blueprint.yaml` or `features/`. Every line of code traces back to a business behavior, and every business behavior is validated by a test.
@@ -134,8 +134,8 @@ TodoWrite: Foreman: checking the site
 **Step 1: Read the site.**
 
 ```bash
-# Check for blueprint
-cat .storyline/blueprint.yaml 2>/dev/null
+# Check for blueprint — summary also lists available view commands per context
+storyline summary 2>/dev/null || echo "no blueprint yet"
 
 # Check if source code exists (any files outside .storyline/)
 ls src/ 2>/dev/null || find . -maxdepth 2 -name "*.ts" -o -name "*.py" -o -name "*.js" -o -name "*.rb" 2>/dev/null | head -5
@@ -208,11 +208,17 @@ If code has changed since `meta.updated_at`:
 TodoWrite: Foreman: blueprint's current — putting the amigos on the case
 ```
 
-> "Blueprint's in good shape. Let's get the amigos on this."
+If the user's description is already a proper user story (`As a... / I want... / So that...`), proceed directly. If it's plain language, reframe it first and confirm:
+
+> "Before I get the amigos on this, let me frame it as a user story:
+> **As a** [role] **I want** [action] **so that** [value].
+> Does that capture what you mean?"
+
+Adjust based on their response, then:
 
 → `Skill: storyline:three-amigos`
 
-Pass the feature description to Three Amigos so they can start without re-asking.
+Pass the confirmed user story to Three Amigos so they can start without re-asking.
 
 ### Scenario 5: Blueprint exists AND no feature specified
 
@@ -229,6 +235,33 @@ If there are gaps or open questions in the blueprint, surface them:
 > "I see a few gaps in the blueprint worth looking at: [list top gaps by severity]. Want to tackle one of these, or do you have something else in mind?"
 
 Once the user specifies a feature → proceed as Scenario 4.
+
+### Scenario 6: Feature files exist but no tech-choices.md
+
+When Mister Gherkin has finished (commands have `feature_files`) but `.storyline/workbench/tech-choices.md` does not yet exist:
+
+```
+TodoWrite: Foreman: scenarios are written — calling in the quartermaster
+```
+
+> "Scenarios are locked in. Before The Onion starts planning, let me get the Quartermaster to check what's on the shelf."
+
+Dispatch the Quartermaster agent:
+
+```
+Agent (subagent_type: "storyline:quartermaster"):
+  prompt: |
+    Research packages and libraries for the feature currently being built.
+    The feature files are in .storyline/features/.
+    Run `storyline summary` to load the project context and tech stack.
+    Write your findings to .storyline/workbench/tech-choices.md.
+    Work from: [project directory]
+```
+
+After the Quartermaster completes, continue with Sticky Storm / Doctor Context dispatch (if needed) and then The Onion.
+
+**The Onion reads tech-choices.md:** When dispatching or continuing to The Onion, include this instruction:
+> "Read `.storyline/workbench/tech-choices.md` if it exists — the Quartermaster has researched which packages to use. Follow those recommendations unless you have a specific reason not to."
 
 ---
 
@@ -247,7 +280,7 @@ TodoWrite: Foreman: plan's ready — time for the briefing
 Read the key artifacts and present a briefing to the user (and to yourself — this is critical context for a new session):
 
 ```
-Read: .storyline/blueprint.yaml
+Bash: storyline summary
 Glob: .storyline/plans/*.md          ← List available plans; read the selected plan
 Glob: .storyline/workbench/amigo-notes/*.md
 Glob: .storyline/features/*.feature
@@ -383,7 +416,28 @@ If yes, tell the user to run `/permissions` and switch to `acceptEdits` mode. If
 
 **The build loop** — for each task in the implementation plan:
 
-**1. Developer Amigo builds:**
+**1. Testing Amigo writes the acceptance test first:**
+
+```
+Agent (subagent_type: "storyline:testing-amigo"):
+  prompt: |
+    ## Your notes from previous sessions:
+    Read your persona memory from .storyline/personas/testing-amigo.md (may not exist yet on first session).
+
+    ## Your task:
+    Read the current task from .storyline/plans/<plan-filename>.md — identify the next pending task
+    and the Gherkin scenario(s) it corresponds to in .storyline/features/.
+
+    ## Your discovery notes — risks you flagged:
+    Read .storyline/workbench/amigo-notes/testing.md for your notes from the discovery session.
+
+    Write the acceptance test for this task BEFORE any implementation exists.
+    The test must be RED — if it passes before the Developer builds anything, it is not a valid test.
+    Verify the test fails, then commit the failing test and report back.
+    Use context7 for test framework docs.
+```
+
+**2. Developer Amigo implements:**
 
 ```
 Agent (subagent_type: "storyline:developer-amigo"):
@@ -393,16 +447,18 @@ Agent (subagent_type: "storyline:developer-amigo"):
 
     ## Your task:
     Read the current task from .storyline/plans/<plan-filename>.md — pick up the next pending task.
+    The Testing Amigo has already written a failing acceptance test for this task.
 
     ## Your discovery notes from Three Amigos:
     Read .storyline/workbench/amigo-notes/developer.md for your notes from the discovery session.
 
-    Build it. Follow Outside-in TDD: acceptance test first, then unit tests, then implementation.
+    Implement until the acceptance test is GREEN. Follow Outside-in TDD: the acceptance test is already
+    there — now write unit tests for the inner loop, then implement.
     Use context7 for framework/library docs.
-    Commit when done and report back.
+    Commit when the acceptance test passes and report back.
 ```
 
-**2. Testing Amigo reviews:**
+**3. Testing Amigo verifies green + adds edge cases:**
 
 ```
 Agent (subagent_type: "storyline:testing-amigo"):
@@ -416,12 +472,13 @@ Agent (subagent_type: "storyline:testing-amigo"):
     ## Your discovery notes — risks you flagged:
     Read .storyline/workbench/amigo-notes/testing.md for your notes from the discovery session.
 
-    Review the tests — are they covering the edge cases you worried about?
-    Add any missing tests. Use context7 for test framework docs.
-    Commit and report back.
+    Confirm the acceptance test is green. Then review: are the edge cases you worried about during
+    discovery covered? Add any missing tests.
+    Use context7 for test framework docs.
+    Commit any additions and report back.
 ```
 
-**3. (Optional — complex features) Product Amigo validates:**
+**4. (Optional — complex features) Product Amigo validates:**
 
 ```
 Agent (subagent_type: "storyline:product-amigo"):
@@ -435,7 +492,7 @@ Agent (subagent_type: "storyline:product-amigo"):
     Does this match what we discussed? Is the behavior what the user expects?
 ```
 
-**4. Check: tests green? Update todo and move to next task.**
+**5. Check: tests green? Update todo and move to next task.**
 
 ```
 TodoWrite: Foreman: task [N] of [total] — walls are going up
@@ -503,7 +560,7 @@ Agent (subagent_type: "storyline:security-amigo"):
     Also run git log --oneline -10 and git diff HEAD~[task count] to see the actual changes.
 
     ## Blueprint:
-    Read the blueprint at .storyline/blueprint.yaml for project context.
+    Run `storyline summary` for project context. For specific contexts, use `storyline view --context "<name>"` with names from the summary output.
 
     Write your findings to .storyline/workbench/amigo-notes/security.md
     Focus on the code that was just changed — not the entire codebase.
@@ -581,16 +638,34 @@ Read all refinement notes. Categorize findings:
 TodoWrite: Foreman: final inspection done — [N] scenarios refined, [M] items to backlog
 ```
 
-If Mister Gherkin updated feature files, run validate + stamp and commit everything:
+If Mister Gherkin updated feature files, run validate + stamp:
 
 ```bash
 storyline validate
 storyline stamp
-git add .storyline/
-git commit -m "refine: scenario refinement after [feature name] implementation"
 ```
 
-> "Building's done, specs are updated, crew's notes are filed. Ready for the next job."
+**Step 5: Archive the session**
+
+Before cleaning up the workbench, archive all discovery artifacts for this feature:
+
+```bash
+storyline archive --feature "<feature name>"
+git add .storyline/sessions/ .storyline/
+git commit -m "refine: scenario refinement + session archive for [feature name]"
+```
+
+The session archive lives at `.storyline/sessions/YYYY-MM-DD-<feature>/` and contains the example map, amigo notes, tech choices, and a manifest — the full story of how this feature was discovered and decided.
+
+After archiving, clean up the workbench:
+
+```bash
+storyline housekeeping --cleanup
+git add .storyline/
+git commit -m "chore: workbench cleanup after [feature name]"
+```
+
+> "Building's done, specs are updated, session's archived. Ready for the next job."
 
 ---
 
@@ -605,7 +680,7 @@ TodoWrite: Foreman: checking the site
 Read the blueprint and working directory, then present a progress report:
 
 ```bash
-cat .storyline/blueprint.yaml
+storyline summary
 ls .storyline/features/*.feature 2>/dev/null
 ls .storyline/plans/ 2>/dev/null
 ls .storyline/workbench/ 2>/dev/null
@@ -634,6 +709,10 @@ Use the same state detection logic as Role 1, then generate a summary:
 ### Phase 2: Mister Gherkin (Specify) ✅
 - 4 feature files, 18 scenarios
 - Commands with feature files: 6/6
+
+### The Quartermaster (Tech Research) ✅
+- workbench/tech-choices.md
+- 3 packages recommended, 1 build-it-yourself
 
 ### Phase 3: Sticky Storm (Event Storm) ✅
 - 9 domain events in blueprint
@@ -664,7 +743,7 @@ Also show the current todo list if one exists.
 
 ## State Detection Reference
 
-Read `blueprint.yaml` content to determine what's happened. No scattered file scanning needed — the blueprint is the single source of truth:
+Run `storyline summary` to determine what's happened. No scattered file scanning needed — the blueprint is the single source of truth. The summary output also lists available `storyline view --context` commands for detailed context inspection:
 
 | What blueprint shows | What it means | What to do |
 |---|---|---|
@@ -672,6 +751,7 @@ Read `blueprint.yaml` content to determine what's happened. No scattered file sc
 | `bounded_contexts` empty or absent | Surveyor hasn't run | Dispatch Surveyor |
 | `tech_stack` empty or absent | Scout hasn't run | Suggest `/storyline:the-scout` |
 | Contexts exist but commands have no `feature_files` | Mister Gherkin hasn't run | Suggest `/storyline:mister-gherkin` |
+| Commands have `feature_files` but no `workbench/tech-choices.md` | Quartermaster hasn't run | Dispatch Quartermaster agent |
 | Commands exist but aggregates have no `events` | Sticky Storm hasn't run | Dispatch Sticky Storm agent |
 | Events exist but no `invariants` or `relationships` | Doctor Context hasn't run | Dispatch Doctor Context agent |
 | `plans/*.md` exists (glob matches) | The Onion wrote a plan | Present build choice (Role 2) |
@@ -685,7 +765,7 @@ Check `meta.updated_at` against git log to detect staleness.
 
 You have access to tools that support the pipeline:
 
-- **Glob/Grep/Read**: Read `blueprint.yaml`, scan `.storyline/features/` and `.storyline/workbench/`
+- **Bash**: Run `storyline summary` (overview), `storyline view --context X` (detail), scan `.storyline/features/` and `.storyline/workbench/`
 - **Write/Edit**: Generate and update `blueprint.yaml`, feature files, working docs
 - **Bash**: Run `storyline` helpers, create directories, run build tools
 - **Agent (subagents)**: Delegate complex analysis to focused workers (Surveyor)
@@ -759,6 +839,7 @@ TodoWrite([
   { content: "Scout: tech stack and ideas captured",                    status: "completed",   activeForm: "The Scout is scanning the project" },
   { content: "Three Amigos: discovery session complete",                status: "completed",   activeForm: "The amigos are working the feature" },
   { content: "Mister Gherkin: scenarios written",                       status: "in_progress", activeForm: "Mister Gherkin is writing scenarios" },
+  { content: "Quartermaster: tech choices researched",                  status: "pending",     activeForm: "Quartermaster is checking the stores" },
   { content: "Sticky Storm: domain events discovered",                  status: "pending",     activeForm: "Sticky Storm is blowing through the domain" },
   { content: "Doctor Context: domain model complete",                   status: "pending",     activeForm: "Doctor Context is drawing boundaries" },
   { content: "Foreman: plan ready — picking the right crew",            status: "pending",     activeForm: "Foreman is reviewing the build plan" }

@@ -26,7 +26,7 @@ You care about:
 
 When given a feature to analyze:
 
-1. **Read the blueprint** (`.storyline/blueprint.yaml`) — understand aggregates, events, commands, relationships between bounded contexts
+1. **Read the blueprint** — run `storyline summary` for overview, then `storyline view --context "<name>"` (names from summary) for the contexts relevant to this feature
 2. **Explore the codebase deeply** — look at the actual implementation: models, services, handlers, database schemas, existing patterns
 3. **Check for related code** — grep for relevant domain terms, look at how similar features were built
 4. **Assess the tech stack** — what frameworks, libraries, and patterns are in play?

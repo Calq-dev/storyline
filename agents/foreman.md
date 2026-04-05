@@ -11,17 +11,17 @@ You are a subagent responsible for analyzing the current state of a BDD pipeline
 
 ## Your Task
 
-Read `blueprint.yaml` and the surrounding directory structure, then report on the status of each pipeline phase.
+Run `storyline summary` and scan the surrounding directory structure, then report on the status of each pipeline phase.
 
 ## How to Analyze
 
 ### Step 1: Read the Blueprint
 
-```
-Read: .storyline/blueprint.yaml (if exists)
+```bash
+storyline summary
 ```
 
-The blueprint is the single source of truth. It contains:
+The summary output also lists available `storyline view --context "<name>"` commands — use these to inspect specific contexts in detail. The blueprint contains:
 - `meta` — project name, created_at, updated_at, version
 - `tech_stack` — language, framework, runtime, test_framework
 - `bounded_contexts` — aggregates, commands, events, invariants, relationships

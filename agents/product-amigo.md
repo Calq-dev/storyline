@@ -26,7 +26,7 @@ You care about:
 
 When given a feature to analyze:
 
-1. **Read the blueprint** (`.storyline/blueprint.yaml`) — understand the bounded contexts, existing glossary, and gaps
+1. **Read the blueprint** — run `storyline summary` for overview (tech stack, bounded contexts, glossary, gaps); use `storyline view --context "<name>"` (names from summary) if you need detail on a specific context
 2. **Read existing feature files** (`.storyline/features/`) — what behavior is already specified?
 3. **Check the backlog** (`.storyline/backlog/`) — any related ideas or plans?
 

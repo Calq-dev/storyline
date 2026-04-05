@@ -9,7 +9,7 @@ description: |
 # Mister Gherkin — BDD Pipeline Phase 2: Specify
 
 <HARD-GATE>
-Do NOT explore the codebase. Read the blueprint and the example map — that's your input.
+Do NOT explore the codebase. Run `storyline summary` for project context, then read the example map — that's your input.
 The Three Amigos session already explored the code. You formalize what was discovered.
 If a rule is too vague, ask the USER, don't go digging in code for answers.
 </HARD-GATE>
@@ -159,6 +159,38 @@ Save all `.feature` files to `.storyline/features/`:
 ```bash
 mkdir -p .storyline/features
 ```
+
+### Scenario Quality Gate
+
+Before updating the blueprint or handing off to The Foreman, run a mandatory quality check on every scenario in every feature file you just wrote.
+
+Check for the following issues and fix them directly — do not leave them for later:
+
+**1. Imperative steps**
+Scan for UI-mechanical language: "klik", "click", "vul in", "fill in", "navigate to", "navigeer naar", "open", "select", "press", "scroll". These are imperative steps that describe *how*, not *what*. Rewrite them declaratively — describe the outcome or intent, not the user action.
+
+```gherkin
+# Imperative — fix this
+When the user clicks the "Submit Order" button
+
+# Declarative — aim for this
+When the customer submits their order
+```
+
+**2. Multiple When-steps**
+If a scenario has more than one `When` step (including `And` after a `When` that introduces a new action), it is testing more than one behavior. Split it into two scenarios.
+
+**3. Scenarios longer than 7 steps**
+Count `Given`, `When`, `Then`, and `And` steps together. If any scenario has more than 7, either simplify it or extract shared setup into a `Background:` block.
+
+**4. Missing sad-path coverage**
+For every rule that has at least one happy-path scenario: check that at least one sad-path scenario also exists for that rule. A rule with only success cases is not fully specified. Add the missing sad-path scenario, tagged `@sad-path`.
+
+After running this check, report what was corrected:
+
+> "Quality gate: found and fixed [N] issues — [X imperative steps rewritten, Y scenarios split, Z sad paths added]. No issues remaining."
+
+If nothing needed fixing: "Quality gate: all [N] scenarios pass — no issues found."
 
 ### After Writing Feature Files: Update the Blueprint
 

@@ -62,9 +62,12 @@ As you work through scenarios, update dynamically: "The Onion: layer 3 of 5 — 
 This is the most important step. Before writing a single line of code or step definition, load the consolidated blueprint and feature files. Everything you need — the domain model, events, commands, invariants, tech stack, gaps, glossary, and bounded context relationships — lives in a single file.
 
 **Load the blueprints:**
+```bash
+storyline summary                        # overview: tech stack, context names, aggregate counts
+# Then for each context you'll be implementing:
+storyline view --context "<name>"        # full detail: commands, events, invariants, relationships
 ```
-Read: .storyline/blueprint.yaml          ← Single source of truth: domain, events, commands,
-                                               invariants, tech stack, glossary, gaps, relationships
+```
 Glob: .storyline/features/*.feature      ← All behavior specs
 Glob: .storyline/workbench/*.md            ← Any working notes from earlier phases
 ```

@@ -8,7 +8,7 @@
 import { test, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -567,6 +567,43 @@ test("test_summary_on_empty_blueprint", () => {
   assert.ok(result.stdout.includes("Test App"), "Expected project name in summary");
 });
 
+test("test_summary_includes_context_views_section", () => {
+  const d = tmp();
+  setupBddDir(d);
+  run(["init", "--project", "Test App"], d);
+  run(["add-context", "Payment"], d);
+  run(["add-context", "Ordering"], d);
+
+  const result = run(["summary"], d);
+  assert.equal(result.exitCode, 0, `summary failed:\nSTDOUT: ${result.stdout}\nSTDERR: ${result.stderr}`);
+  assert.ok(result.stdout.includes("## Context Views"), "Expected '## Context Views' section in summary");
+  assert.ok(result.stdout.includes('storyline view --context "Payment"'), "Expected view command for Payment");
+  assert.ok(result.stdout.includes('storyline view --context "Ordering"'), "Expected view command for Ordering");
+});
+
+test("test_summary_includes_cli_commands_section", () => {
+  const d = tmp();
+  setupBddDir(d);
+  run(["init", "--project", "Test App"], d);
+
+  const result = run(["summary"], d);
+  assert.equal(result.exitCode, 0, `summary failed:\nSTDOUT: ${result.stdout}\nSTDERR: ${result.stderr}`);
+  assert.ok(result.stdout.includes("## Available CLI Commands"), "Expected '## Available CLI Commands' section");
+  assert.ok(result.stdout.includes("storyline validate"), "Expected validate command listed");
+  assert.ok(result.stdout.includes("storyline housekeeping"), "Expected housekeeping command listed");
+  assert.ok(result.stdout.includes("storyline add-context"), "Expected add-context command listed");
+});
+
+test("test_summary_no_context_views_when_empty", () => {
+  const d = tmp();
+  setupBddDir(d);
+  run(["init", "--project", "Test App"], d);
+
+  const result = run(["summary"], d);
+  assert.equal(result.exitCode, 0, `summary failed:\nSTDOUT: ${result.stdout}\nSTDERR: ${result.stderr}`);
+  assert.ok(!result.stdout.includes("## Context Views"), "Expected NO '## Context Views' section on empty blueprint");
+});
+
 // ===========================================================================
 // View tests
 // ===========================================================================
@@ -735,4 +772,87 @@ test("test_housekeeping_idempotent", () => {
   const versionAfterSecond = versionMatch2 ? parseInt(versionMatch2[1], 10) : 0;
 
   assert.equal(versionAfterSecond, versionAfterFirst, "Version should not change on idempotent housekeeping");
+});
+
+// ===========================================================================
+// Archive tests
+// ===========================================================================
+
+test("test_archive_creates_session_directory", () => {
+  const d = tmp();
+  setupBddDir(d);
+  run(["init", "--project", "Test App"], d);
+
+  const result = run(["archive", "--feature", "shopping cart"], d);
+  assert.equal(result.exitCode, 0, `archive failed:\nSTDOUT: ${result.stdout}\nSTDERR: ${result.stderr}`);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const sessionDir = join(d, ".storyline", "sessions", `${today}-shopping-cart`);
+  assert.ok(existsSync(sessionDir), `Expected session directory at ${sessionDir}`);
+});
+
+test("test_archive_writes_session_manifest", () => {
+  const d = tmp();
+  setupBddDir(d);
+  run(["init", "--project", "My Project"], d);
+
+  run(["archive", "--feature", "checkout flow"], d);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const manifest = join(d, ".storyline", "sessions", `${today}-checkout-flow`, "session.yaml");
+  assert.ok(existsSync(manifest), "Expected session.yaml to exist");
+
+  const content = readFileSync(manifest, "utf-8");
+  assert.ok(content.includes("feature: checkout flow"), "Expected feature name in manifest");
+  assert.ok(content.includes("project: My Project"), "Expected project name in manifest");
+});
+
+test("test_archive_copies_workbench_artifacts", () => {
+  const d = tmp();
+  setupBddDir(d);
+  run(["init", "--project", "Test App"], d);
+
+  // Create a workbench artifact
+  const workbench = join(d, ".storyline", "workbench");
+  mkdirSync(workbench, { recursive: true });
+  writeFileSync(join(workbench, "example-map.yaml"), "feature: test\nrules: []");
+
+  run(["archive", "--feature", "my feature"], d);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const archived = join(d, ".storyline", "sessions", `${today}-my-feature`, "example-map.yaml");
+  assert.ok(existsSync(archived), "Expected example-map.yaml to be archived");
+});
+
+test("test_archive_slugifies_feature_name", () => {
+  const d = tmp();
+  setupBddDir(d);
+  run(["init", "--project", "Test App"], d);
+
+  run(["archive", "--feature", "User Login & Auth!"], d);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const sessionDir = join(d, ".storyline", "sessions", `${today}-user-login--auth`);
+  assert.ok(existsSync(sessionDir), "Expected slugified directory name");
+});
+
+test("test_archive_fails_on_duplicate", () => {
+  const d = tmp();
+  setupBddDir(d);
+  run(["init", "--project", "Test App"], d);
+
+  run(["archive", "--feature", "payments"], d);
+  const result = run(["archive", "--feature", "payments"], d);
+
+  assert.equal(result.exitCode, 1, "Expected second archive to fail");
+  assert.ok(result.stderr.includes("already exists"), "Expected 'already exists' error");
+});
+
+test("test_archive_requires_feature_flag", () => {
+  const d = tmp();
+  setupBddDir(d);
+  run(["init", "--project", "Test App"], d);
+
+  const result = run(["archive"], d);
+  assert.equal(result.exitCode, 1, "Expected archive without --feature to fail");
 });

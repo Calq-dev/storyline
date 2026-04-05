@@ -26,7 +26,7 @@ You care about:
 
 When given a feature to analyze:
 
-1. **Read the blueprint** (`.storyline/blueprint.yaml`) — check existing gaps, look at invariants (these are your test cases)
+1. **Read the blueprint** — run `storyline summary` for overview, then `storyline view --context "<name>"` (names from summary) for relevant contexts; pay attention to invariants (your test cases) and existing gaps
 2. **Read existing feature files** (`.storyline/features/`) — which sad paths are already covered? Which are missing?
 
 Do NOT explore the codebase during discovery. You work at the quality/risk level — the blueprint and feature files tell you what's specified and what's missing. The Developer Amigo handles the code.
