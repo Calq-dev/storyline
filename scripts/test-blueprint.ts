@@ -1054,9 +1054,10 @@ test("test_resolve_question", () => {
   assert.equal(result.exitCode, 0, `resolve-question failed:\nSTDOUT: ${result.stdout}\nSTDERR: ${result.stderr}`);
 
   const content = readFileSync(join(d, ".storyline", "blueprint.yaml"), "utf-8");
-  assert.ok(content.includes("status: resolved"), "Expected status to be resolved");
+  // yaml may serialize the scalar with or without quotes depending on source style
+  assert.ok(/status:\s+"?resolved"?/.test(content), "Expected status to be resolved");
   assert.ok(content.includes("Only when the feature touches auth"), "Expected answer text in blueprint");
-  assert.ok(/resolved_at:\s*\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(content), "Expected resolved_at ISO datetime in blueprint");
+  assert.ok(/resolved_at:\s+"?\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(content), "Expected resolved_at ISO datetime in blueprint");
 
   const validate = run(["validate"], d);
   assert.equal(validate.exitCode, 0, `validate failed after resolve-question:\nSTDOUT: ${validate.stdout}\nSTDERR: ${validate.stderr}`);
@@ -1090,10 +1091,11 @@ test("test_resolve_question_already_resolved", () => {
   run(["resolve-question", "--id", "Q-001", "--answer", "Original answer"], d);
 
   // Capture the resolved_at timestamp written by the first resolution
+  // The yaml library may serialize with or without quotes, so strip them
   const afterFirst = readFileSync(join(d, ".storyline", "blueprint.yaml"), "utf-8");
-  const resolvedAtMatch = afterFirst.match(/resolved_at:\s*(\S+)/);
+  const resolvedAtMatch = afterFirst.match(/resolved_at:\s+"?(\d{4}-\d{2}-\d{2}T[\d:.Z]+)"?/);
   assert.ok(resolvedAtMatch, "Expected resolved_at to be set after first resolution");
-  const originalResolvedAt = resolvedAtMatch![1];
+  const originalResolvedAt = resolvedAtMatch![1]; // the raw timestamp without quotes
 
   // Second resolution
   const result = run(
