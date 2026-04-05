@@ -472,8 +472,8 @@ function validateSchema(data: any, strict = false): string[] {
         if ("answer" in q && q.answer != null && typeof q.answer !== "string") {
           errors.push(fmtError(`${qprefix}.answer`, "'answer' must be a string.", "Set 'answer' to a string or remove it."));
         }
-        if ("decided_at" in q && q.decided_at != null && typeof q.decided_at !== "string") {
-          errors.push(fmtError(`${qprefix}.decided_at`, "'decided_at' must be a string.", "Use format: '2026-04-05'."));
+        if ("resolved_at" in q && q.resolved_at != null && typeof q.resolved_at !== "string") {
+          errors.push(fmtError(`${qprefix}.resolved_at`, "'resolved_at' must be a string.", "Use format: '2026-04-05'."));
         }
       }
     }
@@ -1295,6 +1295,10 @@ function cmdResolveQuestion(args: { id: string; answer: string }, cwd: string) {
     }
   }
 
+  if (!qNode) {
+    console.error(`Internal error: question '${args.id}' found in data but not in YAML AST.`);
+    process.exit(1);
+  }
   qNode.set("status", "resolved");
   qNode.set("answer", args.answer);
   qNode.set("resolved_at", nowIso());

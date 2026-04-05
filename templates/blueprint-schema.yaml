@@ -98,4 +98,4 @@ questions:                                  # optional section, list
     affects: ["Payment"]                    # required: list of existing context names
     status: "open"                          # required: open | resolved | deferred
     answer: "Card and bank transfer only"   # optional: the decision — fill in when status → resolved
-    decided_at: "2026-04-05"               # optional: when the decision was made
+    resolved_at: "2026-04-05"              # optional: when the decision was made
