@@ -10,10 +10,42 @@
 
 import { test, afterEach } from "node:test";
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { mkdtempSync, writeFileSync, rmSync, existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
+
+// Path to the bin/storyline CLI wrapper used for subprocess (CLI) tests.
+const BIN = join(fileURLToPath(import.meta.url), "..", "..", "bin", "storyline");
+
+// Path to an existing blueprint used as a real model file for the happy-path CLI test.
+const REAL_BLUEPRINT = join(
+  fileURLToPath(import.meta.url),
+  "..",
+  "..",
+  ".storyline",
+  "blueprint.yaml",
+);
+
+// ---------------------------------------------------------------------------
+// CLI subprocess helper
+// ---------------------------------------------------------------------------
+
+function runCLI(
+  args: string[],
+  cwd?: string,
+): { stdout: string; stderr: string; exitCode: number } {
+  const result = spawnSync(BIN, args, {
+    cwd: cwd ?? tmpdir(),
+    encoding: "utf-8",
+  });
+  return {
+    stdout: result.stdout ?? "",
+    stderr: result.stderr ?? "",
+    exitCode: result.status ?? 1,
+  };
+}
 
 // This import will fail until scaffold.ts is written — that is the point.
 import {
@@ -523,6 +555,75 @@ test("generatePython: value object file exists and contains 'class Money'", () =
 // ---------------------------------------------------------------------------
 // Integration tests — printSummary (Phase-2, RED until implemented)
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// CLI end-to-end tests — subprocess via bin/storyline scaffold
+// ---------------------------------------------------------------------------
+
+test("CLI scaffold: exit code 0 and at least one .ts file created (typescript)", () => {
+  const d = tmp();
+
+  const result = runCLI([
+    "scaffold",
+    "--model", REAL_BLUEPRINT,
+    "--output", d,
+    "--lang", "typescript",
+  ]);
+
+  assert.equal(
+    result.exitCode,
+    0,
+    `Expected exit code 0, got ${result.exitCode}.\nSTDOUT: ${result.stdout}\nSTDERR: ${result.stderr}`,
+  );
+
+  // At least one .ts file must have been created somewhere in the output dir.
+  // Use spawnSync to find .ts files — avoids shell glob expansion issues.
+  const find = spawnSync("find", [d, "-name", "*.ts"], { encoding: "utf-8" });
+  const tsFiles = find.stdout.trim().split("\n").filter(Boolean);
+  assert.ok(
+    tsFiles.length > 0,
+    `Expected at least one .ts file in output dir, found none.\nOutput dir: ${d}`,
+  );
+});
+
+test("CLI scaffold: non-zero exit code and stderr contains 'Model file not found' for missing model", () => {
+  const d = tmp();
+
+  const result = runCLI([
+    "scaffold",
+    "--model", join(d, "missing.yaml"),
+    "--output", "/tmp/scaffold-error-test",
+    "--lang", "typescript",
+  ]);
+
+  assert.notEqual(
+    result.exitCode,
+    0,
+    `Expected non-zero exit code for missing model file, got 0.\nSTDOUT: ${result.stdout}\nSTDERR: ${result.stderr}`,
+  );
+  assert.ok(
+    result.stderr.includes("Model file not found"),
+    `Expected stderr to contain 'Model file not found', got:\n${result.stderr}`,
+  );
+});
+
+test("CLI usage: storyline with no args exits non-zero and output contains 'scaffold --model'", () => {
+  const result = runCLI([]);
+
+  // The binary exits 1 when called with no arguments.
+  assert.notEqual(
+    result.exitCode,
+    0,
+    `Expected non-zero exit code for no-args invocation, got 0.\nSTDOUT: ${result.stdout}\nSTDERR: ${result.stderr}`,
+  );
+
+  // The usage text is written to stderr by bin/storyline.
+  const combined = result.stdout + result.stderr;
+  assert.ok(
+    combined.includes("scaffold --model"),
+    `Expected output to contain 'scaffold --model', got:\n${combined}`,
+  );
+});
 
 test("printSummary: output contains all four expected lines", () => {
   const d = tmp();
