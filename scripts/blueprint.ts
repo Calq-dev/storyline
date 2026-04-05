@@ -1666,6 +1666,27 @@ function globFiles(dir: string, suffix: string): string[] {
 // Argument parsing & dispatch
 // ---------------------------------------------------------------------------
 
+const ALLOWED_TECH_STACK_FIELDS = new Set([
+  "language", "framework", "runtime", "package_manager", "test_framework",
+]);
+
+function cmdUpdateTechStack(args: { field: string; value: string }, cwd: string) {
+  if (!ALLOWED_TECH_STACK_FIELDS.has(args.field)) {
+    console.error(`Error: unknown tech_stack field '${args.field}'. Allowed: ${[...ALLOWED_TECH_STACK_FIELDS].join(", ")}`);
+    process.exit(1);
+  }
+  const [bp] = requireBlueprint(cwd);
+  const doc = loadDocument(bp);
+  const techStack = findDocNode(doc, ["tech_stack"]);
+  if (techStack == null) {
+    console.error("Error: tech_stack section not found in blueprint.");
+    process.exit(1);
+  }
+  techStack.set(args.field, args.value);
+  saveDocument(bp, doc);
+  console.log(`Updated tech_stack.${args.field} = ${args.value}`);
+}
+
 function printUsage(): never {
   console.error(`Usage: blueprint <command> [options]
 
@@ -1688,7 +1709,8 @@ Commands:
   summary                                        Compact blueprint overview
   view --context X                               View a single bounded context
   housekeeping [--cleanup] [--phase X]           Validate + stamp + cleanup
-  archive --feature "name"                       Archive session artifacts to sessions/`);
+  archive --feature "name"                       Archive session artifacts to sessions/
+  update-tech-stack --field X --value "Y"        Update a tech_stack field (language, framework, runtime, package_manager, test_framework)`);
   process.exit(1);
 }
 
@@ -1998,6 +2020,23 @@ function main() {
 
     case "session-init": {
       cmdSessionInit(cwd);
+      break;
+    }
+
+    case "update-tech-stack": {
+      const { values } = parseArgs({
+        args: rest,
+        options: {
+          field: { type: "string" },
+          value: { type: "string" },
+        },
+        strict: true,
+      });
+      if (!values.field || !values.value) {
+        console.error("Error: --field and --value are required for update-tech-stack");
+        process.exit(1);
+      }
+      cmdUpdateTechStack({ field: values.field, value: values.value }, cwd);
       break;
     }
 

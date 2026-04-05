@@ -1,15 +1,15 @@
 meta:
   project: Storyline
   created_at: '2026-04-04'
-  updated_at: '2026-04-05T19:04:42.754Z'
-  version: 17
+  updated_at: '2026-04-05T19:29:55.094Z'
+  version: 21
 tech_stack:
   language: "TypeScript, Markdown, Bash, YAML"
   framework: "Claude Code Plugin SDK"
   runtime: "Node.js 18+ via tsx (ESM), Claude Code CLI (claude.ai/code)"
   package_manager: "npm"
   test_framework: "node:test (scripts/test-blueprint.ts, 60 tests;
-    scripts/test-changeset.ts, 14 tests)"
+    scripts/test-changeset.ts, 14 tests; scripts/test-scaffold.ts, 36 tests)"
   key_dependencies:
     - name: "yaml"
       version: "^2.7.0"
@@ -334,7 +334,7 @@ bounded_contexts:
   - name: "Implementation"
     description: "Outside-in TDD implementation. The Onion plans and executes
       implementation from acceptance tests inward. Plans are persistent dated
-      files in .storyline/plans/. Includes scaffold.py for code generation, The
+      files in .storyline/plans/. Includes scaffold.ts for code generation, The
       Foreman's Crew mode for amigo-based building, The Appraiser for
       triangulated estimation, and scenario refinement in the post-build flow."
     aggregates:
@@ -373,7 +373,7 @@ bounded_contexts:
           - "Outside-in TDD: acceptance test first, then inner loop (unit test,
             implement, refactor)"
           - "Outer loop stays red while inner loop cycles"
-          - "scaffold.py supports TypeScript and Python code generation"
+          - "scaffold.ts supports TypeScript and Python code generation"
           - "Scaffold reads blueprint.yaml or legacy domain-model.json"
           - "Implementation plans are persistent dated files in
             .storyline/plans/YYYY-MM-DD-<feature>.md"
@@ -619,9 +619,8 @@ glossary:
   Scaffold:
     definitions:
       - context: "Implementation"
-        meaning: "Python script (skills/the-onion/scripts/scaffold.py) that generates
-          TypeScript or Python directory structure and skeleton files from the
-          blueprint's bounded contexts and aggregates."
+        meaning: "TypeScript module (scripts/scaffold.ts) that generates TypeScript or
+          Python directory structure and skeleton files from the blueprint"
   Stamp:
     definitions:
       - context: "BlueprintManagement"
@@ -735,13 +734,6 @@ glossary:
         meaning: Same file paths, same class names, same directory structure —
           whitespace and comment wording may differ
 gaps:
-  - id: "GAP-001"
-    description: "No automated test coverage for scaffold.py — blueprint.ts has 60
-      tests (test-blueprint.ts) and changeset.ts has 14 tests
-      (test-changeset.ts), but scaffold.py has none"
-    severity: "important"
-    affects:
-      - "Implementation"
   - id: "GAP-003"
     description: "No integration tests verifying the full pipeline flow from Foreman
       through all phases"

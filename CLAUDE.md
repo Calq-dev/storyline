@@ -23,7 +23,8 @@ skills/
   mister-gherkin/SKILL.md         <- Phase 2: Gherkin scenario formalization
   the-appraiser/SKILL.md           <- Triangulated estimation — The Appraiser (PERT, WBS, T-Shirt)
   the-onion/SKILL.md              <- Phase 5: Outside-in TDD implementation
-    scripts/scaffold.py           <- Code scaffolding from blueprint (to be ported to TS)
+scripts/
+  scaffold.ts                     <- Code scaffolding from blueprint (TypeScript port)
 agents/
   foreman.md                      <- Subagent: The Foreman's site inspector
   surveyor.md                     <- Subagent: reverse-engineers codebase into blueprint

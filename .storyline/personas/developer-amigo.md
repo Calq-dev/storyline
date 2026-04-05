@@ -57,6 +57,36 @@ The view does NOT need to be referentially complete -- it's a read-aid for conte
 
 Only Sticky Storm and Doctor Context truly need the complete blueprint.
 
+## scaffold.ts Port (CS-2026-04-05-scaffold-ts-port)
+
+- Phase-1 complete: `scripts/scaffold.ts` exists with `toSnakeCase`, `toKebabCase`, `extractEventNames`, `extractCommandNames`, `loadModel`
+- Phase-2 complete: `generateTypescript`, `generatePython`, `printSummary` implemented — all 31 tests green (commit f3e9ebc)
+- Phase-3 part A complete: `main()` implemented, `bin/storyline scaffold` dispatcher added — all 33 tests green (commit f06d3ed)
+- Phase-3 part B remains: CLI integration tests in `scripts/test-scaffold.ts` (spawn bin/storyline, assert exit codes)
+- `loadModel` uses the `yaml` npm package (`parse` from `"yaml"`) — same dependency already used by `blueprint.ts` via `parseDocument`/`stringify`
+- `toSnakeCase` inserts `_` before every uppercase letter at position > 0, then lowercases: `InvoiceID` → `invoice_i_d` (documented actual behaviour, not normalised)
+- `loadModel` throws `Error` (never `process.exit`) so unit tests can call it directly without killing the runner — changeset constraint enforced
+- `scripts/test-scaffold.ts` imports from `"./scaffold.ts"` (bare .ts extension — tsx resolves this correctly)
+- Key TS divergence from Python: `generateTypescript` skips `application/` AND `infrastructure/` when aggregate has no commands — Python always creates them; this is an intentional improvement
+- `generatePython` always creates all four `__init__.py` files (context, domain, application, infrastructure) regardless of commands — matches Python original
+- `printSummary` uses `process.stdout.write` (not `console.log`) — test suite intercepts `process.stdout.write` directly
+- Template literals (backtick strings) work cleanly as a direct port of Python f-strings for multi-line file content
+
+### ESM/tsx module execution pattern (critical for this codebase)
+
+- tsx loads scripts via `node --import tsx/dist/esm/index.mjs` — ESM mode
+- Calling `main()` unconditionally at module bottom breaks test imports (test runner imports the module, main() fires with wrong argv)
+- The correct guard: `if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) { main(); }`
+- `fileURLToPath` must be imported at the top level with `import { fileURLToPath } from "node:url"`
+- `blueprint.ts` and `changeset.ts` call `main()` unconditionally — they are never imported by test files (tests use spawnSync), so no guard is needed there
+- `scaffold.ts` IS imported by `test-scaffold.ts` directly — guard is essential
+
+### bin/storyline dispatcher pattern
+
+- No-args case must be handled BEFORE any `elif` branching: check `[ -z "$FIRST_ARG" ]` first, print usage, exit 1
+- Adding a new sub-command: add `elif [ "$FIRST_ARG" = "X" ]; then shift; exec node --import ... scripts/X.ts "$@"`
+- Usage block lives in bin/storyline for cross-script commands; individual scripts print their own detailed usage on bad args
+
 ## Workbench Lifecycle Rules
 
 | Artifact | Safe to clean after | Notes |
