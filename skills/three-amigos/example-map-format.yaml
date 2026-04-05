@@ -1,0 +1,79 @@
+feature: "Order Placement"
+story: "As a customer I want to place orders from my cart so that I can purchase products"
+session_date: "2026-04-01"
+participants:
+  - "Product (AI-facilitated)"
+  - "Developer"
+  - "Testing"
+
+codebase_context:
+  existing_models:
+    - "Cart"
+    - "Product"
+    - "User"
+  related_features:
+    - "cart.feature"
+    - "authentication.feature"
+  technical_notes: "Cart service exists, Order service needs to be created"
+
+rules:
+  - id: "R1"
+    description: "A customer must be authenticated to place an order"
+    priority: "must-have"
+    examples:
+      - id: "R1-E1"
+        name: "Authenticated customer places order successfully"
+        context: "Alice is logged in with items in her cart"
+        action: "Alice submits her order"
+        outcome: "Order is created and confirmed with order number"
+        type: "happy-path"
+      - id: "R1-E2"
+        name: "Anonymous user cannot place order"
+        context: "A visitor has items in their cart but is not logged in"
+        action: "Visitor tries to submit the order"
+        outcome: "Redirected to login, cart is preserved"
+        type: "sad-path"
+  - id: "R2"
+    description: "Orders over €100 qualify for free shipping"
+    priority: "should-have"
+    examples:
+      - id: "R2-E1"
+        name: "Order qualifies for free shipping"
+        context: "Alice has items totalling €120 in her cart"
+        action: "Alice submits her order"
+        outcome: "Shipping cost is €0, shown in order summary"
+        type: "happy-path"
+
+questions:
+  - id: "Q1"
+    question: "What payment methods do we support?"
+    why_it_matters: "Affects the checkout flow and external integrations needed"
+    who_can_answer: "Product Owner"
+    best_guess: "Credit card and iDEAL based on market"
+    severity: "critical"
+
+assumptions:
+  - id: "A1"
+    assumption: "Free shipping applies to the cart total after discounts, not before"
+    confidence: "medium"
+    consequence_if_wrong: "Shipping cost calculation will be wrong for discounted orders"
+  - id: "A2"
+    assumption: "Guest checkout is not required — all customers must be registered"
+    confidence: "high"
+    consequence_if_wrong: "Entire authentication flow needs to be made optional"
+
+glossary_candidates:
+  - term: "Order"
+    context: "Ordering"
+    meaning: "A customer's intent to purchase one or more products"
+  - term: "Cart"
+    context: "Ordering"
+    meaning: "A temporary collection of products before purchase is confirmed"
+
+risks:
+  technical:
+    - "No existing order service — needs to be built from scratch"
+  scope:
+    - "Payment integration might be a separate feature"
+  knowledge_gaps:
+    - "Q1 must be resolved before Phase 2"

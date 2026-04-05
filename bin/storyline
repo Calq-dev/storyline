@@ -20,9 +20,16 @@ find_node_modules() {
 }
 
 NM="$(find_node_modules)"
-if [ -n "$NM" ]; then
-  exec node --import "${NM}/tsx/dist/esm/index.mjs" "${SCRIPT_DIR}/scripts/blueprint.ts" "$@"
-else
+if [ -z "$NM" ]; then
   echo "storyline: node_modules not found. Run: npm install" >&2
   exit 1
+fi
+
+# Dispatch to the right script based on first argument
+FIRST_ARG="${1:-}"
+if [ "$FIRST_ARG" = "changeset" ]; then
+  shift
+  exec node --import "${NM}/tsx/dist/esm/index.mjs" "${SCRIPT_DIR}/scripts/changeset.ts" "$@"
+else
+  exec node --import "${NM}/tsx/dist/esm/index.mjs" "${SCRIPT_DIR}/scripts/blueprint.ts" "$@"
 fi

@@ -1,1 +1,3 @@
 node_modules/
+.tmp/
+.storyline/.session-id

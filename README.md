@@ -1,21 +1,23 @@
 # Storyline — From Idea to Working Code
 
-A Claude Code plugin that applies BDD principles to guide software development from discovery through implementation. You describe what you want to build, and a crew of specialized AI agents takes it from exploration through working code.
+A Claude Code plugin that combines **BDD**, **DDD**, and **TDD** to guide software development from discovery through implementation. You describe what you want to build, and a crew of specialized AI agents takes it from exploration through working code — each principle doing its job at the right moment.
 
-> **A note on BDD:** Storyline applies BDD-inspired principles to enforce methodical thinking before implementation — it is not a BDD framework. It does not replace the human conversations and executable specifications that real BDD requires. The loop is not fully closed without a BDD framework (Cucumber, SpecFlow, etc.) running Gherkin scenarios as automated tests in your project — that integration is intentionally out of scope for this plugin.
+> **BDD** surfaces shared understanding before anyone touches code. **DDD** gives that understanding a precise model: bounded contexts, aggregates, events, ubiquitous language. **TDD** closes the loop by building from the outside in, one failing test at a time. Storyline enforces this sequence — it's not possible to skip to implementation without first specifying behavior and modeling the domain.
+
+> **Note:** Storyline applies these principles structurally — it is not a BDD framework. The loop is not fully closed without a framework like Cucumber, Behave, or SpecFlow running Gherkin scenarios as automated tests in your project. That integration is intentionally out of scope.
 
 ## What It Does
 
 You say "I want to add shopping cart persistence" and the pipeline:
 
 1. **The Foreman** assesses the project, checks the blueprint, starts the right process
-2. **Three Amigos** explore the feature from three perspectives (Product, Developer, Testing) — writing shared notes and challenging each other
-3. **Mister Gherkin** formalizes the rules into concrete Gherkin scenarios, pushing back on anything vague
-4. **The Quartermaster** researches packages and libraries for what needs to be built — before anyone writes code
-5. **Sticky Storm** discovers the domain events hiding inside the scenarios (dispatched only if needed)
-6. **Doctor Context** refines bounded contexts, invariants, and the domain glossary (dispatched only if needed)
-7. **The Onion** plans the implementation layer by layer, outside-in
-8. **The Foreman** returns as Build Director — lets you choose how to build: continue here, new session, or **The Crew** (the amigos who discovered the feature now build it)
+2. **Three Amigos** explore the feature from three perspectives (Product, Developer, Testing) — writing shared notes and challenging each other *(BDD)*
+3. **Mister Gherkin** formalizes the rules into concrete Gherkin scenarios, pushing back on anything vague *(BDD)*
+4. **The Quartermaster** researches packages and libraries before anyone writes code
+5. **Sticky Storm** discovers the domain events hiding inside the scenarios *(DDD, dispatched when needed)*
+6. **Doctor Context** refines bounded contexts, invariants, relationships, and the ubiquitous language glossary *(DDD, dispatched when needed)*
+7. **The Onion** plans the implementation layer by layer, outside-in — acceptance test first, then the inner loop *(TDD)*
+8. **The Foreman** returns as Build Director — lets you choose how to build: continue here, new session, or **The Crew**
 
 Everything flows automatically. The pipeline pauses only when human input is needed — vague rules, blocking questions, build approach decisions.
 
@@ -23,14 +25,14 @@ Everything flows automatically. The pipeline pauses only when human input is nee
 
 All project knowledge lives in one file: `.storyline/blueprint.yaml`. Agents read this instead of exploring the codebase every time. It contains:
 
-- Tech stack
-- Bounded contexts with aggregates, commands, events, policies
-- Glossary (ubiquitous language)
-- Gaps and open questions
+- **Tech stack** — language, framework, test runner, package manager
+- **Bounded contexts** with aggregates, commands, events, policies, relationships, and invariants *(DDD)*
+- **Glossary** — ubiquitous language per context *(DDD)*
+- **Gaps and open questions** — flagged during discovery, resolved before implementation
 
-Feature files (`.feature`) contain the detailed behavioral specs. The blueprint points to them.
+Feature files (`.feature`) contain the detailed behavioral specs. The blueprint points to them via `feature_files` links.
 
-A validation script (`storyline`) enforces schema and referential integrity — agents can't corrupt the structure.
+A CLI (`storyline`) enforces schema and referential integrity — agents can't corrupt the structure.
 
 ## The Crew
 
@@ -51,7 +53,7 @@ Each persona has **persistent memory** across sessions — they get smarter abou
 /plugin install storyline@calq
 ```
 
-Requires Python 3.9+ (for blueprint validation). The plugin auto-installs its Python dependencies on first use.
+Requires Node.js 18+. The blueprint CLI runs via `tsx` (installed with `npm install`).
 
 ## Usage
 
@@ -62,8 +64,8 @@ Requires Python 3.9+ (for blueprint validation). The plugin auto-installs its Py
 # Or with a feature description
 /storyline:the-foreman add shopping cart persistence
 
-# Check status anytime
-/storyline:the-foreman where are we?
+# Jump straight to an existing plan
+/storyline:the-foreman build shopping-cart
 ```
 
 The Foreman auto-detects what's needed:
@@ -73,15 +75,15 @@ The Foreman auto-detects what's needed:
 
 ### The Surveyor
 
-Before the pipeline can add features, it needs to understand what already exists. The Surveyor is a subagent that reverse-engineers your codebase into the blueprint — like a land surveyor mapping terrain before construction begins.
+Before the pipeline can add features, it needs to understand what already exists. The Surveyor reverse-engineers your codebase into the blueprint — like a land surveyor mapping terrain before construction begins.
 
 It runs in three modes:
 
-- **Full survey** — first time on an existing project. Scans your entire codebase (tech stack, domain models, APIs, database schemas, event patterns) and populates `blueprint.yaml` from scratch. Also generates baseline `.feature` files tagged `@surveyed` to capture existing behavior.
-- **Incremental survey** — the blueprint exists but code has changed. Re-scans only what's different and updates the blueprint accordingly.
-- **As-built survey** — after The Onion finishes building a feature. Compares what was planned with what was actually built and updates the blueprint to match reality, like as-built drawings in construction.
+- **Full survey** — first time on an existing project. Scans your codebase (tech stack, domain models, APIs, schemas, event patterns) and populates `blueprint.yaml` from scratch.
+- **Incremental survey** — blueprint exists but code has changed. Re-scans only what's different.
+- **As-built survey** — after The Onion finishes. Compares what was planned with what was built and updates the blueprint to match reality.
 
-The Foreman dispatches the Surveyor automatically — you don't invoke it directly.
+The Foreman dispatches the Surveyor automatically.
 
 ## Project Structure (in your project)
 
@@ -89,7 +91,9 @@ The Foreman dispatches the Surveyor automatically — you don't invoke it direct
 .storyline/
   blueprint.yaml        # Single source of truth
   features/             # Gherkin scenarios (permanent)
-  workbench/            # Transient docs (example map, event notes, estimation report)
+  plans/                # Implementation plans (one per feature, dated)
+  workbench/            # Transient docs (example map, event notes, tech choices)
+  sessions/             # Completed session archives
   personas/             # Persona memory (grows across sessions)
   backlog/              # Feature ideas waiting to enter the pipeline
 ```
@@ -100,42 +104,65 @@ The Foreman dispatches the Surveyor automatically — you don't invoke it direct
 |---|---|---|
 | The Foreman | Skill | Entry point + build director |
 | The Scout | Skill | Project scanning + backlog capture |
-| Three Amigos | Skill | Discovery sessions with persona agents |
-| Mister Gherkin | Skill | Gherkin scenario formalization |
+| Three Amigos | Skill | Discovery sessions with persona agents *(BDD)* |
+| Mister Gherkin | Skill | Gherkin scenario formalization *(BDD)* |
 | The Appraiser | Skill | Triangulated estimation (PERT + WBS + T-Shirt) |
-| The Onion | Skill | Outside-in TDD implementation planning |
-| Surveyor | Agent | Reverse-engineers codebase into blueprint (full, incremental, or as-built) |
-| The Quartermaster | Agent | Package/library research before implementation — build vs. buy decisions |
-| Sticky Storm | Agent | Event Storming (dispatched when needed) |
-| Doctor Context | Agent | DDD modeling (dispatched when needed) |
+| The Onion | Skill | Outside-in TDD implementation planning *(TDD)* |
+| Surveyor | Agent | Reverse-engineers codebase into blueprint |
+| The Quartermaster | Agent | Package/library research — build vs. buy decisions |
+| Sticky Storm | Agent | Event Storming *(DDD)* |
+| Doctor Context | Agent | Bounded context modeling *(DDD)* |
 | Product Amigo | Agent | Business perspective persona |
 | Developer Amigo | Agent | Technical perspective persona |
 | Testing Amigo | Agent | Quality/risk perspective persona |
 | Frontend Amigo | Agent | UI/UX perspective persona (optional) |
 | Security Amigo | Agent | Post-implementation security audit (optional) |
 
-## Storyline CLI
+## Blueprint CLI
+
+The `storyline` CLI is a TypeScript script (`scripts/blueprint.ts`) that agents use for all blueprint mutations. This ensures YAML round-trip safety — no agent ever writes raw YAML by hand.
 
 ```bash
+# Lifecycle
 storyline init --project "Name"
 storyline validate [--strict]
 storyline stamp
+storyline housekeeping [--cleanup]
+storyline session-init          # generate session ID for traceability
+
+# Read
+storyline summary
+storyline view --context "Payment"
+
+# Add domain model elements
 storyline add-context "Payment"
 storyline add-aggregate --context "Payment" --name "Invoice"
-storyline add-event --context "Payment" --aggregate "Invoice" --name "InvoiceSent" --payload "invoiceId,amount"
-storyline add-command --context "Payment" --aggregate "Invoice" --name "SendInvoice" --feature-files "invoicing.feature"
-storyline add-glossary --term "Invoice" --context "Payment" --meaning "A request for payment"
-storyline add-gap --description "Missing tests" --severity "important" --affects "Payment"
+storyline add-event     --context "Payment" --aggregate "Invoice" --name "InvoiceSent" --payload "invoiceId,amount"
+storyline add-command   --context "Payment" --aggregate "Invoice" --name "SendInvoice" --feature-files "invoicing.feature"
+storyline add-glossary  --term "Invoice" --context "Payment" --meaning "A request for payment"
+
+# Structural mutations (safe list insertions)
+storyline add-relationship --context "Payment" --type "customer-supplier" --target "Ordering" [--via "description"]
+storyline add-invariant    --context "Payment" --aggregate "Invoice" --invariant "Amount must be greater than zero"
+storyline add-policy       --context "Payment" --name "RefundOnCancel" --triggered-by "OrderCancelled" --issues-command "IssueRefund"
+storyline resolve-question --id "Q-001" --answer "Only for auth-related features"
+
+# Track gaps and open questions
+storyline add-gap      --description "Missing retry logic" --severity "important" --affects "Payment"
 storyline add-question --question "How do refunds work?" --severity "important" --raised-during "Three Amigos" --affects "Payment"
+
+# Session management
+storyline archive --feature "Shopping Cart"
 ```
+
+All timestamps (created, updated, resolved) are stored as ISO 8601 datetimes. Mutation commands automatically record a `session_id` when one is set via `session-init` — giving you traceability across agent mutations.
 
 ## Roadmap
 
-- [ ] **Living Documentation** — generate readable project documentation from feature files + blueprint
-- [ ] **Continuous Validation** — CI/CD integration to run Gherkin scenarios on every commit
-- [ ] **Executable specs bridge** — guidance for wiring `.feature` files to a BDD framework (Cucumber, SpecFlow, Behave) in the target project, closing the feedback loop between specification and running tests
-- [ ] **Refactoring support** — use the pipeline for restructuring existing code (currently focused on new features)
-- [ ] **Greenfield projects** — full project scaffolding from scratch (currently focused on existing codebases)
+- [ ] **Executable specs bridge** — guidance for wiring `.feature` files to Cucumber, Behave, or SpecFlow, closing the feedback loop between specification and running tests
+- [ ] **Living Documentation** — generate readable project docs from feature files + blueprint
+- [ ] **Continuous Validation** — CI/CD integration to validate the blueprint on every commit
+- [ ] **Refactoring support** — use the pipeline for restructuring existing code
 
 ## License
 
@@ -143,4 +170,4 @@ MIT
 
 ## Author
 
-Jan Krikken — [Calq](https://calq.nl)
+Jan Egbert Krikken — [Calq](https://calq.nl)

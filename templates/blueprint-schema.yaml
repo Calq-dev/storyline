@@ -29,8 +29,12 @@ bounded_contexts:                           # optional section, list
         value_objects: ["Money", "OrderId"] # optional: list of strings
         commands:
           - name: "PlaceOrder"              # required: string
+            actor: "Customer"              # optional: who issues this command
             feature_files:                  # required: list (can be empty)
               - "order-placement.feature"   # filename relative to .storyline/features/
+            rejection_reasons:              # optional: domain rejections (not technical errors)
+              - "InsufficientStock"
+              - "CreditLimitExceeded"
         events:
           - name: "OrderPlaced"             # required: string, unique across ALL aggregates
             payload_fields:                 # required: list
@@ -38,6 +42,19 @@ bounded_contexts:                           # optional section, list
               - "customerId"
         invariants:                         # optional: list of strings
           - "Order total equals sum of line item totals"
+    sagas:                                  # optional: stateful multi-step workflows (distinct from policies)
+      - name: "OrderFulfillmentSaga"        # required: string
+        description: "Coordinates payment, inventory, and shipping" # optional
+        steps:
+          - on: "OrderPlaced"               # required: event that triggers this step
+            do: "RequestPayment"            # required: command to issue
+            context: "Payment"             # optional: which bounded context handles this
+          - on: "PaymentReceived"
+            do: "ReserveInventory"
+            context: "Inventory"
+        compensation:                       # optional: commands to issue on rollback
+          - "CancelOrder"
+          - "RefundPayment"
     policies:                               # optional: list
       - name: "RequestPaymentOnOrderPlaced" # required: string
         triggered_by: "OrderPlaced"         # required: must reference event in same context
@@ -80,3 +97,5 @@ questions:                                  # optional section, list
     raised_during: "Three Amigos"           # required: string (phase name)
     affects: ["Payment"]                    # required: list of existing context names
     status: "open"                          # required: open | resolved | deferred
+    answer: "Card and bank transfer only"   # optional: the decision — fill in when status → resolved
+    resolved_at: "2026-04-05"              # optional: when the decision was made

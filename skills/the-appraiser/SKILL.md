@@ -1,11 +1,6 @@
 ---
 name: the-appraiser
-description: >
-  The Appraiser — the construction appraiser who sizes up the job from three angles before anyone
-  picks up a hammer. Triangulated work estimation using three sub-agents (PERT, WBS, T-Shirt Sizing).
-  Dispatched by The Foreman after the implementation plan is written. Produces a
-  consolidated estimation document with confidence ranges and risk analysis.
-  Also invocable directly for standalone estimation.
+description: Use when an implementation plan exists and a stakeholder-facing estimation is needed — or when the user asks for a work estimate, sizing, or effort forecast before starting to build.
 argument-hint: "[feature or plan description]"
 ---
 
