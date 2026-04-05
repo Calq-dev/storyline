@@ -2,12 +2,32 @@
 
 Generated from blueprint.yaml v4 on 2026-04-05
 
+**REVISED**: Rewriting CLI from Python to TypeScript (Node.js native for Claude Code plugins).
+
+## Architecture Change: Python → TypeScript
+
+The CLI is being rewritten from Python (`scripts/blueprint.py`) to TypeScript (`scripts/blueprint.ts`). This aligns with Claude Code's Node.js runtime — no more `pip install` hacks in SessionStart hooks.
+
+**Key decisions:**
+- YAML library: `yaml` npm package (v2) — preserves comments and formatting like ruamel.yaml
+- Runtime: `tsx` for running .ts directly (installed via npm in `${CLAUDE_PLUGIN_DATA}`)
+- Test runner: `node --test` (built-in, no extra dependency)
+- `bin/storyline` wrapper calls `node` with `tsx` loader
+- `package.json` replaces `requirements.txt`
+- SessionStart hook switches from pip to npm (using exact pattern from Claude Code plugin docs)
+
+**Files being replaced:**
+- `scripts/blueprint.py` → `scripts/blueprint.ts`
+- `scripts/test_blueprint.py` → `scripts/test-blueprint.ts`
+- `skills/the-onion/scripts/scaffold.py` → `scripts/scaffold.ts` (later)
+- `requirements.txt` → `package.json`
+
 ## Scenario Execution Order
 
 This is a **tooling feature** — no domain aggregates or application code to build. The implementation targets are:
-- `scripts/blueprint.py` (CLI commands)
-- `scripts/test_blueprint.py` (tests)
-- `hooks/hooks.json` (hook configuration)
+- `scripts/blueprint.ts` (CLI — all existing + new commands)
+- `scripts/test-blueprint.ts` (tests)
+- `hooks/hooks.json` (hook configuration + npm dependency management)
 - `skills/*/SKILL.md` + `agents/*.md` (convention updates)
 
 ### Task 1: `blueprint summary` CLI command

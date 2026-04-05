@@ -77,12 +77,12 @@ domain_services:
 For terms that appear in more than one context, document what they mean in each:
 
 ```bash
-blueprint add-glossary \
+storyline add-glossary \
   --term "Order" \
   --context "Ordering" \
   --meaning "A customer's intent to purchase one or more products"
 
-blueprint add-glossary \
+storyline add-glossary \
   --term "Order" \
   --context "Shipping" \
   --meaning "A fulfillment instruction to pick, pack, and dispatch items"
@@ -95,8 +95,8 @@ The same word meaning two different things is not a problem — it's a discovery
 After each round of edits:
 
 ```bash
-blueprint validate
-blueprint stamp
+storyline validate
+storyline stamp
 ```
 
 Fix any errors before proceeding.

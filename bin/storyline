@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Scaffold CLI wrapper — uses Node.js with tsx for TypeScript
+# Blueprint CLI wrapper — uses Node.js with tsx for TypeScript
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
@@ -7,8 +7,8 @@ SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 # Plugin install: use dependencies from plugin data dir
 if [ -n "${CLAUDE_PLUGIN_DATA:-}" ] && [ -d "${CLAUDE_PLUGIN_DATA}/node_modules" ]; then
   export NODE_PATH="${CLAUDE_PLUGIN_DATA}/node_modules:${NODE_PATH:-}"
-  exec node --import "${CLAUDE_PLUGIN_DATA}/node_modules/tsx/esm" "${SCRIPT_DIR}/scripts/scaffold.ts" "$@"
+  exec node --import "${CLAUDE_PLUGIN_DATA}/node_modules/tsx/esm" "${SCRIPT_DIR}/scripts/blueprint.ts" "$@"
 fi
 
 # Local dev: use project node_modules
-exec npx tsx "${SCRIPT_DIR}/scripts/scaffold.ts" "$@"
+exec npx tsx "${SCRIPT_DIR}/scripts/blueprint.ts" "$@"

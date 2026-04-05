@@ -11,8 +11,8 @@ A Claude Code plugin (`storyline`) that provides a complete Behavior-Driven Deve
 ```
 .claude-plugin/plugin.json        <- Plugin manifest (name, version, author)
 scripts/
-  blueprint.py                    <- Blueprint validation, CLI helpers, init, stamp
-  test_blueprint.py               <- Tests for the validation script
+  blueprint.ts                    <- Blueprint CLI (TypeScript) — validate, stamp, summary, view, housekeeping, add-*
+  test-blueprint.ts               <- Tests for the CLI (node:test, 30 tests)
 templates/
   blueprint-schema.yaml           <- Full example blueprint showing all fields and types
 skills/
@@ -23,7 +23,7 @@ skills/
   mister-gherkin/SKILL.md         <- Phase 2: Gherkin scenario formalization
   the-appraiser/SKILL.md           <- Triangulated estimation — The Appraiser (PERT, WBS, T-Shirt)
   the-onion/SKILL.md              <- Phase 5: Outside-in TDD implementation
-    scripts/scaffold.py           <- Code scaffolding from blueprint (TypeScript/Python)
+    scripts/scaffold.py           <- Code scaffolding from blueprint (to be ported to TS)
 agents/
   foreman.md                      <- Subagent: The Foreman's site inspector
   surveyor.md                     <- Subagent: reverse-engineers codebase into blueprint
@@ -63,28 +63,40 @@ Target project directory structure:
   backlog/                    <- Feature ideas waiting to enter the pipeline
 ```
 
-## Blueprint CLI (`bin/blueprint`)
+## Blueprint CLI (`bin/storyline`)
 
-Requires: Python 3.9+, `ruamel.yaml` (`pip install ruamel.yaml`)
+Requires: Node.js 18+, dependencies installed via `npm install` (yaml, tsx)
 
 ```bash
 # Core commands
-blueprint init --project "Name"     # Initialize empty blueprint
-blueprint validate [--strict]        # Validate schema + referential integrity (read-only)
-blueprint stamp                      # Update timestamp + increment version
+storyline init --project "Name"     # Initialize empty blueprint
+storyline validate [--strict]        # Validate schema + referential integrity (read-only)
+storyline stamp                      # Update timestamp + increment version
+storyline summary                    # Compact overview (~80-120 lines for large blueprints)
+storyline view --context "Payment"   # Full detail for a single bounded context
+storyline housekeeping               # Validate + stamp (skip if up to date)
+storyline housekeeping --cleanup     # + remove committed workbench artifacts
+storyline housekeeping --cleanup --phase three-amigos  # Phase-specific cleanup
 
 # Structural mutations (agents use these instead of Edit for list insertions)
-blueprint add-context "Payment"
-blueprint add-aggregate --context "Payment" --name "Invoice"
-blueprint add-event --context "Payment" --aggregate "Invoice" --name "InvoiceSent" --payload "invoiceId,amount"
-blueprint add-command --context "Payment" --aggregate "Invoice" --name "SendInvoice" --feature-files "invoicing.feature"
-blueprint add-glossary --term "Invoice" --context "Payment" --meaning "A request for payment"
-blueprint add-gap --description "Missing tests" --severity "important" --affects "Payment"
-blueprint add-question --question "How do refunds work?" --severity "important" --raised-during "Three Amigos" --affects "Payment"
+storyline add-context "Payment"
+storyline add-aggregate --context "Payment" --name "Invoice"
+storyline add-event --context "Payment" --aggregate "Invoice" --name "InvoiceSent" --payload "invoiceId,amount"
+storyline add-command --context "Payment" --aggregate "Invoice" --name "SendInvoice" --feature-files "invoicing.feature"
+storyline add-glossary --term "Invoice" --context "Payment" --meaning "A request for payment"
+storyline add-gap --description "Missing tests" --severity "important" --affects "Payment"
+storyline add-question --question "How do refunds work?" --severity "important" --raised-during "Three Amigos" --affects "Payment"
 
 # Run tests
-python scripts/test_blueprint.py
+npx tsx --test scripts/test-blueprint.ts
 ```
+
+## Blueprint Read Convention (Decision Tree)
+
+Skills follow this convention for reading the blueprint:
+1. **Summary by default** — `storyline summary` for orientation (most agents)
+2. **Context view for targeted work** — `storyline view --context X` when editing a specific context
+3. **Full read only for cross-context agents** — Sticky Storm (event uniqueness) and Doctor Context (boundary modeling)
 
 ## Git Commits
 
@@ -96,9 +108,9 @@ python scripts/test_blueprint.py
 After editing the blueprint, every skill follows this workflow:
 ```
 Edit blueprint (Edit tool for scalar updates, CLI helpers for list insertions)
-  -> blueprint validate
+  -> storyline validate
   -> fix errors if any, re-validate
-  -> blueprint stamp
+  -> storyline stamp
   -> git commit
 ```
 

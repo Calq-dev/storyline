@@ -3,7 +3,7 @@
 ## Architecture & Code Patterns
 
 - Single blueprint.yaml is the core contract -- every skill/agent starts by reading it
-- CLI (`scripts/blueprint.py`, wrapped by `bin/blueprint`) handles all structural mutations via ruamel.yaml CommentedMap/CommentedSeq
+- CLI (`scripts/blueprint.ts`, wrapped by `bin/storyline`) handles all structural mutations via yaml library
 - Hooks in `hooks/hooks.json`: SessionStart (3 hooks), PostToolUse (Edit|Write matcher for blueprint auto-validate), SubagentStop (amigo memory check)
 - Agent frontmatter supports: name, description, tools, skills, model, permissionMode
 - Skills are markdown files with YAML frontmatter; agents are similar but dispatched as subagents

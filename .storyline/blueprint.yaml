@@ -481,7 +481,7 @@ bounded_contexts:
   - type: "open-host-service"
     target: "Orchestration"
     pattern: "CLI interface"
-    via: "bin/blueprint wrapper provides the CLI that all skills invoke"
+    via: "bin/storyline wrapper provides the CLI that all skills invoke"
 
 glossary:
   Blueprint:

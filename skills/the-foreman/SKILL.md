@@ -152,7 +152,7 @@ TodoWrite: Foreman: empty site — finding out what we're building
 > "Empty site. Nothing here yet. Tell me what we're building — give me the idea and I'll get the crew moving."
 
 - Wait for the user's answer
-- Initialize blueprint: `blueprint init --project "[name from user]"`
+- Initialize blueprint: `storyline init --project "[name from user]"`
 - Validate and stamp
 - Commit: `git commit -m "init: blueprint for [project name]"`
 - Then: `Skill: storyline:three-amigos`
@@ -188,7 +188,7 @@ TodoWrite: Foreman: blueprints are out of date — checking what changed
 Check staleness:
 
 ```bash
-BLUEPRINT_DATE=$(blueprint validate --json 2>/dev/null | python -c "import sys,json; d=json.load(sys.stdin); print(d.get('meta',{}).get('updated_at',''))" 2>/dev/null)
+BLUEPRINT_DATE=$(storyline validate --json 2>/dev/null | python -c "import sys,json; d=json.load(sys.stdin); print(d.get('meta',{}).get('updated_at',''))" 2>/dev/null)
 if [ -n "$BLUEPRINT_DATE" ]; then
   git log --since="$BLUEPRINT_DATE" --name-only --pretty=format: -- src/ | sort -u | grep .
   git rev-list --count --since="$BLUEPRINT_DATE" HEAD
@@ -575,7 +575,7 @@ Read all refinement notes. Categorize findings:
 
 - **Fix now** — scenarios that are wrong or missing for what was just built → dispatch Mister Gherkin to update the feature files, then validate + stamp
 - **Backlog** — new feature ideas or scope expansions that emerged → write to `.storyline/backlog/`
-- **Gaps** — add to blueprint via `blueprint add-gap`
+- **Gaps** — add to blueprint via `storyline add-gap`
 
 ```
 TodoWrite: Foreman: final inspection done — [N] scenarios refined, [M] items to backlog
@@ -584,8 +584,8 @@ TodoWrite: Foreman: final inspection done — [N] scenarios refined, [M] items t
 If Mister Gherkin updated feature files, run validate + stamp and commit everything:
 
 ```bash
-blueprint validate
-blueprint stamp
+storyline validate
+storyline stamp
 git add .storyline/
 git commit -m "refine: scenario refinement after [feature name] implementation"
 ```
@@ -687,7 +687,7 @@ You have access to tools that support the pipeline:
 
 - **Glob/Grep/Read**: Read `blueprint.yaml`, scan `.storyline/features/` and `.storyline/workbench/`
 - **Write/Edit**: Generate and update `blueprint.yaml`, feature files, working docs
-- **Bash**: Run `blueprint` helpers, create directories, run build tools
+- **Bash**: Run `storyline` helpers, create directories, run build tools
 - **Agent (subagents)**: Delegate complex analysis to focused workers (Surveyor)
 - **SendMessage**: Coordinate with Three Amigos persona agents during The Crew build mode
 - **Git (via Bash)**: Track pipeline progress through commits
@@ -699,15 +699,15 @@ Any time you or a subagent edits `blueprint.yaml` — whether via the Edit tool 
 
 ```bash
 # 1. Make the edit (Edit tool or CLI helper)
-blueprint add-event --context "Payment" --aggregate "Invoice" --name "InvoiceSent" --payload "invoiceId,amount"
+storyline add-event --context "Payment" --aggregate "Invoice" --name "InvoiceSent" --payload "invoiceId,amount"
 
 # 2. Validate the result
-blueprint validate
+storyline validate
 
 # 3. Fix any errors reported, then validate again
 
 # 4. Stamp with updated_at and version bump
-blueprint stamp
+storyline stamp
 
 # 5. Commit
 git add .storyline/
@@ -719,16 +719,16 @@ Never commit `blueprint.yaml` without validating and stamping first.
 ### Available CLI Helpers
 
 ```bash
-blueprint init --project "Name"
-blueprint validate [--strict]
-blueprint stamp
-blueprint add-context "Payment"
-blueprint add-aggregate --context "Payment" --name "Invoice"
-blueprint add-event --context "Payment" --aggregate "Invoice" --name "InvoiceSent" --payload "invoiceId,amount"
-blueprint add-command --context "Payment" --aggregate "Invoice" --name "SendInvoice" --feature-files "invoicing.feature"
-blueprint add-glossary --term "Invoice" --context "Payment" --meaning "A request for payment"
-blueprint add-gap --description "Missing tests" --severity "important" --affects "Payment"
-blueprint add-question --question "How do refunds work?" --severity "important" --raised-during "Three Amigos" --affects "Payment"
+storyline init --project "Name"
+storyline validate [--strict]
+storyline stamp
+storyline add-context "Payment"
+storyline add-aggregate --context "Payment" --name "Invoice"
+storyline add-event --context "Payment" --aggregate "Invoice" --name "InvoiceSent" --payload "invoiceId,amount"
+storyline add-command --context "Payment" --aggregate "Invoice" --name "SendInvoice" --feature-files "invoicing.feature"
+storyline add-glossary --term "Invoice" --context "Payment" --meaning "A request for payment"
+storyline add-gap --description "Missing tests" --severity "important" --affects "Payment"
+storyline add-question --question "How do refunds work?" --severity "important" --raised-during "Three Amigos" --affects "Payment"
 ```
 
 ### Git Workflow
