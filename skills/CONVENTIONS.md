@@ -134,6 +134,37 @@ Never add a single todo mid-flow without also creating the remaining todos for t
 
 ---
 
+## Agent & Prompt Writing Style
+
+**Caveman English.** Keep agent instructions and dispatch prompts short. The model knows BDD, TDD, DDD, outside-in testing, blueprints, etc. from training — don't explain concepts it already understands.
+
+Write:
+- File paths, commands, output locations
+- Constraints and hard gates (what NOT to do)
+- Patterns it can't infer (shared notes format, task chaining, @mention conventions)
+
+Don't write:
+- Why something works ("you just built it so you have context")
+- How standard practices work ("outside-in means acceptance test first, then unit tests, then implementation")
+- Motivation ("this saves tokens because...")
+
+**Example — too verbose:**
+```
+After all tasks are green, you update the blueprint to match reality — you just built it,
+so you have the context. Compare the changeset with what you actually implemented:
+- Changed payloads, invariants, glossary → edit blueprint directly
+- New structures → use CLI helpers (`storyline add-command`, `storyline add-aggregate`, etc.)
+```
+
+**Example — caveman English:**
+```
+Compare changeset vs what you built. Update `blueprint.yaml`:
+- Changed payloads/invariants/glossary → edit directly
+- New structures → CLI helpers (`storyline add-command`, etc.)
+```
+
+---
+
 ## Frontmatter Fields
 
 | Field | Required | Description |

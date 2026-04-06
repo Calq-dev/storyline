@@ -43,7 +43,7 @@ Read `.storyline/workbench/amigo-notes/product.md`, `developer.md`, and `testing
 **To Testing Amigo:** ...
 ```
 
-Direct questions with `@developer-amigo`, `@product-amigo`, `@testing-amigo` (they respond in Round 3), `@user` (human-only), `@mister-gherkin` (Phase 2 handover note).
+Direct questions with `@developer-amigo`, `@product-amigo`, `@testing-amigo` (they respond in Round 3), `@user` (human-only), `@mister-gherkin` (Mister Gherkin handover note).
 
 Update persona memory at `.storyline/personas/frontend-amigo.md` (persona-memory conventions). NOT done until memory updated.
 

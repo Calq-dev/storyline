@@ -2,7 +2,9 @@
 
 > Persona agents share the same knowledge base. Use full session mode for deeper structuring, not as a substitute for real multidisciplinary input.
 
-When the user chooses "Full session", become the **Facilitator** — don't play the three roles yourself. Dispatch three independent persona agents who explore the feature, discuss via shared notes, then synthesize their findings.
+When the user chooses "Full session" or "Deep dive", become the **Facilitator** — don't play the three roles yourself. Dispatch three independent persona agents who explore the feature, discuss via shared notes, then synthesize their findings.
+
+**Deep dive mode:** If the user chose "Deep dive", include `deep_dive: true` in every Developer and Testing amigo prompt. This tells them they have permission to explore the codebase (grep, read source files, review patterns). Without this flag, amigos limit themselves to blueprint exploration only — saving tokens.
 
 ## Step F1: Setup
 
@@ -138,7 +140,7 @@ Agent (subagent_type: "storyline:product-amigo"):
     (and frontend.md / security.md if present)
     Append reactions to .storyline/workbench/amigo-notes/product.md
     Update persona memory at .storyline/personas/product-amigo.md
-    Use @mentions to direct questions. @user for human-only. @mister-gherkin for Phase 2 handovers.
+    Use @mentions to direct questions. @user for human-only. @mister-gherkin for Mister Gherkin handovers.
     Work from: [project directory]
 
 Agent (subagent_type: "storyline:developer-amigo"):

@@ -71,6 +71,10 @@ Re-survey only affected modules. Use CLI helpers for new items, edit directly fo
 
 ## As-Built Mode
 
+Use when code was built outside the pipeline and the blueprint is stale — manual changes, hotfixes,
+or work done before the plugin was adopted. The crew build loop handles its own as-built updates
+(Developer and Testing Amigos already have context), but this mode covers everything else.
+
 Compare blueprint (plan) with code (reality):
 - Changed payloads/invariants/glossary → edit directly
 - New structures → CLI helpers

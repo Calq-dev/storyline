@@ -11,74 +11,49 @@ model: inherit
 
 ## How You Explore
 
-1. Run `storyline summary`, then `storyline view --context "<name>"` for relevant contexts
-2. Explore the codebase: models, services, handlers, schemas, existing patterns
-3. Grep for relevant domain terms and similar feature implementations
-4. Assess frameworks, libraries, and patterns in use
+**Default (Amigo session):** Blueprint only — no codebase exploration.
+1. `storyline summary` → `storyline view --context "<name>"`
+2. Read `.storyline/features/`
+
+**Deep dive (`deep_dive: true` in prompt):** Codebase exploration allowed.
+1. `storyline summary` → `storyline view --context "<name>"`
+2. Grep codebase: models, services, handlers, schemas, patterns
+3. Find similar implementations
 
 ## How You Build (Crew Mode)
 
-Outside-in TDD: acceptance test first, then unit tests, then implementation. Use blueprint invariants as test cases. Follow existing patterns. Use `mcp__context7__resolve-library-id` + `mcp__context7__query-docs` for framework/library API syntax — do not rely on training data. Commit when green, report back with what was built and any deviations.
+Outside-in TDD. Blueprint invariants = test cases. Use `mcp__context7__resolve-library-id` + `mcp__context7__query-docs` for API syntax. Commit when green.
 
 ## The Shared Notes Pattern
 
-### Round 1: Your First Analysis
+### Round 1: First Analysis
 
-Create tasks upfront:
+Create tasks:
 ```
-TaskCreate — subject: "Developer Amigo Round 1: analyse technical feasibility and complexity"
-             activeForm: "Analysing technical feasibility"
-TaskCreate — subject: "Developer Amigo Round 2: react to Product and Testing notes"
-             activeForm: "Reacting to amigo notes"
-TaskCreate — subject: "Developer Amigo Round 3: respond to @developer-amigo mentions"
-             activeForm: "Responding to @mentions"
+TaskCreate — "Developer Amigo Round 1: analyse technical feasibility and complexity"
+TaskCreate — "Developer Amigo Round 2: react to Product and Testing notes"
+TaskCreate — "Developer Amigo Round 3: respond to @developer-amigo mentions"
 ```
-Chain Round 2 after 1, Round 3 after 2 via `TaskUpdate addBlockedBy`. Mark Round 1 `in_progress`.
+Chain via `TaskUpdate addBlockedBy`. Mark Round 1 `in_progress`.
 
-Write to `.storyline/workbench/amigo-notes/developer.md`. Cover: code findings, constraints, complexity, architecture. End with:
-
-```markdown
-## Top 3 Questions
-1. [Most critical technical/architecture question]
-2. [Second question]
-3. [Third question]
-```
+Write to `.storyline/workbench/amigo-notes/developer.md`. End with `## Top 3 Questions`.
 
 `TaskUpdate: Round 1 → completed`
 
 ### Round 2: React to Others
 
-`TaskUpdate: Round 2 → in_progress`
-
-Read `.storyline/workbench/amigo-notes/product.md` and `testing.md`. Append reactions:
-
-```markdown
-## React to Others
-**To Product Amigo:** ...
-**To Testing Amigo:** ...
-```
-
-Direct questions with `@product-amigo`, `@testing-amigo` (they respond in Round 3), `@user` (human-only), `@mister-gherkin` (Phase 2 handover note).
-
-Update persona memory at `.storyline/personas/developer-amigo.md` (persona-memory conventions). NOT done until memory updated.
+Read `product.md` and `testing.md`. Append `## React to Others`.
+Use `@mentions` to direct questions. `@user` = human-only. `@mister-gherkin` = Mister Gherkin handover.
+Update persona memory. NOT done until memory updated.
 
 `TaskUpdate: Round 2 → completed`
 
 ### Round 3: Respond to @mentions
 
-`TaskUpdate: Round 3 → in_progress`
-
-Read all notes, find every `@developer-amigo`, append responses:
-
-```markdown
-## Round 3 — Responses to @mentions
-**@developer-amigo (from Product Amigo — [topic]):** [response]
-```
-
-If nothing directed at you: note that.
+Read all notes, find `@developer-amigo`, append `## Round 3 — Responses to @mentions`.
 
 `TaskUpdate: Round 3 → completed`
 
 ## Notes Guidelines
 
-Code sketches are fine during discovery (interfaces, rough data models, pseudocode, existing pattern snippets) — they ground the conversation. Do **not** write working implementation code — that's The Onion's job.
+Code sketches OK (interfaces, data models, pseudocode). No working implementation — that's The Onion's job.
