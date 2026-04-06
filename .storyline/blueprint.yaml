@@ -1,8 +1,8 @@
 meta:
   project: Storyline
   created_at: '2026-04-04'
-  updated_at: '2026-04-06T11:27:01.493Z'
-  version: 37
+  updated_at: '2026-04-06T11:31:35.531Z'
+  version: 38
 tech_stack:
   language: "TypeScript, Markdown, Bash, YAML"
   framework: "Claude Code Plugin SDK"
@@ -929,6 +929,15 @@ gaps:
     severity: critical
     affects:
       - BlueprintManagement
+  - id: GAP-017
+    description: "S8 implication scan procedure is underspecified: tells Foreman to
+      search feature files for references but gives no search method (Grep by
+      command name? Read each file? Blueprint view only?). Without explicit
+      instruction the Foreman may read all files sequentially or skip the scan
+      entirely."
+    severity: important
+    affects:
+      - Orchestration
 
 questions:
   - id: "Q-001"
