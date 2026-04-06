@@ -38,6 +38,35 @@ Claude Code hooks kunnen niet blokkeren. "Altijd waarschuwing + zichtbare housek
 | amigo-notes/*.md | Three Amigos | Three Amigos (begin volgende run) |
 | estimation-report.md | The Appraiser | NOOIT automatisch (user artifact) |
 
+## Skills-as-Gherkin (sessie 2026-04-06, bijgewerkt Ronde 2)
+
+### Conclusie na Ronde 2
+De echte pijn is **authoring discipline**, niet bestandsformaat. De 11 `.feature` files zijn getagd `@surveyed` — geschreven nádat skills bestonden, niet ervoor. Gherkin in SKILL.md toevoegen lost het probleem niet op; het creëert een tweede spec-locatie.
+
+### Aanbevolen scope (product-standpunt, na developer + testing analyse)
+1. Vul ontbrekende scenario-coverage in bestaande `.feature` files (missende branches, hard gates, Three Amigos mode-splitsing)
+2. Voeg conventie toe aan `skills/CONVENTIONS.md`: "update het relevante scenario VOOR je SKILL.md aanpast"
+3. Geen Gherkin inside SKILL.md files; geen nieuwe parallelle feature files per skill
+
+### Wat "verifiability" betekent voor skill-Gherkin
+Geen geautomatiseerde tests mogelijk (LLM, non-deterministisch). Waarde = documentatiewaarde:
+- Contributor onboarding: 5-minuten menselijke check vervangt 336 regels prose lezen
+- Veranderingsvalidatie: checklist voor wie een skill aanpast
+- Drift-detectie: referentiepunt dat zichtbaar wordt als skill verandert maar scenario niet
+- Niet: automatische regressiedetectie, kwaliteitsgarantie per commit
+
+### Level 1 / Level 2 collision (architectuurrisico)
+`orchestration.feature` (pipeline-spec) en `shopping-cart.feature` (target-project-feature) leven nu in dezelfde map. Als pipeline-spec-coverage groeit, moet deze structuurfout geadresseerd worden. Buiten scope voor huidige sessie, wel te flaggen.
+
+### Drie interpretaties — eindoordeel
+- **A (replace)**: Af. Niet technisch veilig.
+- **B (quality layer parallel files)**: Af. Dual-maintenance trap.
+- **C (selective embedding)**: Alleen acceptabel als procesingreep (authoring order), niet als bestandsformat-wijziging. Deliverable is betere coverage + geschreven conventie.
+
+### Toets bij @user (nog open)
+- Klopt de trigger-hypothese: iemand paste een skill aan zonder iets om tegen te checken?
+- Gewenste scope voor deze sessie: top 2-3 missing branches invullen + conventie schrijven?
+
 ## Technical Task Entry Point (sessie 2026-04-06)
 
 ### Kernbehoefte

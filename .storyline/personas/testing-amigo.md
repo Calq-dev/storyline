@@ -28,6 +28,47 @@
 ## Missing Test Coverage
 - No sad-path scenarios for: blueprint size thresholds, corrupted YAML, concurrent edits, empty feature files
 - No scenarios for workbench cleanup lifecycle at all
+- `specification.feature` has no sad paths at all — only happy paths (no conflict detection, no quality gate failures)
+- `orchestration.feature` missing: corrupt blueprint, empty feature description, two phases in_progress simultaneously
+- `discovery.feature` missing: one agent fails mid-run, conflicting amigo conclusions
+
+## Skills-as-Gherkin — Key Quality Findings (Session 2026-04-06, Rounds 1 & 2)
+
+- The fundamental problem: skill behavior is non-deterministic (LLM output). Gherkin for skills is human-verification tooling, not automated quality assurance. Never conflate the two.
+- Skill drift is invisible today — `.feature` files are all `@surveyed` (written once from observed behavior). No mechanism detects when SKILL.md diverges from its feature file.
+- **Critical safety rule**: any Gherkin embedded inside a SKILL.md must be in a fenced code block AND preceded by explicit framing prose ("for reference", "this illustrates"). Bare Gherkin in prose is semantically ambiguous. Unframed fenced Gherkin in non-Gherkin-topic skills risks being read as output format instruction.
+- Mister Gherkin's skill already embeds Gherkin safely in code fences (as quality examples) — this is the correct pattern.
+- The dual maintenance trap: if Gherkin lives in SKILL.md AND in `.storyline/features/`, two specs must be kept in sync. This is how specs die.
+- My invariant: there must be exactly one authoritative location per skill's behavior spec. If both claim authority, the spec is undefined.
+- Verification bar: contributor must be able to invoke skill, compare Claude's output to the Then clause, and make a binary judgment in under 5 minutes. If not, scenario is not verifiable and should not be written.
+- Token cost: Interpretation C adds ~200-300 lines across 8 skills. Acceptable. Interpretation A breaks skill function.
+- Agreed path (Round 2): extend existing `.feature` files with missing scenarios + add spec-first convention to CONVENTIONS.md. No Gherkin inside SKILL.md files.
+
+### Minimum scenario set required to close coverage gaps (Round 2 decision)
+1. Foreman: "blueprint exists and is current" branch (currently unspecified)
+2. Foreman: hard gate fires when user attempts to skip spec step
+3. Three Amigos: hard gate fires at story size >= 8 (must be in feature file, not just SKILL.md)
+4. Mister Gherkin: quality gate rejects scenario with implementation-level steps (sad path)
+5. Foreman: MCQ is presented before routing decision
+
+### Tag convention agreed
+- `@surveyed` = as-built documentation (existing files)
+- No `@surveyed` = spec-first (new scenarios written before or alongside behavior change)
+- Tags alone are NOT sufficient enforcement — a pre-commit warning hook should be added as a follow-up: "if SKILL.md modified without corresponding feature file modification, emit warning"
+
+### Self-application risk — elevated severity
+- Storyline uses its own blueprint and feature files to understand itself. Wrong scenarios in `orchestration.feature` propagate into future implementation decisions. Failure mode is slow, compounding, and hard to trace back.
+- Mitigation: before any Three Amigos session on a skill-related feature, add an explicit "reality check" step to the Foreman's task list: verify feature files match current SKILL.md behavior before starting.
+- Existing drift (pre-convention) must be addressed via a one-time manual audit of all 8 skills. Not in scope for this session — log as follow-up.
+- New scenarios written for this session must be validated against actual skill invocation output before merge — not assumed correct because they were spec-first.
+
+## Things To Watch Out For
+- Any solution that relies on agent discipline (prompt instructions alone) will fail in long sessions. Already proven by the housekeeping problem.
+- String matching on Bash command content for PostToolUse is fragile — commands can be chained with `&&`, wrapped in subshells, etc.
+- Phase names are not formally defined as an enum anywhere. Any CLI that accepts `--phase` must validate strictly or agents will pass inconsistent values.
+- When reviewing multi-phase changesets: phase stubs (throw-on-call exports) are valid for phase-1 — do NOT flag them as missing coverage unless the phase that implements them has been completed.
+- `@surveyed` tag = as-built documentation, not living spec. Never assume surveyed scenarios cover edge cases.
+- Gherkin "coverage" for skills is a false confidence trap — scenarios describe intent, not verified behavior.
 - No scenarios for agent failure mid-build in Crew mode
 - No scenarios for housekeeping command (does not exist yet)
 
@@ -87,9 +128,3 @@ Full notes at `.storyline/workbench/amigo-notes/testing.md`.
 - Developer Amigo proposes Gherkin optional — agreed, but the brief facilitator must explicitly ask "observable behavior?" and record the answer as a structured field, not just skip silently.
 - Option B (`the-brief` as standalone skill) accepted by all. Foreman must auto-route there via MCQ, preserving the single-entry-point promise.
 - Two-codepath risk in The Onion: if The Brief feeds The Onion directly, The Onion's step-1 ("read feature files for acceptance tests") may fail. The Onion needs a guard: "if no feature files exist, use acceptance criteria from the technical brief."
-
-## Things To Watch Out For
-- Any solution that relies on agent discipline (prompt instructions alone) will fail in long sessions. Already proven by the housekeeping problem.
-- String matching on Bash command content for PostToolUse is fragile — commands can be chained with `&&`, wrapped in subshells, etc.
-- Phase names are not formally defined as an enum anywhere. Any CLI that accepts `--phase` must validate strictly or agents will pass inconsistent values.
-- When reviewing multi-phase changesets: phase stubs (throw-on-call exports) are valid for phase-1 — do NOT flag them as missing coverage unless the phase that implements them has been completed.

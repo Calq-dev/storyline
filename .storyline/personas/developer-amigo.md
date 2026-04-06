@@ -7,6 +7,29 @@
 - Hooks in `hooks/hooks.json`: SessionStart (3 hooks), PostToolUse (Edit|Write matcher for blueprint auto-validate), SubagentStop (amigo memory check)
 - Agent frontmatter supports: name, description, tools, skills, model, permissionMode
 - Skills are markdown files with YAML frontmatter; agents are similar but dispatched as subagents
+- Skills total 1,897 lines across 8 files; only YAML frontmatter is parsed by tooling -- rest is LLM prompt context
+- XML tag conventions in skills: `<HARD-GATE>`, `<todo-actions>`, `<bash-commands>`, `<user-question>`, `<agent-dispatch>`, `<branch-todos>`
+
+## Skills vs Feature Files — Spec Layer Architecture
+
+- 11 `.feature` files in `.storyline/features/` already specify pipeline/skill behavior (all tagged `@surveyed` — generated from observed behavior, not spec-first)
+- Skills contain categories that have no Gherkin equivalent: persona establishment, hard gates, tool requirements, bash command blocks, agent dispatch templates
+- Skills cannot be automatically tested against Gherkin — LLM behavior is non-deterministic, no test runner exists
+- "Skills as Gherkin" viable interpretations: (A) replace SKILL.md = unsafe; (B) parallel spec files = duplication risk; (C) embed Gherkin at decision points = lowest risk
+- Two levels of feature files conceptually: Level 1 (target project features) and Level 2 (plugin's own behavior specs) — currently conflated in `.storyline/features/`
+- SETTLED (Round 2, 2026-04-06): real pain is authoring discipline (no spec-first rule for skill edits), not format change
+
+## Skills as Gherkin — Settled Conclusions (2026-04-06)
+
+- The `@surveyed` tag on all feature files is a confession: this pipeline enforces BDD discipline on users but not on itself
+- Minimum viable fix: add spec-first convention to `skills/CONVENTIONS.md` + fill missing scenario gaps in existing `.feature` files
+- No Gherkin goes inside SKILL.md files — convention update + coverage extension is the correct deliverable
+- Fenced Gherkin in SKILL.md is only safe with explicit prose framing before the fence ("for reference," "this illustrates")
+- Bare (unfenced) Gherkin in prose sections of any skill is unsafe — LLM may treat as instruction
+- Mister Gherkin's existing Gherkin fences are safe because surrounding prose makes intent clear (examples, not instructions)
+- Priority coverage gaps: Foreman Scenario 3 (current blueprint), Foreman hard gate respected, Three Amigos mode branching, Mister Gherkin quality gate sad path
+- New spec-first scenarios should be distinguishable from `@surveyed` surveys — either no tag or a `@spec-first` tag convention
+- Level 1 / Level 2 feature file collision (user features vs. plugin specs sharing `.storyline/features/`) is a real structural problem — flag as future feature, out of scope for this session
 
 ## Technical Constraints I've Learned
 

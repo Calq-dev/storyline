@@ -1,191 +1,343 @@
 # Developer Amigo — Technical Analysis
 
-Feature: Technical task entry point in the pipeline
+Feature: Turn skills into Gherkin format
+Session date: 2026-04-06
 
 ---
 
 ## What I Found in the Code
 
-### The Foreman is the single entry point — Scenario 4 is the only path into Three Amigos
+### Skills are prompt files, not software modules
 
-The Foreman skill (`skills/the-foreman/SKILL.md`) has one branch that leads to feature development: **Scenario 4** — "Blueprint exists AND user specifies a feature". In that branch, the Foreman reframes whatever the user said into a user story format before dispatching Three Amigos:
+Skills live at `skills/*/SKILL.md`. They are read by Claude Code at invocation time as prompt context. They are not parsed by any tooling, not executed by a test runner, and not referenced by the blueprint. The only structural contract is the YAML frontmatter (`name`, `description`, `argument-hint`) which is consumed by the Claude Code plugin manifest. Everything below the frontmatter is free-form prose with a few XML tag conventions (`<HARD-GATE>`, `<todo-actions>`, `<bash-commands>`, `<user-question>`, `<agent-dispatch>`, `<branch-todos>`).
 
-> "If not already a user story, reframe it and confirm: 'As a [role] I want [action] so that [value]. Does that capture what you mean?'"
+Skills range from 71 lines (persona-memory) to 336 lines (the-foreman). Average ~237 lines. All instruction prose, no Gherkin.
 
-This is the reframe step we need to bypass or fork for technical tasks. There's no conditional — it always tries to cast input as a user story.
+### The existing Gherkin is already about skills — just living elsewhere
 
-### Three Amigos is hardwired around the "user story" structure
+There are 11 `.feature` files in `.storyline/features/`, all tagged `@surveyed`. They specify the pipeline as a software product, from the outside. These ARE the Gherkin specs for skill behavior:
 
-Three Amigos (`skills/three-amigos/SKILL.md`) opens with:
+- `orchestration.feature` → specifies the-foreman
+- `discovery.feature` → specifies three-amigos
+- `specification.feature` → specifies mister-gherkin
+- `implementation.feature` → specifies the-onion
+- `blueprint-management.feature` → specifies the CLI (not a skill, but adjacent)
+- etc.
 
-> "**User Story** — formulate before mapping rules: As a [role] I want [action] So that [value]"
+This is the key architectural fact. The spec-and-code separation already exists in the codebase. The `.feature` files are the "what." The `SKILL.md` files are the "how-to-instruct-an-LLM-to-do-the-what." The proposal raises the question: what would it mean to add Gherkin to the "how" files?
 
-And the Example Map format (`example-map.yaml`) has a top-level `story:` field for exactly this. The whole session ritual (NFR probe, MoSCoW, story size check) is framed around user-visible behavior.
+### What SKILL.md files currently do that Gherkin cannot do
 
-Some of this is still useful for technical tasks. NFR probing, MoSCoW, assumption audit — all apply. The forced user story framing does not.
+Reading all skills, they contain things that have no Gherkin equivalent:
 
-### The example-map.yaml format is the key contract
+1. **Persona establishment** — "You are The Foreman — practical, no-nonsense..." — this is not behavior, it's identity
+2. **Hard gates** — `<HARD-GATE>` blocks that tell the LLM to refuse certain actions — this is a safety constraint, not a scenario
+3. **Tool requirements** — `<TOOL-REQUIREMENTS>` that mandate specific Claude Code tool usage — this is a capability prescription, not observable behavior
+4. **Decision trees** — dot digraphs for routing — these could be expressed as Scenario Outlines but only partially
+5. **Bash command blocks** — `<bash-commands>` that tell the LLM exactly what to run — this is imperative procedure, not declarative specification
+6. **Agent dispatch templates** — `<agent-dispatch>` with full prompt text — this is configuration, not behavior description
+7. **Interaction style guidance** — "Be warm but structured, you're running a meeting not lecturing" — this is LLM behavior shaping, not testable output
 
-The example map feeds Mister Gherkin, which feeds the Changeset, which The Onion builds from. Whatever we produce in the new entry point needs to be structurally compatible with what comes after, OR we need to define a new artifact format that Mister Gherkin (or a replacement) understands.
+These categories cannot be replaced by Gherkin without losing their function. Gherkin specifies observable outcomes from a user's perspective. Skills prescribe internal LLM behavior.
 
-Let me be specific about the shape. From `skills/three-amigos/example-map-format.yaml` (not fully read, but referenced):
+---
 
-- `feature`: name
-- `story`: the user story string
-- `rules[]`: each with examples, MoSCoW, assumptions
-- `questions[]`
-- `assumptions[]`
-- `risks`
+## The Three Viable Interpretations — Technical Assessment
 
-For a technical task, `story` becomes a **task description** (what changes, why, acceptance criteria). The `rules` become **constraints and acceptance criteria**. Everything else carries over cleanly.
+**Interpretation A: Replace SKILL.md with Gherkin**
 
-### Mister Gherkin also assumes a user story
+Not technically feasible as written. Claude Code reads skills as prompt context — the LLM interprets the text. If a SKILL.md were pure Gherkin, the LLM would receive a list of scenarios with no instruction on how to interpret or execute them. The LLM does not have a Cucumber runner — it has to be told what to do in prose. A SKILL.md that is only Gherkin would be ambiguous about whether to "run" the scenarios, "pass" them, or use them as documentation.
 
-Mister Gherkin reads the example map and writes Gherkin scenarios. It doesn't enforce the user story format structurally — it reads rules and examples. But its persona and framing ("pickling requirements") is user-story-centric.
+Specific danger: Mister Gherkin's SKILL.md contains a Gherkin syntax reference (showing correct and incorrect examples). Claude Code handles this fine today because the surrounding prose makes clear: "here's what good Gherkin looks like." If the whole file were Gherkin, those examples might be interpreted as step definitions or actual instructions.
 
-For technical tasks, Gherkin may still be appropriate (e.g., "Given the scaffold script receives a TypeScript target / When it runs / Then it generates the expected file tree"). But for pure internal refactors (e.g., "migrate file format from JSON to YAML"), Gherkin is awkward and the scenario-per-rule pattern doesn't fit well.
+Verdict: Technically unsafe. Do not pursue.
 
-This raises a genuine branch question: does the technical entry point produce an example map that flows into Mister Gherkin, or does it produce a **direct changeset** (bypassing Gherkin entirely)?
+**Interpretation B: Add Gherkin as a parallel quality/verification layer**
 
-### The blueprint domain model has no concept of a "technical task"
+Gherkin scenarios written for skills as acceptance criteria — "the skill is done when these pass." Stored alongside SKILL.md or in a separate file. Used for human-verification or contributor onboarding, not automated execution.
 
-Looking at `orchestration.feature` and the Orchestration context, every pipeline path routes through Discovery → Specification. There's no `StartTechnicalTask` command, no `TechnicalTaskStarted` event. We'd be adding a new command to `PipelineSession` and a new event — the blueprint needs updating alongside the skill.
+Technical viability: Yes, but the value proposition is thin. The `.feature` files in `.storyline/features/` already do this. They describe skill behavior. Adding another set of Gherkin files (inside `skills/`) would create two parallel specs with no enforced relationship between them. If `orchestration.feature` says "The Foreman asks what the user wants to build" and a hypothetical `skills/the-foreman/foreman.feature` says the same thing, we now have two files to update when the behavior changes.
 
-The Discovery context's `DiscoverySession` aggregate has `RunQuickScan` and `RunFullSession` as its commands. A technical task could be modeled as a third command: `RunTechnicalBrief` or similar. Or it could be a separate aggregate entirely: `TechnicalTask`. That's a design question.
+The only scenario where this adds value without duplication: if the skill-internal scenarios describe *internal behavior details* that are too fine-grained for the public-facing feature files. E.g., the Foreman's decision tree branching — the existing `orchestration.feature` doesn't verify "does the Foreman present an MCQ before routing?" at that level of detail. A skill-internal spec could.
+
+**Interpretation C: Embed Gherkin examples inside SKILL.md for specific decision points**
+
+Some parts of skill files are already structured enough to express as Gherkin. The Foreman's decision tree is currently a dot digraph (graphviz syntax). Three Amigos' story size gate is a Markdown table. These are behavioral rules with inputs and outcomes — exactly what Gherkin's `Rule:` + `Scenario Outline:` are designed for.
+
+Technical viability: Yes, with caveats. Embedding Gherkin in an otherwise prose SKILL.md is safe only if Claude interprets it as documentation/example material, not as instructions to execute. Based on how the skills are structured today (prose instructions + example snippets), a clearly-labeled `## Behavior Specification` section with Gherkin blocks would be treated as illustrative examples. This is what `mister-gherkin/SKILL.md` already does — it embeds Gherkin code blocks to show correct and incorrect patterns. The LLM reads them as examples, not commands.
 
 ---
 
 ## Technical Constraints
 
-**1. The Foreman reframe is unconditional.** Right now Scenario 4 always tries to impose a user story frame. The simplest fix is a conditional branch: detect if the input is a technical change (CLI, migration, refactor, dependency) and route differently. But "detect technical change" is fuzzy — we'd need the user to signal intent, or we need an explicit argument/flag.
+**1. Skills are LLM prompt context, not parsed files.**
+No tooling reads skills except the Claude Code plugin SDK (which only reads the frontmatter). Any Gherkin added to a SKILL.md would be consumed exclusively by an LLM. This has two implications:
+- Gherkin embedded in a skill that contains instructions may be treated as instructions by the LLM (ambiguous intent)
+- Gherkin embedded in a skill CANNOT be automatically tested — there is no test runner that invokes a skill and asserts on Claude's output
 
-**2. The example map format assumes `story:`.** If we keep the same downstream pipeline (Mister Gherkin), we either:
-   - Extend the format with `task:` as an alternative to `story:`, and teach Mister Gherkin to handle both, or
-   - Define a separate "technical brief" format that plugs into a different downstream, or
-   - Leave `story:` as optional/nullable in the schema and document the convention
+**2. Token cost is real.**
+All 8 skills total 1,897 lines today. Adding Gherkin to each would increase that. Interpretation C (selective embedding at decision points) might add 20-40 lines per skill — call it +200-300 lines across the plugin. That's ~15% size increase. Acceptable. Interpretation B (parallel spec files) would roughly double the line count of skill-related content.
 
-**3. Mister Gherkin may not add value for pure internal changes.** The Gherkin phase is valuable when there's observable behavior to specify. For "restructure the internal module layout" or "replace yaml library v1 with v2", there's no meaningful Given/When/Then. We'd either write awkward scenarios ("Given the codebase / When I run the tests / Then they all pass") or skip Gherkin entirely.
+**3. The `.feature` files already cover the same territory.**
+Any Gherkin written for skills must either:
+(a) live inside the `.feature` files that already exist (extending them)
+(b) live as new files with a clear non-duplicate scope
+(c) live inside SKILL.md as illustrative examples only
 
-**4. Cross-cutting vs. scoped is an architecture decision, not just a parameter.** The user confirmed technical changes can be scoped (one context) or cross-cutting. This affects how The Onion builds it — cross-cutting changes likely need a changeset that touches multiple contexts and may have ordering constraints. The changeset format already supports `touches[]` per task, so this is not a new technical problem. But it's a thing the "technical brief" phase needs to capture.
+Option (a) is the lowest-friction path. The `orchestration.feature`, `discovery.feature` etc. already specify skill behavior. Adding missing or more detailed scenarios to those files is the correct change if the goal is "better Gherkin coverage of skills."
 
-**5. The bin/storyline dispatcher would need a new subcommand or the Foreman needs a new branch.** If we add a `tech-task` skill, it needs to be callable via an argument: `/storyline:the-foreman tech my task description` or a separate `/storyline:tech-task`. Given the plugin architecture, a separate skill is cleanest — it doesn't require changing every existing Foreman branch.
+**4. Skills have no programmatic interface.**
+A REST endpoint has a URL, an HTTP verb, request/response shapes — all assertable. A skill has an invocation trigger and a prose output. "Given the Foreman is invoked with a stale blueprint / When it detects staleness / Then it presents a refresh option" — how do you automate that assertion? You'd need to invoke Claude, read its output, and check that it followed the scenario. That's an LLM evaluation problem, not a test problem. Nobody has a test runner for this.
+
+**5. Interpretation A breaks the CONVENTIONS.md contract.**
+The `skills/CONVENTIONS.md` defines the file structure: YAML frontmatter + structured Markdown. Any change to skills must be backward compatible with this schema. Gherkin as the primary format would violate the convention that the file is a structured Markdown instruction prompt.
 
 ---
 
 ## Complexity Assessment
 
 **Low complexity:**
-- Adding the entry point branch to the Foreman (one new `elif` in the decision tree)
-- Extending the example map format with `task:` as an optional field
+- Adding `Rule:` + `Scenario:` blocks to the existing `.feature` files to cover decision-tree cases that are currently missing (e.g., Foreman's MCQ routing behavior, Three Amigos' story size gate edge cases)
+- Embedding Gherkin code examples inside SKILL.md to illustrate specific decision points (like Mister Gherkin already does for scenario quality)
 
 **Medium complexity:**
-- Deciding whether the technical task path flows into Mister Gherkin or bypasses it — this is a design call that affects two skills
-- Defining what the "technical brief" artifact looks like and what makes it "complete enough" to hand off to The Onion
+- Creating a parallel `<skill>.feature` file for each skill, stored in `skills/<skill>/` or a new `features/skills/` directory — requires a convention decision about where these live and how they relate to `.storyline/features/`
 
-**Hard part:**
-- The "is this a user story or a technical task?" detection. We should NOT try to auto-detect — the user must signal intent explicitly. Otherwise the Foreman will misclassify ambiguous inputs ("add CLI command for X" — is that a user feature or a technical task?). An explicit `--tech` flag or a separate skill invocation is much safer.
-
----
-
-## Architecture Considerations
-
-Three viable architectures:
-
-**Option A: Fork inside Three Amigos**
-The Foreman routes everything through Three Amigos. Three Amigos gets a third mode alongside Quick Scan and Full Session: "Technical Brief mode". The example map format gets a `task:` alternative. Mister Gherkin becomes optional (the facilitator asks "does this need Gherkin scenarios or go straight to changeset?").
-
-Pro: minimum new skill files, everything reuses the existing pipeline infrastructure.
-Con: Three Amigos skill gets three modes — complexity grows. The user story framing in Step 2 needs careful conditional logic.
-
-**Option B: New skill — `the-brief`**
-A standalone skill: `/storyline:the-brief "migrate YAML format from v1 to v2"`. It runs a structured technical brief session (what changes, why, scope, acceptance criteria, risks), produces a `technical-brief.yaml` in workbench, and then either invokes Mister Gherkin (if scenarios are warranted) or The Onion directly.
-
-Pro: clean separation, no conditional clutter in Three Amigos, independent evolution.
-Con: new skill file, new artifact format, The Foreman needs to know about it.
-
-**Option C: Foreman flag, shared downstream**
-The Foreman gets an explicit `tech` mode. When triggered, it runs a lightweight inline brief (no separate amigo session) and produces a minimal example map (with `task:` instead of `story:`). Mister Gherkin is still invoked but in a technical mode.
-
-Pro: fewest new files.
-Con: too much logic in The Foreman, which is supposed to be a coordinator, not a facilitator.
-
-My read: **Option B is cleanest**. The Brief is a first-class pipeline entry point alongside Three Amigos. The Foreman gets a new branch in its decision tree: "technical task specified" → dispatch The Brief. The Brief produces a `technical-brief.yaml` that The Onion can consume directly or via a light Mister Gherkin pass.
-
-The blueprint would get:
-- New command `StartTechnicalTask` in Orchestration/PipelineSession
-- New command `RunTechnicalBrief` in Discovery/DiscoverySession (or a new context?)
-- New event `TechnicalBriefProduced`
+**Hard part (and probably not the right problem):**
+- Creating a test harness that executes skills and asserts Claude's behavior against Gherkin scenarios — this requires LLM-evaluation tooling, determinism assumptions that aren't valid, and infrastructure that doesn't exist in this codebase
 
 ---
 
-## What I Still Need to Understand
+## Architecture Impact
 
-- Does the example map format already have an optional `story:` or is it required? I didn't read the full format file.
-- Does The Onion read the example map directly or only via the changeset? If only via changeset, the upstream format matters less.
-- What does "acceptance criteria" look like for a technical task in terms of verifiability — is it always "tests pass + no regressions" or can it be more specific?
+### What already exists that we'd be building on or around
+
+```
+.storyline/features/          <- 11 .feature files specifying pipeline behavior
+skills/*/SKILL.md             <- 8 skills as prose instruction files
+skills/CONVENTIONS.md         <- skill authoring conventions
+.claude-plugin/plugin.json    <- plugin manifest (reads skill frontmatter)
+```
+
+No tooling currently reads `.feature` files inside the `skills/` directory. The `storyline validate` and `storyline summary` commands operate only on the `blueprint.yaml`. Feature files in `.storyline/features/` are referenced by blueprint commands, not by skills.
+
+### The key architectural question
+
+The `.feature` files in `.storyline/features/` are the pipeline's specification artifacts. They are produced by the pipeline for target-project features. The fact that they also describe the pipeline's own behavior is somewhat accidental — they were created by a survey (`@surveyed`) of the plugin itself.
+
+There is a conceptual confusion here that this feature surfaces:
+
+- **Level 1 feature files**: specs for a target project's features (what the plugin is *for*)
+- **Level 2 feature files**: specs for the pipeline plugin's own behavior (what the plugin *is*)
+
+Right now both levels live in `.storyline/features/`. For a project that uses Storyline to build a shopping cart, this directory would contain both `shopping-cart.feature` (their feature) and `orchestration.feature` (the plugin's behavior). That collision would need resolving if we want to use the same directory for both levels.
+
+### What would a clean architecture look like?
+
+If the goal is "use Gherkin to specify skill behavior more precisely," the cleanest structure would be:
+
+```
+skills/the-foreman/SKILL.md               <- instructions
+skills/the-foreman/the-foreman.feature    <- behavior spec (new)
+```
+
+Or — keeping the plugin's spec files out of the user's `.storyline/features/` directory:
+
+```
+.storyline/features/          <- target project feature files only
+skills/features/              <- plugin's own behavior specs (new)
+  orchestration.feature
+  discovery.feature
+  ...
+```
+
+This would mean moving the existing `@surveyed` feature files out of `.storyline/features/` into a plugin-level location. That's a significant structural change with a clear benefit: the separation of "specs I'm building" from "specs of the tool I'm using."
+
+---
+
+## Concrete Examples
+
+**Where Gherkin would actually improve a skill (Interpretation C):**
+
+Three Amigos, story size gate — currently a Markdown table:
+
+```markdown
+| Rules | Action |
+|---|---|
+| ≤ 4 | Right-sized → continue |
+| 5–7 | Warn → offer to split |
+| ≥ 8 | Hard gate → propose split immediately |
+```
+
+This could be a Scenario Outline in a `Rule:` block, making the branches explicit and assertable:
+
+```gherkin
+Rule: Story size determines whether to continue or split
+
+  Scenario Outline: Story size gate
+    Given a story has <count> rules
+    When the Three Amigos facilitator evaluates size
+    Then the outcome is <action>
+
+    Examples:
+      | count | action                                        |
+      | 3     | continue without warning                      |
+      | 5     | warn and offer split choice                   |
+      | 8     | hard gate — propose split immediately         |
+```
+
+This is clearer than the table, follows existing Gherkin quality rules, and could live in `skills/three-amigos/three-amigos.feature` or be added to `discovery.feature`.
+
+**Where Gherkin would NOT improve a skill:**
+
+The Foreman's character setup:
+
+```
+You are The Foreman — practical, no-nonsense. You read the blueprints, assess what's been built, put the right crew to work.
+```
+
+There is no Gherkin equivalent for this. "Given an LLM / When it reads this prompt / Then it should respond like a foreman" is not a useful scenario. LLM persona definitions must stay as prose.
+
+---
+
+## My Read on the Real Goal
+
+The `@surveyed` tag on every existing `.feature` file signals something important: these were generated from observed behavior, not written before implementation. They describe what was built. They are documentation, not a living specification used to drive behavior.
+
+The real value of "skills as Gherkin" might not be about *format* — it might be about *authoring order*. If someone proposes changing the Foreman's decision tree, should they:
+(a) edit SKILL.md directly (today's practice), or
+(b) update the scenario in `orchestration.feature` first, then adjust SKILL.md to match
+
+Option (b) is BDD: spec first, implementation second. The fact that "implementation" here is an LLM prompt rather than code doesn't change the principle. This is possibly what the user actually wants: a discipline where skill changes are spec-driven, not ad hoc.
+
+If that's the goal, the technical path is:
+1. Ensure each skill has corresponding scenarios in a `.feature` file (adding missing ones to the existing `@surveyed` files)
+2. Establish a convention: "before editing a SKILL.md, update or add the relevant scenario first"
+3. No new file format needed — just authoring discipline + better scenario coverage
 
 ---
 
 ## Mijn top-3 vragen voor de sessie
 
-1. **Does the technical entry point produce Gherkin scenarios, or does it hand off directly to The Onion?** This is the biggest fork in the road. If we require Gherkin for technical tasks too, we need Mister Gherkin to handle both modes. If we bypass Gherkin, we skip a layer of specification but gain speed and avoid awkward scenarios. My inclination: Gherkin should be optional — the Brief facilitator asks "are there observable behaviors we can specify as scenarios, or is this a pure internal change?"
+1. **Is the goal format change or authoring discipline?** The product amigo should confirm: is the value in having Gherkin syntax *inside* SKILL.md files, or in having Gherkin *drive* skill changes (spec-first editing of `.feature` files before touching SKILL.md)?
 
-2. **Is "The Brief" a new skill file, a mode inside Three Amigos, or a branch inside The Foreman?** I lean toward new skill (Option B) because it keeps the code clean and the concepts separate. But the Product Amigo and Testing Amigo should weigh in on whether they expect a "full session" variant with all personas, or a lighter single-agent flow.
+2. **Who maintains the Gherkin for skills — plugin contributors or the pipeline itself?** Today, a user runs the pipeline to produce feature files for their project. If skills have `.feature` files, those are plugin-level files that must be maintained by plugin contributors, not by the pipeline. That's a different governance model and a different contributor audience.
 
-3. **How does the Foreman distinguish user stories from technical tasks at intake?** The safest answer is: the user signals it explicitly (either via an argument flag, a separate command, or an MCQ choice). Auto-detection is unreliable. What's the right UX — a flag like `/storyline:the-foreman tech "..."`, a choice at Scenario 4/5, or a dedicated skill invocation?
+3. **If we add Gherkin to the existing `.feature` files to cover skill behavior more precisely (the low-friction option), are there specific gaps the user wants filled?** The existing 11 files are `@surveyed` — they cover happy paths. Missing: the Foreman's MCQ routing behavior, Three Amigos' full session vs quick scan detailed branching, Mister Gherkin's quality gate edge cases. Knowing which gaps hurt would make this a scoped, deliverable change rather than an open-ended format debate.
 
----
+@product-amigo — you identified the right question: what triggered this idea? My read above suggests the real pain might be "skills drift because there's no spec to change them against." If that's it, the solution is authoring discipline + better scenario coverage in existing files — not adding Gherkin syntax to SKILL.md. But this needs confirmation from the user.
 
-## Reactie op de anderen
-
-**Op Product Amigo:**
-
-The "minimum viable bypass" framing aligns closely with Option B (new `the-brief` skill). You named it cleanly: the problem is not the pipeline depth — it's the forced user story framing at the entry gate. I agree that the Changeset infrastructure is already good enough for the output side; the gap is only at the intake side.
-
-One point of friction: you put "a fully new skill file" in the NOT-in-scope column, preferring a branch inside the Foreman or an agent file. I understand the conservatism, but I want to push back on it. The Foreman is a coordinator, not a facilitator. Putting intake logic for a new kind of work inside the Foreman's decision tree would be like putting the Three Amigos session logic inside the Foreman — it's the wrong abstraction layer. A new `the-brief` agent file (even a lightweight one, not a full multi-persona session) keeps the Foreman's job as "route to the right thing" rather than "also do the thing." The boundary matters for future maintainability.
-
-On your twijfelzone: "Should there be a `technical-amigo` agent?" — I think the right answer is no standalone persona, but yes a brief-facilitator agent. It's one agent running a structured intake, not a multi-agent session. The Brief has no business perspective to negotiate and no quality risks to anticipate in advance — those concerns get embedded in the brief template as required fields.
-
-@product-amigo — your Scenario 3 question: "Is the problem only the framing, or is it the full Three Amigos overhead?" From the code: it's both, but in different proportions. The user story reframe is the first friction point. The NFR probe, MoSCoW scoring, and assumption audit that follow are still useful for technical tasks. So the answer might be: keep the structured thinking, drop the user story frame. That suggests a shared brief template that borrows the NFR/MoSCoW/assumption structure from the example map but replaces `story:` with `task:`.
-
-**Op Testing Amigo:**
-
-You surfaced the hardest structural issue in this session: if the technical path creates blueprint commands without feature files, `storyline validate` will either reject the blueprint or silently allow dangling `feature_files` references. This is real — I've read the validation code and referential integrity on `feature_files` is enforced.
-
-Here's where the `the-brief` architecture has an answer, though not a complete one. Two options:
-
-**Option 1: Technical tasks produce a `technical-brief.yaml`, not blueprint commands.** The blueprint only gains new entries when `StartTechnicalTask` is commanded — and for that event, we define that `feature_files` is not required (or is allowed to be `[]`). This requires a schema change: the `feature_files` field on a command must become conditionally required based on whether a `technical_task: true` flag is set on that command (or the changeset). The validation logic would need a corresponding exemption path.
-
-**Option 2: Require a brief feature file.** `the-brief` always produces at least one feature file — a lightweight one with technical acceptance criteria in a non-Gherkin format (or lightweight Gherkin: "Given the build passes / When the migration runs / Then the existing test suite remains green"). This is less elegant but requires no schema changes to validation.
-
-My preference: Option 2 initially, with Option 1 as a follow-on. Option 2 preserves the validation invariant unchanged. Option 1 is cleaner long-term but requires a schema decision and a validation code change — scope that's better handled when we know the exact command taxonomy for technical tasks.
-
-@testing-amigo — your question "Who decides a change is technical?" needs a concrete answer before Mister Gherkin writes scenarios. Here's my proposal: the Foreman presents an MCQ at intake — "Is this a user-facing feature or a technical/internal change?" — and routes accordingly. No auto-detection. The user's answer is the signal. This means the guard condition is simple: an explicit user choice, not a heuristic. Is that firm enough for you to write a scenario against, or do you need a validation step within the brief itself?
-
-@testing-amigo — on the security bypass concern: I fully agree an explicit security triage step is needed in the brief. For the blueprint, this maps cleanly to a required field in the `technical-brief.yaml` format: `security_surface: none | input-handling | auth | external-api | data-storage`. If `security_surface` is anything other than `none`, the brief dispatches the Security Amigo before handing off to The Onion. This makes the triage explicit and machine-readable rather than relying on agent judgment.
-
-@testing-amigo — on phase enumeration: you're right that phase names are not formally defined as an enum. For the technical path, the simplest model is: Orchestration → Technical Brief → (optional Specification) → Implementation. The `in_progress` tracking needs to know about "Technical Brief" as a valid phase name. This is a small addition to the Orchestration invariants — but it must be made or the phase tracker will reject the new sequence. I'll flag this as a blueprint update required before any implementation.
-
-@mister-gherkin — the brief's output format is the key handoff question for you. If `the-brief` produces a `technical-brief.yaml` with a `task:` field instead of `story:`, and `criteria[]` instead of `rules[]`, can you consume that as an alternative input to produce acceptance-criteria scenarios? Or do you need the standard example map shape? Your answer determines whether we need to extend your input format or produce a transformed example map as an intermediary.
-
-On your "what if" scenario about blueprint CLI porting changing flag semantics: that's a real gap that the brief template needs to capture explicitly. A required field like `public_interface_change: yes | no` (which the Testing Amigo also mentioned) would force the contributor to declare it. This feeds directly into whether the changeset needs backward-compatibility tasks in its phases.
+@testing-amigo — skills cannot be automatically tested against Gherkin scenarios (LLM behavior is non-deterministic, no test runner exists). If we write Gherkin for skills, it is for human verification only. Does that change what you'd want the scenarios to look like? Manual verification scenarios are typically broader and less step-heavy than automated ones.
 
 ---
 
-## Round 3 — Responses to @mentions
+## Round 2
 
-**@developer-amigo (from Product Amigo — Scenario 4 branch vs new Scenario 5):**
+### On the Testing Amigo's empirical test question
 
-New Scenario 5. Here is why: Scenario 4 is already doing one thing — "blueprint exists AND user specifies a feature." Adding a conditional inside it ("...unless it looks technical, in which case...") makes it a two-headed scenario. The Foreman's decision tree is readable precisely because each scenario has a single trigger condition. A new Scenario 5 — "Blueprint exists AND user specifies a technical task" — keeps each branch clean and mirrors the existing pattern exactly. The MCQ clarifying question ("user-facing feature or internal technical change?") lives at the top of the Foreman's intake, before the scenario routing. It sets the flag; Scenario 4 or Scenario 5 fires based on the answer. The Foreman stays a coordinator.
+The Testing Amigo asked: have you actually tested whether fenced Gherkin in a skill causes Claude to change its behavior? If not, reason through it carefully.
 
-**@developer-amigo (from Product Amigo — does the changeset support a `type:` field?):**
+I cannot run this empirically during a discovery session, but the architecture makes the answer tractable.
 
-No, not at the metadata level. I checked `CS-2026-04-05-scaffold-ts-port.yaml` directly. The changeset has a `meta:` block with `id`, `title`, `blueprint_version`, `created_at`, and `status` — no `type:` field. Each phase inside the changeset has a `type:` (addition / removal / modification), but that is phase-level, not changeset-level. Adding `type: technical` to the `meta:` block would require a schema change in both the changeset YAML template and the `changeset validate` logic in `scripts/blueprint.ts`. It is a two-line addition to the meta block and a corresponding check in the validator — small, but it must be done deliberately so validation does not silently ignore an unknown field.
+**How Claude processes skill files:**
 
-**@developer-amigo (from Testing Amigo — which of the three options is compatible with Option B?):**
+A SKILL.md arrives as part of the system prompt context at invocation time. The LLM reads the entire file as instruction text. It does not parse or execute anything — it reasons about what the file is telling it to do and then acts.
 
-Option 2 is the right fit for Option B. In Option B, `the-brief` is a standalone skill that produces a `technical-brief.yaml` artifact. That artifact can be listed in `feature_files` for any blueprint commands the task adds — the file exists on disk, the referential integrity check passes, and no schema changes are needed. The brief IS the specification artifact, just not Gherkin-formatted. Option 1 (conditional `feature_files` exemption) is architecturally cleaner but requires changes to both the blueprint schema and the validation code — scope better deferred. Option 3 (a `technical_task: true` flag on commands) is the most invasive and creates a two-tier command model I would not want to maintain. Start with Option 2; migrate to Option 1 if the brief format proves stable enough to warrant first-class schema support.
+The question is: does a fenced Gherkin block trigger a behavioral shift?
 
-**@developer-amigo (from Testing Amigo — does The Onion read only via the changeset, or also directly from feature files?):**
+Fenced code blocks in system prompts are read by the LLM as "content that is being shown to me as an example or reference, not as something I should execute." This is not a guarantee — it is the model's general pattern for handling quoted or fenced material. The key variable is the semantic context around the fence.
 
-Confirmed: both. The Onion's Step 0 explicitly reads `.storyline/features/*.feature` alongside the blueprint. It does not operate solely through the changeset — the opening instruction says "Also read: Glob: `.storyline/features/*.feature`." This means if a technical task produces no feature files, The Onion's opening read finds nothing and has no acceptance tests to make red. The Tester's concern is valid. Option 2 (the `technical-brief.yaml` listed as a feature file reference) resolves this: The Onion reads the brief as its outermost acceptance artifact and uses the `criteria[]` list as its acceptance test inputs. We will need to add one line to The Onion's Step 0: "If feature files are absent but a `technical-brief.yaml` exists, use its `criteria[]` as the acceptance test inputs." That is a small guard, not a restructuring of The Onion.
+**The Mister Gherkin case confirms the pattern is safe when context is clear.** That skill contains six or more Gherkin code fences. The skill has not been observed to produce Gherkin output when invoked — it produces natural language guidance and `.feature` files when appropriate. Why? Because the surrounding prose is explicit: "here is what good Gherkin looks like," "here is what to avoid." The fences are framed as examples. The instruction prose is the dominant signal.
+
+**The Foreman case is semantically different.** Mister Gherkin is about Gherkin — a Gherkin example inside it is coherent and expected. The Foreman is about intake routing and pipeline orchestration. A Gherkin block inside the Foreman skill creates a semantic tension: "why is there a Given/When/Then inside an instruction that tells me how to triage a project?" Without explicit framing, the LLM might plausibly interpret it as:
+- A description of what the Foreman should produce (treat as output format instruction)
+- An acceptance criterion the Foreman should satisfy (treat as self-test)
+- An example of what scenarios look like (treat as documentary)
+
+The first two are failure modes. The third is the intended behavior.
+
+**The mitigation the Testing Amigo identified is correct and sufficient:** any Gherkin embedded in a SKILL.md must be inside a fenced block AND be preceded by a prose sentence that explicitly frames it as illustrative. Example:
+
+```
+The following scenario shows the expected routing behavior for reference:
+```gherkin
+...
+```
+```
+
+The phrase "for reference" or "this illustrates" is load-bearing. It shifts the semantic frame from instruction to documentation. Without that framing, the risk is real, especially in skills where Gherkin is unexpected.
+
+**Verdict:** Fenced Gherkin in SKILL.md files is safe only with explicit prose framing. Unframed fenced Gherkin is risky in skills that are not about Gherkin. Bare (unfenced) Gherkin in prose sections is unsafe in any skill.
+
+This does not change my Interpretation C assessment — it adds a specific authoring rule: every embedded Gherkin block must have a framing sentence before the fence.
+
+---
+
+### On the Product Amigo's Round 2 conclusion: real fix is authoring discipline
+
+The Product Amigo has converged on the same position I ended Round 1 with: the problem is authoring discipline (spec-first edits), not file format. I agree, and the Round 2 analysis from the Product Amigo adds clarity I did not have in Round 1.
+
+The `@surveyed` tag on every feature file is now the clearest signal: this is as-built documentation, not a living specification. Nobody is prevented from editing SKILL.md without touching the corresponding `.feature` file. The convention does not exist. The tool does not enforce it. The pipeline enforces BDD discipline on users but not on itself.
+
+**The minimal technical change that enforces this discipline:**
+
+There are three layers, ordered by cost:
+
+**Layer 1 — Convention only (zero code, high value):** Add a rule to `skills/CONVENTIONS.md`:
+
+> Before editing any SKILL.md, update or add the relevant scenario in the corresponding `.feature` file in `.storyline/features/` first. The feature file is the spec; the SKILL.md is the implementation. Skill edits without a spec step are not BDD — they are ad hoc changes.
+
+This is the "spec-first" contract written down. It takes 10 minutes to add. It does not automate anything, but it makes the convention explicit and visible to every contributor who reads the conventions file. Without this being written down, the discipline has no anchor.
+
+**Layer 2 — Coverage gaps filled (low code, high value):** Audit the 11 `.feature` files and add missing scenarios for:
+- Foreman Scenario 3 (blueprint exists and is current — currently no scenario)
+- Foreman's hard gate being respected (no scenario today)
+- Three Amigos full session vs. quick scan branching (partially covered, decision branches incomplete)
+- Mister Gherkin quality gate detecting implementation leakage (no sad path scenario)
+
+This is additive — existing `@surveyed` files get new scenarios with behavioral intent rather than as-built observation. The new scenarios would NOT be tagged `@surveyed` — they would signal "this was written before the behavior, not after."
+
+**Layer 3 — Structural separation (schema change, lower priority):** Address the Level 1 / Level 2 collision: `orchestration.feature` should not share a directory with `shopping-cart.feature`. This is a real architectural problem, but it is a consequence of the discipline problem, not the cause. Out of scope for this session — flag it.
+
+Nothing in layers 1 or 2 requires touching SKILL.md files or adding Gherkin inside them.
+
+---
+
+### Concrete technical recommendation
+
+The Product Amigo asked: given that the real fix is authoring discipline, what does the concrete technical recommendation look like? What files change?
+
+**Files that change:**
+
+1. `skills/CONVENTIONS.md` — add the spec-first rule (Layer 1). One section, ~5 lines.
+
+2. `.storyline/features/orchestration.feature` — add missing scenarios: Foreman Scenario 3 (current blueprint, nothing stale), hard gate respected, MCQ presented before routing decision.
+
+3. `.storyline/features/discovery.feature` — add full-session vs. quick-scan branch scenarios with more specificity than the current surveyed versions.
+
+4. `.storyline/features/specification.feature` — add quality gate sad path: "Mister Gherkin detects implementation leakage and rewrites the step."
+
+**Files that do NOT change:**
+
+- Any SKILL.md file. No Gherkin goes inside skills.
+- `plugin.json`, `blueprint.yaml`, any CLI script.
+- No new files — new `.feature` files are not warranted; extend existing ones.
+
+**What the new scenarios look like (not surveyed, written with behavioral intent):**
+
+Rather than `@surveyed`, the new scenarios should carry a tag indicating they were written spec-first — e.g., `@spec:2026-04-06` or simply no `@surveyed` tag. The absence of `@surveyed` is the signal. This can be a convention rather than a new tag.
+
+**What "done" looks like for this session:**
+
+A contributor making a change to the Foreman's routing logic would:
+1. Open `orchestration.feature`
+2. Find the scenario that covers the routing decision being changed
+3. Update that scenario first
+4. Then open `SKILL.md` and make the matching change
+5. Know they followed the discipline because CONVENTIONS.md says so
+
+That workflow is what this feature delivers. Not a new file format. Not Gherkin inside SKILL.md. A written convention and better scenario coverage.
+
+@testing-amigo — the scenarios I described above (Foreman hard gate, MCQ before routing, specification quality gate sad path) are the priority gaps. If you agree these are the highest-value missing scenarios, we can use those as the scope for this session's deliverable. Are there other gaps in your Round 1 list that should rank above these?
+
+@product-amigo — the `@surveyed` vs. non-surveyed distinction may need a small convention update too: new scenarios written spec-first should be distinguishable from surveys. Is a naming convention enough, or should we add a tag (e.g., `@spec-first`) to make this visible in the files themselves?
