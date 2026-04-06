@@ -1,8 +1,8 @@
 meta:
   project: Storyline
   created_at: '2026-04-04'
-  updated_at: '2026-04-06T19:05:47.485Z'
-  version: 46
+  updated_at: '2026-04-06T19:32:26.473Z'
+  version: 47
 tech_stack:
   language: "TypeScript, Markdown, Bash, YAML"
   framework: "Claude Code Plugin SDK"
@@ -144,6 +144,14 @@ bounded_contexts:
           - "Blueprint must be validated and stamped before any commit that
             touches the blueprint — code-only commits on the lightweight tweak
             path are exempt"
+          - "Open changeset (status: draft or in_progress) routes Foreman
+            directly to Role 2 — bypasses Role 1 intake"
+          - "Abandoned changeset detected when domain_model_delta has unapplied
+            entries and no build has started — Foreman surfaces resume/discard
+            choice before presenting build options"
+          - "Murphy logs decisions, deferred scope, and risky assumptions to
+            .storyline/workbench/murphy.md throughout the session; surfaces one
+            critique per phase transition via AskUserQuestion"
     policies:
       - name: "DispatchSurveyorOnMissingBlueprint"
         triggered_by: "ProjectStateDetected"
@@ -368,6 +376,10 @@ bounded_contexts:
               - "meaning"
         invariants:
           - "Events and commands are discovered from scenarios, not from code"
+          - "Sticky Storm writes discovered events and commands to the open
+            changeset domain_model_delta, not directly to blueprint.yaml"
+          - "Doctor Context writes invariants and relationships to the open
+            changeset domain_model_delta, not directly to blueprint.yaml"
           - "Doctor Context reads the blueprint as its patient, never explores
             the codebase"
           - "DDD patterns reference is available at references/ddd-patterns.md"
@@ -459,7 +471,11 @@ bounded_contexts:
             { name: ChangesetInitialised, payload_fields: [ id, title, blueprintVersion ] },
             { name: ChangesetValidated, payload_fields: [ id, errorCount, warningCount ] }
           ]
-        invariants: []
+        invariants:
+          - "domain_model_delta entries are applied to blueprint.yaml
+            incrementally per scenario as acceptance tests go green"
+          - "DiscardChangeset deletes the changeset file without touching
+            blueprint.yaml — used for abandoned changesets with unapplied delta"
     policies:
       - name: "HandOffToForemanAfterPlan"
         triggered_by: "ImplementationPlanCreated"
@@ -583,6 +599,15 @@ bounded_contexts:
           - "Glossary definition context must reference existing context or
             Shared Kernel"
           - "Feature files referenced in commands must exist on disk"
+          - "Validation resolves brief-type feature_files: plain filename looks
+            up in workbench/, path containing a slash resolves relative to
+            .storyline/"
+          - "archiveSession moves session artifacts (example-map.yaml,
+            amigo-notes/, murphy.md, events-raw.md, estimates/,
+            technical-brief.yaml) to .storyline/sessions/YYYY-MM-DD-slug/ and
+            updates blueprint references"
+          - "housekeeping --cleanup auto-archives from the completed changeset —
+            no separate archive command needed"
           - "CLI helpers use the yaml npm package for YAML parsing and writing"
           - "Init creates features/, workbench/, plans/, and backlog/
             subdirectories"
@@ -656,14 +681,17 @@ glossary:
       - context: "DomainModeling"
         meaning: "The Event Storming agent (agents/sticky-storm.md) dispatched by The
           Foreman to discover domain events, commands, policies, and aggregates
-          from Gherkin scenarios and write them into the blueprint."
+          from Gherkin scenarios. Writes discovered entries to the open
+          changeset domain_model_delta — never writes directly to
+          blueprint.yaml."
   Doctor Context:
     definitions:
       - context: "DomainModeling"
         meaning: "The DDD modeling agent (agents/doctor-context.md) dispatched by The
           Foreman to refine bounded context boundaries, add invariants,
-          relationships, and glossary terms. References ddd-patterns.md for
-          strategic patterns."
+          relationships, and glossary terms. Writes invariants and relationships
+          to the open changeset domain_model_delta — never directly to
+          blueprint.yaml. References ddd-patterns.md for strategic patterns."
   The Onion:
     definitions:
       - context: "Implementation"
@@ -800,18 +828,18 @@ glossary:
   The Brief:
     definitions:
       - context: Discovery
-        meaning: Standalone pipeline skill that runs a structured technical intake
-          session. Produces
-          sessions/2026-04-06-domain-model-delta-in-changeset/technical-brief.yaml.
-          Entry point for technical tasks that have no user story framing.
-  sessions/2026-04-06-domain-model-delta-in-changeset/technical-brief.yaml:
+        meaning: Standalone pipeline skill that runs a 3-question technical intake
+          (what/why, done criteria, risks). Produces
+          .storyline/workbench/technical-brief.yaml. Entry point for technical
+          tasks that have no user story framing.
+  technical-brief.yaml:
     definitions:
       - context: Discovery
-        meaning: Schema-validated YAML artifact produced by The Brief. Contains task
-          description, acceptance criteria, security_surface, and
-          public_interface_change. Serves as the specification artifact for
-          blueprint commands created by technical tasks, listed in
-          feature_files.
+        meaning: YAML artifact produced by The Brief. Contains task description,
+          acceptance criteria, risks, scope, and optional NFR/MoSCoW fields.
+          Stored in workbench/ during the session; archived to
+          sessions/YYYY-MM-DD-slug/ by housekeeping --cleanup. Referenced in
+          blueprint command feature_files with spec_type brief.
   Scoped technical task:
     definitions:
       - context: Discovery
@@ -828,9 +856,9 @@ glossary:
     definitions:
       - context: BlueprintManagement
         meaning: "Field on blueprint commands (values: gherkin or brief). Controls which
-          artifact type is accepted in feature_files. brief allows a
-          sessions/2026-04-06-domain-model-delta-in-changeset/technical-brief.y\
-          aml reference; gherkin requires a .feature file."
+          artifact type is accepted in feature_files. brief accepts a
+          technical-brief.yaml reference (workbench/ or sessions/ path); gherkin
+          requires a .feature file in .storyline/features/."
   Minor tweak:
     definitions:
       - context: Orchestration
@@ -853,6 +881,14 @@ glossary:
         meaning: Staged domain model entries (events, commands, invariants,
           relationships) held in the changeset until a scenario goes green, at
           which point The Onion applies them to blueprint.yaml incrementally
+  Murphy:
+    definitions:
+      - context: Orchestration
+        meaning: Session critic character in The Foreman. Logs decisions, skipped gaps,
+          deferred scope, and risky assumptions to
+          .storyline/workbench/murphy.md throughout the session. Surfaces one
+          targeted critique per phase transition via AskUserQuestion — one at a
+          time, never interrupting flow.
 gaps:
   - id: "GAP-003"
     description: "No integration tests verifying the full pipeline flow from Foreman
