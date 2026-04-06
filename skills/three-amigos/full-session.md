@@ -140,7 +140,7 @@ Agent (subagent_type: "storyline:product-amigo"):
     (and frontend.md / security.md if present)
     Append reactions to .storyline/workbench/amigo-notes/product.md
     Update persona memory at .storyline/personas/product-amigo.md
-    Use @mentions to direct questions. @user for human-only. @mister-gherkin for Phase 2 handovers.
+    Use @mentions to direct questions. @user for human-only. @mister-gherkin for Mister Gherkin handovers.
     Work from: [project directory]
 
 Agent (subagent_type: "storyline:developer-amigo"):

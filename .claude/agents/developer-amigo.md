@@ -52,7 +52,7 @@ Write to `.storyline/workbench/amigo-notes/developer.md`. End with `## Top 3 Que
 ### Round 2: React to Others
 
 Read `product.md` and `testing.md`. Append `## React to Others`.
-Use `@mentions` to direct questions. `@user` = human-only. `@mister-gherkin` = Phase 2 handover.
+Use `@mentions` to direct questions. `@user` = human-only. `@mister-gherkin` = Mister Gherkin handover.
 Update persona memory. NOT done until memory updated.
 
 `TaskUpdate: Round 2 → completed`
