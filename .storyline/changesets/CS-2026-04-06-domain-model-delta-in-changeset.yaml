@@ -1,0 +1,148 @@
+meta:
+  id: CS-2026-04-06-domain-model-delta-in-changeset
+  title: Domain Model Delta Belongs in the Changeset, Not the Blueprint
+  blueprint_version: 42
+  created_at: "2026-04-06T18:21:32.081Z"
+  status: draft
+  spec: workbench/technical-brief.yaml
+  spec_type: brief
+
+goal: >
+  Move domain model deltas (events, commands, invariants, relationships) out of blueprint.yaml
+  and into the changeset. The blueprint only gets updated after each scenario goes green.
+  Blueprint stays trustworthy even after an interrupted session.
+
+constraints:
+  - Existing changesets without domain_model_delta must be treated as empty delta — no migration required
+  - Delta application is idempotent — re-applying an already-applied entry is a no-op
+  - Sticky Storm and Doctor Context must not write to blueprint.yaml directly after this change
+  - Sticky Storm and Doctor Context must refuse to run (or warn loudly) if no open changeset exists — the delta has nowhere to go
+
+phases:
+  - id: P1
+    title: "Add domain_model_delta section to changeset schema (scripts/changeset.ts)"
+    type: addition
+    touches:
+      modify:
+        - path: "bounded_contexts[Implementation].aggregates[Changeset]"
+          field: invariants
+          value: "domain_model_delta section is optional — absent means empty delta"
+    acceptance_criteria:
+      - "`storyline changeset init` produces a changeset with an empty `domain_model_delta:` section"
+      - "`storyline changeset validate` accepts a changeset without `domain_model_delta` (backwards compatible)"
+      - "`storyline changeset validate` accepts a present-but-empty `domain_model_delta` section"
+      - "`storyline changeset validate` rejects malformed delta entries (event with no name, relationship with missing target)"
+      - "`domain_model_delta` supports events[], commands[], invariants[], relationships[] per context/aggregate"
+      - "scripts/test-changeset.ts passes with new tests covering presence, absence, empty section, and malformed delta"
+    notes: >
+      Walking skeleton — all other phases depend on this schema change.
+      The delta structure mirrors the blueprint's domain model shape so The Onion can
+      apply entries via existing CLI helpers.
+
+  - id: P2
+    title: "Rewrite Sticky Storm (agents/sticky-storm.md) — write to changeset delta, not blueprint"
+    type: refactor
+    migration:
+      strategy: >
+        Sticky Storm reads the blueprint and feature files as before, but instead of calling
+        storyline add-event and storyline add-command (which write to blueprint.yaml),
+        it appends entries to the changeset domain_model_delta section. Glossary terms
+        are still written to the blueprint directly — they are safe to pre-populate and
+        not domain model. Commit only the changeset, not the blueprint.
+      rollback: >
+        Restore agents/sticky-storm.md from git. Changeset delta entries are never applied
+        to the blueprint until The Onion runs, so rollback leaves the blueprint clean.
+    acceptance_criteria:
+      - "After Sticky Storm runs, blueprint.yaml contains no new events or commands"
+      - "After Sticky Storm runs, the changeset domain_model_delta contains the discovered events and commands"
+      - "Glossary terms are still written to the blueprint"
+      - "Sticky Storm commits only the changeset, not the blueprint"
+
+  - id: P3
+    title: "Rewrite Doctor Context (agents/doctor-context.md) — write to changeset delta, not blueprint"
+    type: refactor
+    migration:
+      strategy: >
+        Doctor Context reads the blueprint as before but writes invariants and relationships
+        to the changeset domain_model_delta instead of editing blueprint.yaml directly.
+        Glossary terms still go to the blueprint. Commit only the changeset.
+      rollback: >
+        Restore agents/doctor-context.md from git. Delta entries in the changeset are not
+        yet applied to the blueprint, so rollback leaves the blueprint clean.
+    acceptance_criteria:
+      - "After Doctor Context runs, blueprint.yaml contains no new invariants or relationships"
+      - "After Doctor Context runs, the changeset domain_model_delta contains the refined invariants and relationships"
+      - "Doctor Context commits only the changeset, not the blueprint"
+    notes: P2 and P3 can be implemented in parallel — different agent files, same changeset section.
+
+  - id: P4
+    title: "Add delta-apply step to The Onion (skills/the-onion/SKILL.md)"
+    type: refactor
+    migration:
+      strategy: >
+        After each scenario goes green (step 2e), The Onion reads domain_model_delta from
+        the changeset and applies entries relevant to that scenario to blueprint.yaml using
+        existing CLI helpers. Before applying each entry, check if it already exists
+        (idempotent). Mark each applied entry with applied: true in the changeset.
+        Then storyline validate and stamp. Commit blueprint + changeset together.
+        If domain_model_delta is absent, skip silently.
+      rollback: >
+        Restore skills/the-onion/SKILL.md from git. Blueprint entries already written by
+        the delta-apply step can be reconciled via Surveyor as-built mode.
+    acceptance_criteria:
+      - "After a scenario goes green, its domain_model_delta entries appear in blueprint.yaml"
+      - "Re-running the delta-apply step for the same scenario is a no-op"
+      - "The Onion commits blueprint.yaml and changeset together after each scenario"
+      - "If domain_model_delta is absent, The Onion proceeds without error"
+
+  - id: P5
+    title: "Redesign status inspector phase detection (agents/foreman.md)"
+    type: refactor
+    migration:
+      strategy: >
+        Replace the two blueprint-content detection rules for Sticky Storm and Doctor Context
+        with changeset-based detection. Sticky Storm ran if the current changeset has a
+        non-empty domain_model_delta.events or domain_model_delta.commands. Doctor Context
+        ran if the changeset has non-empty domain_model_delta.invariants or
+        domain_model_delta.relationships. No changeset present means both are not_started.
+        All other detection rules are unchanged.
+      rollback: >
+        Restore agents/foreman.md from git. Inspector reverts to blueprint-content detection.
+        Will show Sticky Storm and Doctor Context as not_started even after they ran —
+        acceptable short-term degradation until a proper fix.
+    acceptance_criteria:
+      - "Inspector reports Sticky Storm complete when changeset has domain_model_delta events/commands"
+      - "Inspector reports Doctor Context complete when changeset has domain_model_delta invariants/relationships"
+      - "Inspector reports both as not_started when no changeset exists"
+      - "Surveyor, Scout, Mister Gherkin, and The Onion detection rules produce identical output before and after the rewrite"
+    notes: Implement last — P2 and P3 must be settled before wiring the inspector to their output.
+
+completion_criteria:
+  - "blueprint.yaml only contains domain model entries that exist in the codebase"
+  - "Session interrupted after Sticky Storm/Doctor Context but before build: blueprint.yaml unchanged, next session resumes from changeset"
+  - "The Onion applies delta incrementally — one scenario green means its blueprint entries appear"
+  - "Status inspector correctly detects Sticky Storm and Doctor Context without reading blueprint domain model entries"
+  - "Existing changesets without domain_model_delta work without modification"
+
+  - id: P6
+    title: "Define abandoned-changeset behaviour — what happens when a delta-bearing changeset is never built"
+    type: addition
+    acceptance_criteria:
+      - "Foreman (skill) detects a changeset with domain_model_delta entries where applied: true is absent or false for all entries, and no build has started"
+      - "Foreman presents the user with an explicit choice: resume the build, or discard the changeset (which leaves blueprint.yaml unchanged)"
+      - "Discarding a changeset with an unapplied delta does NOT require any blueprint cleanup"
+      - "The status inspector correctly reports an abandoned changeset as a warning, not an error"
+    notes: >
+      Addresses brief acceptance criterion "If a changeset with a domain_model_delta is abandoned,
+      blueprint.yaml remains consistent." Since delta entries are never applied until The Onion runs,
+      abandonment is inherently safe — this phase just makes it explicit and user-visible.
+
+open_questions:
+  - question: "Should domain_model_delta entries be per-phase (tied to a scenario) or flat at the changeset level?"
+    best_guess: >
+      Flat at changeset level. Phases already correspond to scenarios — The Onion knows which
+      scenario it just made green and can apply all relevant delta entries. Simpler schema.
+  - question: "Does the applied: true marker on delta entries need to survive changeset archival?"
+    best_guess: >
+      Yes — keep it as audit trail. Archiving happens after all scenarios are green and all
+      delta entries are applied anyway.
