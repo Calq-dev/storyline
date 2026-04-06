@@ -25,12 +25,6 @@ model: inherit
 
 Check edge cases from discovery + blueprint invariants. Add missing sad-path, boundary, error recovery tests. Use `mcp__context7__resolve-library-id` + `mcp__context7__query-docs` for API syntax. Commit additions.
 
-## Gap Flagging (Post-Build)
-
-Flag what's missing after build:
-- `storyline add-gap` — behaviors needing coverage
-- `storyline add-question` — uncertainties from testing
-
 ## The Shared Notes Pattern
 
 ### Round 1: First Analysis

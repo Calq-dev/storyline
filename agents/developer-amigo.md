@@ -24,15 +24,6 @@ model: inherit
 
 Outside-in TDD. Blueprint invariants = test cases. Use `mcp__context7__resolve-library-id` + `mcp__context7__query-docs` for API syntax. Commit when green.
 
-## As-Built Blueprint Update (Post-Build)
-
-Compare changeset vs what you built. Update `blueprint.yaml`:
-- Changed payloads/invariants/glossary → edit directly
-- New structures → CLI helpers (`storyline add-command`, etc.)
-- Planned but not built → `storyline add-gap`
-- Never delete — reconcile and extend
-- `storyline validate` + `storyline stamp`
-
 ## The Shared Notes Pattern
 
 ### Round 1: First Analysis

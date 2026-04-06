@@ -117,110 +117,56 @@ Update the in-progress todo:
 
 ## After All Tasks Complete
 
-### As-built update + scenario refinement (parallel)
-
-The amigos already have the right context from building — no need for a separate Surveyor.
-Developer updates the blueprint, Testing flags gaps, Product reviews from user perspective.
-
 <branch-todos id="after-build">
-- Foreman: building's done — crew does as-built update and scenario refinement
-- Foreman: calling in the security inspector
-- Foreman: final walkthrough — do the specs still match the building?
-- Foreman: final inspection done — archiving the session
+- Foreman: building's done — running code review
+- Foreman: updating blueprint to match what was actually built
+- Foreman: archiving the session
 </branch-todos>
 
-<bash-commands>
+### Code review
+
+One focused review of the full diff. No persona agents — just good instructions adapted to this story.
+
+**Load context:**
+1. Read `.storyline/changesets/<cs-filename>.yaml` — what was planned
+2. Run `git diff HEAD~[task count]` — what was built
+3. Read `.storyline/features/*.feature` — what behavior was specified
+4. Run `storyline summary` — blueprint invariants and glossary
+
+**Review passes (single agent, sequential):**
+
+| Pass | Check | Skip |
+|---|---|---|
+| **Correctness** | Logic bugs, edge cases, off-by-one, null handling, incorrect conditionals, error handling gaps | Style, naming, formatting (linters handle that) |
+| **Invariants** | Every `invariants[]` from blueprint holds in the code. Every command validates its preconditions. | Generic "consider pattern X" suggestions |
+| **Cross-file impact** | Changes that break assumptions in other files. Dependency chains, call sites, type contracts. | Praise, positive comments |
+| **Security** | Injection, hardcoded secrets, auth gaps, unsafe input handling. Focus on code paths that touch user input or external APIs. | Low-risk utility code |
+| **Test completeness** | New code paths have tests. Sad paths from feature files have test coverage. | Asserting test style preferences |
+| **Glossary** | Code identifiers match `glossary[]` terms exactly. No drift from ubiquitous language. | |
+
+**Rules:**
+- Only flag issues with high confidence. State confidence if borderline.
+- Every finding: severity (blocking / warning / nit), file:line, what's wrong, suggested fix.
+- Blocking findings must be fixed before proceeding. Warnings and nits go to the user.
+- If the feature touches auth, user input, sensitive data, or external APIs — the security pass is mandatory, not skimmable.
+
+**After review — fix blocking issues, then proceed.**
+
+### As-built blueprint update
+
+Compare changeset plan vs actual diff. Update `blueprint.yaml` to match reality:
+- Changed payloads, invariants, glossary → edit directly
+- New structures discovered during build → `storyline add-command`, `storyline add-event`, etc.
+- Planned but not implemented → `storyline add-gap --description "Planned <X> not built" --severity "important" --affects "<Ctx>"`
+- Scenarios that drifted → dispatch Mister Gherkin to update feature files
+- Never delete existing entries — reconcile and extend
+
 ```bash
-mkdir -p .storyline/workbench/amigo-notes
+storyline validate
+storyline stamp
 ```
-</bash-commands>
 
-<agent-dispatch subagent_type="storyline:developer-amigo">
-prompt: |
-  The feature is built. You have two jobs:
-
-  ## 1. As-built blueprint update
-  You just built this — you know what changed. Read .storyline/changesets/<cs-filename>.yaml
-  and compare with what you actually implemented. Update blueprint.yaml to match reality:
-  - Changed payloads, invariants, glossary → edit directly
-  - New structures discovered during build → use CLI helpers (storyline add-command, etc.)
-  - Planned but not implemented → `storyline add-gap --description "Planned <X> not built" --severity "important" --affects "<Ctx>"`
-  - Never delete existing entries — reconcile and extend
-  - `storyline validate` + `storyline stamp` when done
-
-  ## 2. Scenario refinement
-  Review .storyline/features/ against what was actually implemented.
-  Write refinement notes to .storyline/workbench/amigo-notes/developer.md:
-  - Scenarios that no longer match implementation
-  - Missing scenarios for behavior that emerged during implementation
-  - Scenario language that doesn't match the updated glossary
-  - Anything you had to build that wasn't specified
-
-  Also update your persona memory at .storyline/personas/developer-amigo.md
-  Work from: [project directory]
-</agent-dispatch>
-
-<agent-dispatch subagent_type="storyline:testing-amigo">
-prompt: |
-  The feature is built. You have two jobs:
-
-  ## 1. Flag gaps and questions
-  You just reviewed all the tests — you know where coverage is thin. Flag what's missing:
-  - Use `storyline add-gap` for behaviors that need more coverage
-  - Use `storyline add-question` for uncertainties that surfaced during testing
-
-  ## 2. Scenario refinement
-  Review .storyline/features/ for completeness.
-  Write refinement notes to .storyline/workbench/amigo-notes/testing.md:
-  - Edge cases tested in code but missing from feature files
-  - Sad paths discovered during implementation
-  - Scenarios too vague given what we know about actual behavior
-
-  Also update your persona memory at .storyline/personas/testing-amigo.md
-  Work from: [project directory]
-</agent-dispatch>
-
-<agent-dispatch subagent_type="storyline:product-amigo">
-prompt: |
-  The feature is built. Review .storyline/features/ from the user's perspective.
-  Write refinement notes to .storyline/workbench/amigo-notes/product.md:
-  - Scenarios where described behavior doesn't match user expectations
-  - Missing user-facing scenarios
-  - Scope changes that happened during implementation
-  Also update your persona memory at .storyline/personas/product-amigo.md
-  Work from: [project directory]
-</agent-dispatch>
-
-(Include frontend-amigo if they were active in this session.)
-
-### Security audit (if applicable)
-
-If the feature touches auth, user input, sensitive data, or external APIs:
-
-<agent-dispatch subagent_type="storyline:security-amigo">
-prompt: |
-  Audit the code just built for security vulnerabilities.
-
-  ## Your notes:
-  Read .storyline/personas/security-amigo.md (may not exist yet).
-
-  ## What was built:
-  Read .storyline/changesets/<cs-filename>.yaml and run `git log --oneline -10`
-  and `git diff HEAD~[task count]` to see actual changes.
-
-  ## Blueprint:
-  Run `storyline summary`. Use `storyline view --context "<name>"` for specific contexts.
-
-  Write findings to .storyline/workbench/amigo-notes/security.md
-  Focus on code that was just changed — not the entire codebase.
-  Work from: [project directory]
-</agent-dispatch>
-
-If critical issues found → Developer Amigo fixes, Security Amigo reviews.
-
-### Synthesize and act
-
-Read all refinement notes. Fix now (scenarios wrong/missing) → dispatch Mister Gherkin + validate + stamp. New ideas → `.storyline/backlog/`. Gaps → `storyline add-gap`.
+New ideas → `.storyline/backlog/`. Gaps → `storyline add-gap`.
 
 ### Archive the session
 
@@ -228,7 +174,7 @@ Read all refinement notes. Fix now (scenarios wrong/missing) → dispatch Mister
 ```bash
 storyline archive --feature "<feature name>"
 git add .storyline/sessions/ .storyline/
-git commit -m "refine: scenario refinement + session archive for [feature name]"
+git commit -m "refine: code review + as-built update for [feature name]"
 storyline housekeeping --cleanup
 git add .storyline/
 git commit -m "chore: workbench cleanup after [feature name]"
