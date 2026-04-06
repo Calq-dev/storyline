@@ -1,8 +1,8 @@
 meta:
   project: Storyline
   created_at: '2026-04-04'
-  updated_at: '2026-04-06T06:58:49.021Z'
-  version: 26
+  updated_at: '2026-04-06T07:00:39.041Z'
+  version: 27
 tech_stack:
   language: "TypeScript, Markdown, Bash, YAML"
   framework: "Claude Code Plugin SDK"
@@ -813,6 +813,14 @@ gaps:
     severity: important
     affects:
       - Orchestration
+  - id: GAP-011
+    description: Test infrastructure for blueprint.ts spawns a child process per
+      test case (npx tsx + spawnSync), making the full suite take ~9 minutes for
+      64 tests. Consider in-process testing by importing blueprint functions
+      directly, or running tsx once and invoking handlers in-memory.
+    severity: nice_to_know
+    affects:
+      - BlueprintManagement
 
 questions:
   - id: "Q-001"
