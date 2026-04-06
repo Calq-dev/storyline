@@ -1,0 +1,181 @@
+meta:
+  id: CS-2026-04-06-lightweight-tweak-path
+  title: lightweight-tweak-path
+  blueprint_version: 36
+  created_at: 2026-04-06T10:52:17.807Z
+  status: draft
+
+goal: >
+  Add a lightweight tweak path to The Foreman skill. When a user describes a minor
+  adjustment to an existing feature, the Foreman detects tweak signals, confirms with
+  the user, runs an implication scan against feature files and blueprint, gates on
+  cross-context impact, then executes via Developer Amigo (or inline) with post-commit
+  artifact reconciliation.
+
+constraints:
+  - "Pure skill file change — no TypeScript code to write"
+  - "Implementation is Markdown edits to skills/the-foreman/SKILL.md"
+  - "Two-commit pattern: code commit first (no blueprint touch), then validate + stamp + reconcile commit"
+  - "Behavioral acceptance tests only — no automated test harness covers skill behavior"
+  - "Q-004 (ConfirmLightweightPath as separate command) and Q-005 (TweakRoutedToFullPipeline conflation) are implementation decisions left to builder"
+
+phases:
+  - id: T1
+    type: addition
+    title: "Walking skeleton — detect, confirm, scan clean, execute inline"
+    scenarios:
+      - "Scoped change is recognized as a minor tweak"
+      - "User confirms the lightweight path"
+      - "Scan finds no affected scenarios or blueprint structures"
+      - "Inline execution when the session already has context"
+    file: skills/the-foreman/SKILL.md
+    changes:
+      - "Add S8 row to Role 1 routing table: 'Feature specified, minor tweak signals detected → S8'"
+      - >
+        Modify S4 description: before routing to S4a/S5, check for tweak signals.
+        Tweak signals are: named existing behavior, scoped to one aggregate/command,
+        no new rules or contexts implied, phrased as adjustment (e.g. 'change X to Y',
+        'rename', 'add field to', 'update label on').
+      - >
+        Add S8 section after S5 with:
+        (a) detection signal list (same as S4 pre-check above),
+        (b) classification MCQ — minor tweak / broad change / unsure,
+        (c) implication scan procedure: Glob .storyline/features/ + read blueprint commands,
+        (d) clean-scan result + inline execution template,
+        (e) Foreman displays rationale: 'Treating as tweak because: [matched signals]'
+    rationale: >
+      Walking skeleton establishes the full end-to-end path in the simplest case:
+      user describes tweak → Foreman classifies → Foreman shows rationale → user confirms →
+      scan finds nothing → Foreman executes inline. Every subsequent task extends this path.
+
+  - id: T2
+    type: addition
+    title: "Scan output — surface affected scenarios and scenario names"
+    scenarios:
+      - "Scan surfaces affected scenarios"
+    file: skills/the-foreman/SKILL.md
+    changes:
+      - "Extend S8 scan procedure: when feature files reference the changed area, list affected file paths and scenario names in Foreman's response"
+    depends_on: [T1]
+
+  - id: T3
+    type: addition
+    title: "Single-context implication gate — offer proceed lightly or full pipeline"
+    scenarios:
+      - "Single-context implications allow lightweight path with update option"
+    file: skills/the-foreman/SKILL.md
+    changes:
+      - "Extend S8: after surfacing implications, present MCQ — proceed lightly (update those scenarios post-commit) or run full pipeline"
+    depends_on: [T2]
+
+  - id: T4
+    type: addition
+    title: "Cross-context gate — block lightweight path"
+    scenarios:
+      - "Cross-context implications block the lightweight path"
+    file: skills/the-foreman/SKILL.md
+    changes:
+      - "Add gate to S8 scan: if implications span more than one bounded context, block lightweight path and recommend full pipeline"
+    depends_on: [T2]
+
+  - id: T5
+    type: addition
+    title: "Developer Amigo dispatch — delegate execution and reconcile artifacts"
+    scenarios:
+      - "Developer Amigo executes the tweak and updates artifacts"
+    file: skills/the-foreman/SKILL.md
+    changes:
+      - >
+        Add agent-dispatch block to S8 execution: dispatch Developer Amigo with
+        tweak description, affected area (file paths + scenario names from scan),
+        and implication scan results.
+      - >
+        Developer Amigo prompt includes:
+        (1) make the code change,
+        (2) commit code only (no blueprint/feature edits) — report commit SHA back to Foreman,
+        (3) second commit: manually edit affected feature files + blueprint if needed,
+            then run validate + stamp, then commit with 'reconcile: ...' message.
+      - "Inline execution remains for when session has sufficient context (from T1)"
+      - "Observable checkpoint: Developer Amigo must report first commit SHA before starting artifact reconciliation"
+    depends_on: [T3, T4]
+
+  - id: T6
+    type: addition
+    title: "Sad paths — broad change, override, ambiguous"
+    scenarios:
+      - "Broad change routes to full pipeline"
+      - "User overrides the classification and runs the full pipeline"
+      - "Ambiguous description triggers clarification"
+    file: skills/the-foreman/SKILL.md
+    changes:
+      - >
+        Broad change: S8 detection does NOT trigger; routing falls through to S4a/S5.
+        Verify by checking that none of the T1 signal list items match — document this
+        cross-check explicitly in S8 so the Foreman has an artifact to reason against.
+      - >
+        Override: already in S8 MCQ from T1 — verify 'run full pipeline' option routes
+        correctly to S4a/S5. The classification MCQ (minor tweak / broad change / unsure)
+        is distinct from the clarification MCQ (ambiguous input). Classification MCQ fires
+        when signals are present; clarification MCQ fires when signals are inconclusive.
+        These must not collapse into each other.
+      - "Ambiguous: add clarification MCQ to S8 when signals are inconclusive (no named existing behavior found, or scope not determinable)"
+    depends_on: [T1]
+
+component_inventory:
+  - file: skills/the-foreman/SKILL.md
+    type: skill instruction file
+    changes:
+      - "EDIT Role 1 routing table: add S8 row"
+      - "EDIT S4 description: add tweak-signal pre-check paragraph"
+      - "NEW S8 section: detection signals, rationale display, classification MCQ, clarification MCQ, scan procedure (Glob + read), implication list format (file paths + scenario names), single-context gate MCQ, cross-context gate, execution (inline + Developer Amigo dispatch with two-commit prompt)"
+    scenarios_covered:
+      - IdentifyMinorTweak (all scenarios)
+      - ScanTweakImplications (all scenarios)
+      - ExecuteTweakPath (all scenarios)
+
+dependency_graph: |
+  T1 (walking skeleton)
+  ├── T2 (scan output)
+  │   ├── T3 (single-context gate)
+  │   │   └── T5 (Developer Amigo dispatch)
+  │   └── T4 (cross-context gate)
+  │       └── T5
+  └── T6 (sad paths — parallel with T2, no dependency)
+
+integration_points:
+  - "S8 must fall through to S4a/S5 when override selected — existing routing reused"
+  - "Developer Amigo agent already exists and handles code changes — S8 reuses it with a new dispatch prompt"
+  - "Two-commit pattern aligns with narrowed invariant (blueprint.yaml v36)"
+
+test_strategy:
+  approach: behavioral
+  note: >
+    No automated test harness covers skill behavior. Acceptance validation is manual:
+    run /storyline:the-foreman with tweak descriptions matching each scenario, observe
+    classification output, rationale display, scan report, and execution. Flag any
+    regression in the existing S1-S7 routing as a critical test concern.
+  regression_risk:
+    - "S4a routing must still work for non-tweak user-facing features"
+    - "S5 routing must still work for technical tasks"
+    - "S4 description change must not break existing MCQ flow"
+
+risk_spots:
+  - id: Q-004
+    question: "Should ConfirmLightweightPath be a separate command or folded into IdentifyMinorTweak?"
+    decision: "Fold into IdentifyMinorTweak — the MCQ IS the confirmation. Simpler routing, no separate command."
+  - id: Q-005
+    question: "TweakRoutedToFullPipeline conflates user override vs. classification failure — can downstream policies distinguish?"
+    decision: "Add rationale field to the routing outcome in S8 MCQ. No separate events needed for this story."
+  - id: Q-006
+    question: "What happens if the implication scan itself errors (e.g. malformed feature file, missing blueprint context)?"
+    decision: "Open — treat as sad path: surface the error to the user, offer to run full pipeline as fallback."
+
+completion_criteria:
+  - "S8 row appears in Role 1 routing table"
+  - "S4 pre-check for tweak signals documented (with named signal list)"
+  - "S8 section covers detection signals, rationale display, confirmation MCQ, clarification MCQ, scan procedure (returns file paths + scenario names), cross-context gate, execution (inline + Developer Amigo dispatch with two-commit prompt + SHA checkpoint)"
+  - "Existing S1-S7 routing unaffected"
+  - "Two-commit pattern documented in S8 execution"
+  - "Blueprint updated post-build (as-built survey)"
+
+open_questions: []
