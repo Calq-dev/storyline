@@ -65,18 +65,16 @@ After writing changeset, targeted codebase exploration:
 
 Update changeset if anything unexpected.
 
-### 1d: Crew Review
-Dispatch in parallel:
+### 1d: Self-Review
+Before handing off, check your own changeset:
 
-| Amigo | Reviews |
-|---|---|
-| `storyline:developer-amigo` | Build order, dependencies, tech approach |
-| `storyline:testing-amigo` | Scenario coverage, invariants as test cases, test strategy completeness |
-| `storyline:product-amigo` | Must-have priority, walking skeleton scope, nothing unplanned |
-| `storyline:security-amigo` | (if active in session) |
-| `storyline:frontend-amigo` | (if active in session) |
+1. **Coverage** — every scenario in `.storyline/features/` has a task. No scenario left out.
+2. **Invariants** — every `invariants[]` entry in the blueprint maps to a test assertion in the plan.
+3. **Gaps** — blueprint `gaps[]` and `questions[]` acknowledged. Addressed or explicitly deferred.
+4. **Walking skeleton** — first task is simplest happy path end-to-end. Not a partial slice.
+5. **Dependencies** — build order respects `relationships[]`. Nothing depends on something built later.
 
-All report back directly (no files). Flags → adjust changeset. All approve → proceed.
+Fix any holes. If unsure about scope or priority → AskUserQuestion.
 
 ### 1e: Hand Off
 ```bash
@@ -139,15 +137,12 @@ If implementation came before tests — write the missing test now.
 
 ---
 
-## Phase 3: As-Built Survey
+## Phase 3: Hand Back
 
-When all scenarios green, dispatch `storyline:surveyor`:
-- Incremental survey, trigger `post_implementation`
-- Focus on changeset modules
-- Compare planned vs built, update `blueprint.yaml`, re-run gap analysis
+When all scenarios green, hand back to The Foreman for code review and as-built update.
 
 ```bash
 git add .storyline/ src/ tests/
-git commit -m "feat: [feature name] — pipeline complete, blueprint updated"
+git commit -m "feat: [feature name] — all scenarios green"
 ```
-Dispatch `Skill: storyline:the-foreman` for final inspection.
+Dispatch `Skill: storyline:the-foreman` for post-build review.

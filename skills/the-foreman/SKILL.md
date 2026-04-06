@@ -152,10 +152,9 @@ Read: `storyline summary`, `changesets/`, `features/*.feature`, `workbench/amigo
 Present: feature name, discovery (N rules, insights), scenarios (N files, M scenarios), domain model (contexts, events/commands), risks, plan (N tasks, M files, first task).
 
 ### Step 2: Recommend
+- 5+ tasks with independent file scopes → recommend Parallel build
 - Full session mode (personas/ exist) + 5+ tasks → recommend The Crew
-- Full session mode + <5 tasks → recommend Continue here
-- No full session + 5+ tasks → recommend New session
-- No full session + <5 tasks → recommend Continue here
+- <5 tasks → recommend Continue here
 
 ### Step 3: Build choice MCQ
 Options:
@@ -164,6 +163,7 @@ Options:
 3. [recommended ✓] Build now — continue in session
 4. New session — commit, start fresh
 5. The Crew — (only if personas/ exist) Developer + Testing Amigo, task by task
+6. Parallel build — multiple agents build independent tasks simultaneously
 
 ### Step 4: Execute
 
@@ -181,6 +181,8 @@ git commit -m "changeset: CS-YYYY-MM-DD-<feature-name>.yaml"
 Tell user: `/storyline:the-foreman build` next session.
 
 **The Crew:** See `./crew-build-loop.md`.
+
+**Parallel build:** See `./parallel-build.md`.
 
 ---
 

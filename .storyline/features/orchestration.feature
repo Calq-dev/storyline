@@ -48,8 +48,14 @@ Feature: Pipeline Orchestration
       Given an implementation plan exists with 5 or more tasks
       And Three Amigos ran in full session mode with persona agents
       When The Foreman presents the build choice
-      Then it recommends "The Crew"
-      And offers "Continue here", "New session", and "The Crew" as options
+      Then it recommends "The Crew" or "Parallel build"
+      And offers "Continue here", "New session", "The Crew", and "Parallel build" as options
+
+    Scenario: Large plan with independent tasks
+      Given an implementation plan exists with 5 or more tasks
+      And most tasks have independent file scopes
+      When The Foreman presents the build choice
+      Then it recommends "Parallel build"
 
   @command:ReportStatus
   Rule: The Foreman can report pipeline status at any time
@@ -94,23 +100,22 @@ Feature: Pipeline Orchestration
       Then three sub-agents run in parallel (PERT, WBS, T-Shirt Sizing)
       And a consolidated estimation report is written to .storyline/workbench/estimation-report.md
 
-  @command:RunScenarioRefinement @as-built
-  Rule: Scenarios are refined after build completes
+  @command:RunCodeReview @as-built
+  Rule: Code review runs after build completes
 
-    Scenario: Post-build scenario refinement by active amigos
+    Scenario: Post-build code review by a fresh agent
       Given all implementation tasks are complete and tests are green
-      And the as-built survey has updated the blueprint
-      When The Foreman dispatches scenario refinement
-      Then each active amigo reviews feature files against what was built
-      And refinement notes are written to .storyline/workbench/amigo-notes/
-      And Mister Gherkin applies the refinements to the feature files
+      When The Foreman dispatches a code review agent with changeset, diff, features, and blueprint context
+      Then the review covers correctness, invariants, cross-file impact, security, test completeness, and glossary
+      And blocking findings are fixed before proceeding
+      And the security pass is mandatory when the feature touches auth, user input, sensitive data, or external APIs
 
-  @command:DispatchSecurityAudit @as-built
-  Rule: Security audit runs when the feature touches sensitive areas
+  @command:RunAsBuiltUpdate @as-built
+  Rule: Blueprint is updated to match what was actually built
 
-    Scenario: Security audit after implementation
-      Given the feature touches auth, user input, sensitive data, or external APIs
-      When The Foreman dispatches the Security Amigo for post-build audit
-      Then the Security Amigo reviews the code for OWASP top 10 vulnerabilities
-      And findings are written to .storyline/workbench/amigo-notes/security.md
-      And critical issues must be fixed before the build is considered complete
+    Scenario: As-built blueprint reconciliation
+      Given the code review is complete
+      When The Foreman compares the changeset plan with the actual diff
+      Then blueprint.yaml is updated to match reality
+      And planned-but-not-built items become gaps
+      And drifted scenarios are updated by Mister Gherkin

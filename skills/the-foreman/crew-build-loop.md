@@ -117,119 +117,64 @@ Update the in-progress todo:
 
 ## After All Tasks Complete
 
-### Memory update (parallel)
-
-<agent-dispatch subagent_type="storyline:developer-amigo">
-prompt: |
-  The feature is built. Read .storyline/changesets/<cs-filename>.yaml and run
-  `git log --oneline -20` to understand what was implemented and any deviations.
-  Update your persona memory at .storyline/personas/developer-amigo.md
-  Work from: [project directory]
-</agent-dispatch>
-
-<agent-dispatch subagent_type="storyline:testing-amigo">
-prompt: |
-  The feature is built. Update your persona memory at .storyline/personas/testing-amigo.md
-  with what you learned during implementation — edge cases found, test patterns that worked.
-  Work from: [project directory]
-</agent-dispatch>
-
-<agent-dispatch subagent_type="storyline:product-amigo">
-prompt: |
-  The feature is built. Update your persona memory at .storyline/personas/product-amigo.md
-  with how the implementation matched (or deviated from) the discovery session.
-  Work from: [project directory]
-</agent-dispatch>
-
-### As-built survey
-
 <branch-todos id="after-build">
-- Foreman: building's done — sending the surveyor for final inspection
-- Foreman: calling in the security inspector
-- Foreman: final walkthrough — do the specs still match the building?
-- Foreman: final inspection done — archiving the session
+- Foreman: building's done — running code review
+- Foreman: updating blueprint to match what was actually built
+- Foreman: archiving the session
 </branch-todos>
 
-<agent-dispatch subagent_type="storyline:surveyor">
+### Code review
+
+Dispatch a fresh agent — not the Foreman. Clean context = better review.
+
+<agent-dispatch>
 prompt: |
-  Run an as-built survey. Compare what was planned (in the blueprint) with what was actually built.
-  Update blueprint.yaml to match reality. Read .storyline/changesets/<cs-filename>.yaml to see which
-  bounded contexts were touched, then focus your survey on those.
+  You are reviewing code that was just built. No persona, no role-play — just review the code.
+
+  ## Load context
+  1. Read `.storyline/changesets/<cs-filename>.yaml` — what was planned
+  2. Run `git diff HEAD~[task count]` — what was built
+  3. Read `.storyline/features/*.feature` — what behavior was specified
+  4. Run `storyline summary` — blueprint invariants and glossary
+
+  ## Review passes (run sequentially)
+
+  | Pass | Check | Skip |
+  |---|---|---|
+  | **Correctness** | Logic bugs, edge cases, off-by-one, null handling, incorrect conditionals, error handling gaps | Style, naming, formatting (linters handle that) |
+  | **Invariants** | Every `invariants[]` from blueprint holds in the code. Every command validates its preconditions. | Generic "consider pattern X" suggestions |
+  | **Cross-file impact** | Changes that break assumptions in other files. Dependency chains, call sites, type contracts. | Praise, positive comments |
+  | **Security** | Injection, hardcoded secrets, auth gaps, unsafe input handling. Focus on code paths that touch user input or external APIs. | Low-risk utility code |
+  | **Test completeness** | New code paths have tests. Sad paths from feature files have test coverage. | Asserting test style preferences |
+  | **Glossary** | Code identifiers match `glossary[]` terms exactly. No drift from ubiquitous language. | |
+
+  ## Rules
+  - Only flag issues with high confidence. State confidence if borderline.
+  - Every finding: severity (blocking / warning / nit), file:line, what's wrong, suggested fix.
+  - If the feature touches auth, user input, sensitive data, or external APIs — the security pass is mandatory.
+  - Do NOT comment on style, naming, formatting, or things linters catch.
+  - Do NOT add praise or positive comments.
+
   Work from: [project directory]
 </agent-dispatch>
 
-### Security audit (if applicable)
+**Blocking findings → fix before proceeding. Warnings and nits → present to user.**
 
-If the feature touches auth, user input, sensitive data, or external APIs:
+### As-built blueprint update
 
-<agent-dispatch subagent_type="storyline:security-amigo">
-prompt: |
-  Audit the code just built for security vulnerabilities.
+Compare changeset plan vs actual diff. Update `blueprint.yaml` to match reality:
+- Changed payloads, invariants, glossary → edit directly
+- New structures discovered during build → `storyline add-command`, `storyline add-event`, etc.
+- Planned but not implemented → `storyline add-gap --description "Planned <X> not built" --severity "important" --affects "<Ctx>"`
+- Scenarios that drifted → dispatch Mister Gherkin to update feature files
+- Never delete existing entries — reconcile and extend
 
-  ## Your notes:
-  Read .storyline/personas/security-amigo.md (may not exist yet).
-
-  ## What was built:
-  Read .storyline/changesets/<cs-filename>.yaml and run `git log --oneline -10`
-  and `git diff HEAD~[task count]` to see actual changes.
-
-  ## Blueprint:
-  Run `storyline summary`. Use `storyline view --context "<name>"` for specific contexts.
-
-  Write findings to .storyline/workbench/amigo-notes/security.md
-  Focus on code that was just changed — not the entire codebase.
-  Work from: [project directory]
-</agent-dispatch>
-
-If critical issues found → Developer Amigo fixes, Security Amigo reviews.
-
-### Scenario refinement (parallel)
-
-<bash-commands>
 ```bash
-mkdir -p .storyline/workbench/amigo-notes
+storyline validate
+storyline stamp
 ```
-</bash-commands>
 
-<agent-dispatch subagent_type="storyline:developer-amigo">
-prompt: |
-  The feature is built. Review .storyline/features/ against what was actually implemented.
-  Write refinement notes to .storyline/workbench/amigo-notes/developer.md:
-  - Scenarios that no longer match implementation
-  - Missing scenarios for behavior that emerged during implementation
-  - Scenario language that doesn't match the updated glossary
-  - Anything you had to build that wasn't specified
-  Also update your persona memory at .storyline/personas/developer-amigo.md
-  Work from: [project directory]
-</agent-dispatch>
-
-<agent-dispatch subagent_type="storyline:testing-amigo">
-prompt: |
-  The feature is built. Review .storyline/features/ for completeness.
-  Write refinement notes to .storyline/workbench/amigo-notes/testing.md:
-  - Edge cases tested in code but missing from feature files
-  - Sad paths discovered during implementation
-  - Scenarios too vague given what we know about actual behavior
-  Also update your persona memory at .storyline/personas/testing-amigo.md
-  Work from: [project directory]
-</agent-dispatch>
-
-<agent-dispatch subagent_type="storyline:product-amigo">
-prompt: |
-  The feature is built. Review .storyline/features/ from the user's perspective.
-  Write refinement notes to .storyline/workbench/amigo-notes/product.md:
-  - Scenarios where described behavior doesn't match user expectations
-  - Missing user-facing scenarios
-  - Scope changes that happened during implementation
-  Also update your persona memory at .storyline/personas/product-amigo.md
-  Work from: [project directory]
-</agent-dispatch>
-
-(Include frontend-amigo if they were active in this session.)
-
-### Synthesize and act
-
-Read all refinement notes. Fix now (scenarios wrong/missing) → dispatch Mister Gherkin + validate + stamp. New ideas → `.storyline/backlog/`. Gaps → `storyline add-gap`.
+New ideas → `.storyline/backlog/`. Gaps → `storyline add-gap`.
 
 ### Archive the session
 
@@ -237,7 +182,7 @@ Read all refinement notes. Fix now (scenarios wrong/missing) → dispatch Mister
 ```bash
 storyline archive --feature "<feature name>"
 git add .storyline/sessions/ .storyline/
-git commit -m "refine: scenario refinement + session archive for [feature name]"
+git commit -m "refine: code review + as-built update for [feature name]"
 storyline housekeeping --cleanup
 git add .storyline/
 git commit -m "chore: workbench cleanup after [feature name]"

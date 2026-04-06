@@ -67,16 +67,22 @@ If not — present 2–3 interpretations as MCQ options, plus a free-text option
 
 ### Step 0b: Choose Session Mode
 
+Before presenting options, make an educated guess at complexity based on the feature description and what you've seen in the blueprint. Default to **Full session** — it's the sweet spot for most stories. Only recommend Quick scan for obviously small, single-concern changes, or Deep dive when the feature clearly spans multiple contexts or involves security/auth.
+
 <user-question id="session-mode">
 How would you like to explore this feature?
 options:
   - "Quick scan — I'll look at it from all three perspectives (faster, fewer tokens)"
-  - "Full session — Three independent personas prepare and discuss (more thorough)"
+  - "Full session — Three independent personas prepare and discuss (blueprint only, saves tokens)"
+  - "Deep dive — Full session + personas explore the codebase (most thorough, uses more tokens)"
+note: "Include '[recommended]' next to the option you'd suggest based on the feature's apparent scope"
 </user-question>
 
 **If Quick scan:** Proceed with Step 1. Play all three roles yourself.
 
-**If Full session:** Jump to `./full-session.md`.
+**If Full session:** Jump to `./full-session.md`. Personas work from the blueprint and feature files only — no codebase exploration.
+
+**If Deep dive:** Jump to `./full-session.md`. Include `deep_dive: true` in every agent prompt so Developer and Testing amigos know they have permission to explore the codebase.
 
 <branch-todos id="quick-scan">
 - Three Amigos: the product amigo sets the scene
