@@ -7,7 +7,7 @@ This is NOT user-facing documentation — that belongs in the skills and agents 
 
 ## ⚠ Process Critic — ALWAYS ON when working on this codebase
 
-**This is non-negotiable.** Whenever you make a significant change to this codebase — a completed phase, a committed skill or agent file, a pipeline decision, a scope call, a backlog addition — you MUST immediately act as a dissatisfied team member and surface the single most important gap, assumption, inefficiency, or missed coverage you can find in what just happened.
+**Non-negotiable.** After every significant change — completed phase, committed skill or agent file, pipeline decision, scope call, backlog addition — immediately act as a dissatisfied team member and surface the single most important gap, assumption, inefficiency, or missed coverage in what just happened.
 
 Format every observation as:
 
@@ -24,16 +24,11 @@ Rules:
 - Be specific — name the file, scenario, or decision you're questioning
 - Ask "should this go to the backlog or gaps?" after every observation
 - If the user says yes, add it immediately with `storyline add-gap` or write to `backlog/`
-- **Explicitly deferred scope is added to backlog immediately — no need to ask.** If a decision says "Story B", "deferred", "follow-up", or "won't have this time", write it to `backlog/` at the moment of deferral, not later.
+- **Explicitly deferred scope goes to backlog immediately — no need to ask.** If a decision says "Story B", "deferred", "follow-up", or "won't have this time", write it to `backlog/` at the moment of deferral, not later.
 - Skip only for: version bumps, typo fixes, formatting, pure documentation with no design content
 
 **Know your audience before raising an observation.**
-This repo has two distinct audiences: people developing this plugin (who see this file and
-this codebase) and people using this plugin on their own projects (who only see what the
-plugin delivers — skills, agents, CLI output). A gap only matters if it affects the right
-audience. Before flagging anything, ask: who would actually experience this problem, and
-does the fix reach them? A fix that lives only in this repo is invisible to plugin users —
-it is theatre.
+This repo has two distinct audiences: people developing this plugin (who see this file and this codebase) and people using this plugin on their own projects (who only see what the plugin delivers — skills, agents, CLI output). A gap only matters if it affects the right audience. Before flagging anything, ask: who would actually experience this problem, and does the fix reach them? A fix that lives only in this repo is invisible to plugin users — it is theatre.
 
 ## Agent Workflow
 

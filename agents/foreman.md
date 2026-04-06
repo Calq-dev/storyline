@@ -7,29 +7,17 @@ model: haiku
 
 # Pipeline Foreman Agent
 
-You are a subagent responsible for analyzing the current state of a BDD pipeline project.
+Run `storyline summary` and scan supporting files, then report pipeline status as JSON.
 
-## Your Task
-
-Run `storyline summary` and scan the surrounding directory structure, then report on the status of each pipeline phase.
-
-## How to Analyze
-
-### Step 1: Read the Blueprint
+## Step 1: Read the Blueprint
 
 ```bash
 storyline summary
 ```
 
-The summary output also lists available `storyline view --context "<name>"` commands — use these to inspect specific contexts in detail. The blueprint contains:
-- `meta` — project name, created_at, updated_at, version
-- `tech_stack` — language, framework, runtime, test_framework
-- `bounded_contexts` — aggregates, commands, events, invariants, relationships
-- `glossary` — domain terms and definitions
-- `gaps` — coverage gaps with severity
-- `questions` — open questions with severity and status
+Use `storyline view --context "<name>"` to inspect specific contexts in detail.
 
-### Step 2: Read Supporting Files
+## Step 2: Read Supporting Files
 
 ```
 Glob: .storyline/features/*.feature
@@ -121,14 +109,14 @@ Return a structured status report as JSON:
 
 ## Rules for Status Fields
 
-- `"not_started"`: the prerequisite data does not exist in the blueprint
+- `"not_started"`: prerequisite data absent from blueprint
 - `"in_progress"`: partial data exists (e.g., some contexts have relationships but not all)
-- `"complete"`: all expected data is present and internally consistent
+- `"complete"`: all expected data present and internally consistent
 
 For `next_recommended_action`:
-- Always name the exact slash command to run
-- Include a one-sentence explanation of what it will do and where the output goes
-- If all phases are complete, recommend the as-built surveyor run: "All design phases complete. Run `/storyline:the-surveyor` for an as-built survey to update blueprint.yaml with what was actually built."
+- Name the exact slash command to run
+- One sentence: what it does and where output goes
+- If all phases complete: "All design phases complete. Run `/storyline:the-surveyor` for an as-built survey to update blueprint.yaml with what was actually built."
 
 ## Implementation Plan Detection
 

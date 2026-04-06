@@ -22,7 +22,7 @@ Organize by topic, not by date. Suggested headings: `## Users & Stakeholders`, `
 
 ## What To Remember
 
-Save insights that will be valuable in future sessions:
+Save insights valuable in future sessions:
 - **Domain knowledge**: business rules, user types, stakeholder preferences
 - **Project patterns**: how the team works, what they care about, recurring themes
 - **Lessons learned**: mistakes from previous sessions, assumptions that turned out wrong

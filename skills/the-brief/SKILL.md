@@ -66,7 +66,7 @@ options:
 
 **Q3 — What are the acceptance criteria?**
 
-Ask the contributor to list the criteria that must be true for this task to be done. Accept a list (one per line or bullet). This is a **hard gate**: if the contributor provides no criteria, block with:
+Ask the contributor to list the criteria that must be true for this task to be done. Accept a list (one per line or bullet). **Hard gate:** if the contributor provides no criteria, block with:
 
 > "acceptance_criteria[] must be non-empty before proceeding. What needs to be true when this task is complete?"
 
@@ -77,8 +77,6 @@ Re-ask until at least one criterion is provided.
 Ask the contributor to name any risks — things that could go wrong, break, regress, or have unintended side effects. Accept free text or a list. If the contributor says "none", record `risks: ["none identified"]` — do not leave empty.
 
 **Q5 — Observable behavior or interface impact? (internal detection)**
-
-Ask:
 
 ```
 AskUserQuestion: "Does this change have any observable behavior or public interface impact?"
@@ -200,7 +198,7 @@ Fix any validation errors before committing. If referential integrity fails for 
 Skill: storyline:the-foreman
 ```
 
-The Foreman will detect the completed brief and present the next step (build choice or further pipeline phases). It will not re-run the intake MCQ.
+The Foreman detects the completed brief and presents the next step (build choice or further pipeline phases). It will not re-run the intake MCQ.
 
 ---
 

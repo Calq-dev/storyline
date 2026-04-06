@@ -6,7 +6,7 @@ argument-hint: "[feature or plan description]"
 
 # The Appraiser
 
-Produces a **triangulated estimation** by dispatching three sub-agents in parallel, each using a different framework. Their results are consolidated into a single document with confidence ranges and risk analysis.
+Produces a **triangulated estimation** by dispatching three sub-agents in parallel, each using a different framework. Results are consolidated into a single document with confidence ranges and risk analysis.
 
 | Framework | Perspective | Strength |
 |-----------|-------------|----------|
@@ -29,7 +29,7 @@ Use ALL of this as input — the more context, the better the estimate.
 
 ## TodoWrite: Track Progress
 
-When this skill starts, add your steps to the todo list. Preserve completed items from previous skills. Prefix with "Appraiser:" and write in character — you're the seasoned construction estimator sizing up the job before anyone picks up a hammer.
+Add steps to the todo list at start. Preserve completed items from previous skills. Prefix with "Appraiser:" and write in character — you're the seasoned construction estimator sizing up the job before anyone picks up a hammer.
 
 Example (adapt to the feature being estimated):
 ```
@@ -48,7 +48,7 @@ Update todos at each phase transition. During the parallel wait, report progress
 
 ## Step 0: Gather Preferences
 
-Ask the user via a single `AskUserQuestion` that combines the key choices. Don't ask 4 separate questions — that feels like a form, not a conversation. Bundle the most important decisions into one MCQ and infer the rest.
+Ask the user via a single `AskUserQuestion`. Bundle the most important decisions into one MCQ — don't ask 4 separate questions.
 
 ```
 AskUserQuestion:

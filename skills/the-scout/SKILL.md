@@ -3,11 +3,7 @@ name: the-scout
 description: Use when the user wants to capture new feature ideas into the backlog, scan the project for gaps, or analyze the codebase for opportunities — before starting a Three Amigos discovery session.
 ---
 
-# The Scout — Always First on the Scene
-
-You are **The Scout** — the sharp-eyed reconnaissance specialist who maps the terrain before anyone else sets foot on the battlefield. You move fast, see everything, and report back with a clear picture of what's out there. No feature idea survives first contact with reality, so you make sure the team *knows* reality before they start planning.
-
-Your motto: *"I've already been there."*
+# The Scout
 
 <todo-actions>
 - Scout: checking for the blueprint
@@ -23,17 +19,15 @@ Your motto: *"I've already been there."*
 
 ### 0. Check for the Blueprint First
 
-Before doing anything, check if a blueprint exists:
-
 <bash-commands>
 ```bash
 storyline summary 2>/dev/null || echo "no blueprint yet"
 ```
 </bash-commands>
 
-**If `blueprint.yaml` exists**: You have the full project picture — tech stack, bounded contexts, domain model, gaps, open questions. **Skip the full codebase scan.** Your job now is purely to orient the team on what's in the blueprint, capture new ideas into the backlog, and suggest which pipeline phase to run next.
+**If `blueprint.yaml` exists**: Full project picture available — tech stack, bounded contexts, domain model, gaps, open questions. **Skip the full codebase scan.** Orient the team on blueprint contents, capture new ideas into the backlog, suggest next pipeline phase.
 
-**If `blueprint.yaml` does not exist**: Initialize one. Run:
+**If `blueprint.yaml` does not exist**: Initialize one.
 
 <bash-commands>
 ```bash
@@ -41,9 +35,9 @@ storyline init --project "Project Name"
 ```
 </bash-commands>
 
-Ask the user for the project name if it isn't obvious. This creates a minimal `blueprint.yaml` with `meta` fields set. Then proceed to fill in the `tech_stack` section (Step 1 below).
+Ask the user for the project name if it isn't obvious. This creates a minimal `blueprint.yaml` with `meta` fields set. Then fill in the `tech_stack` section (Step 1 below).
 
-The key principle: **The Scout no longer explores the codebase from scratch.** The blueprint is the single source of truth. The Scout reads it, fills gaps, and captures ideas.
+The key principle: **The Scout no longer explores the codebase from scratch.** The blueprint is the single source of truth. Read it, fill gaps, capture ideas.
 
 ### 1. Fill the `tech_stack` Section
 
@@ -89,15 +83,13 @@ tech_stack:
 
 ### 2. Validate and Stamp the Blueprint
 
-After editing `blueprint.yaml`, always run the validate/stamp workflow:
-
 <bash-commands>
 ```bash
 storyline validate
 ```
 </bash-commands>
 
-If there are errors, fix them in `blueprint.yaml` and re-validate. Repeat until clean. When validation passes:
+Fix errors in `blueprint.yaml` and re-validate until clean. Then:
 
 <bash-commands>
 ```bash
@@ -109,7 +101,7 @@ This updates `meta.updated_at` and increments `meta.version` — do not skip it.
 
 ### 3. Capture Ideas into the Backlog
 
-After reading the blueprint, capture whatever the user wants to build. Ideas come from many sources:
+Read the blueprint, then capture what the user wants to build. Ideas come from many sources:
 - Direct request: "I want to add a shopping cart"
 - Bug reports: "Users are losing their cart when they log out"
 - Strategic goals: "We need to support multi-language"
