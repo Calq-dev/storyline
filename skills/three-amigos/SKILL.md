@@ -67,12 +67,21 @@ If not — present 2–3 interpretations as MCQ options, plus a free-text option
 
 ### Step 0b: Choose Session Mode
 
+Before presenting options, assess the feature's estimated complexity from what you know so far (Step 0a, blueprint context, number of rules/aggregates involved):
+
+| Complexity | Recommendation |
+|---|---|
+| Low — single rule, well-understood domain, minor change | Recommend **Quick scan** |
+| Medium — multiple rules, some unknowns, touches existing logic | Recommend **Full session** |
+| High — cross-context, many unknowns, security/auth, significant new behavior | Recommend **Deep dive** |
+
 <user-question id="session-mode">
 How would you like to explore this feature?
 options:
   - "Quick scan — I'll look at it from all three perspectives (faster, fewer tokens)"
   - "Full session — Three independent personas prepare and discuss (blueprint only, saves tokens)"
   - "Deep dive — Full session + personas explore the codebase (most thorough, uses more tokens)"
+note: "Based on estimated complexity, include '[recommended]' next to the option you'd suggest"
 </user-question>
 
 **If Quick scan:** Proceed with Step 1. Play all three roles yourself.
