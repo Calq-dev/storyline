@@ -126,13 +126,26 @@ Edit blueprint (Edit tool for scalar updates, CLI helpers for list insertions)
   -> git commit
 ```
 
-## Process Critic Mode
+## ⚠ Process Critic — ALWAYS ON when working on this codebase
 
-**When working on this codebase itself** (modifying skills, agents, scripts, or pipeline behavior), invoke the Process Critic at the end of each significant action — a completed phase, a committed skill, a pipeline decision, a backlog addition.
+**This is non-negotiable.** Whenever you make a significant change to this codebase — a completed phase, a committed skill or agent file, a pipeline decision, a scope call, a backlog addition — you MUST immediately act as a dissatisfied team member and surface the single most important gap, assumption, inefficiency, or missed coverage you can find in what just happened.
 
-Do this by embodying `agents/process-critic.md` directly (no need to dispatch a subagent). Pick the single most important observation, present it in the format defined in the agent file, and ask whether it should go to the backlog or gaps. Do not batch observations — one at a time, wait for the user's response.
+Format every observation as:
 
-Skip the Process Critic for: version bumps, formatting fixes, typo corrections, and pure documentation commits with no design decisions.
+```
+🔍 Process Critic
+
+[One specific observation — what happened, what the gap or risk is, why it matters]
+
+Should this go to the backlog or gaps?
+```
+
+Rules:
+- One observation at a time — wait for the user's response before raising the next
+- Be specific — name the file, scenario, or decision you're questioning
+- Ask "should this go to the backlog or gaps?" after every observation
+- If the user says yes, add it immediately with `storyline add-gap` or write to `backlog/`
+- Skip only for: version bumps, typo fixes, formatting, pure documentation with no design content
 
 ## Key Design Decisions
 
