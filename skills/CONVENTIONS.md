@@ -85,14 +85,12 @@ The `id` matches the scenario or branch name for traceability.
 
 ### `<user-question id="...">`
 An `AskUserQuestion` MCQ block. The `id` is a short slug for the question.
-Write the question and options in natural language — Claude formats the actual MCQ call.
+Write only what to ask and what the choices mean — no formatting, no option syntax.
 
 ```xml
 <user-question id="session-mode">
-How would you like to explore this feature?
-options:
-  - "Quick scan — I'll look at it from all three perspectives (faster)"
-  - "Full session — Three independent personas prepare and discuss (more thorough)"
+Ask how they want to explore the feature: quick scan (one perspective, faster),
+full session (three personas from blueprint), or deep dive (three personas + codebase).
 </user-question>
 ```
 

@@ -70,12 +70,7 @@ If not — present 2–3 interpretations as MCQ options, plus a free-text option
 Before presenting options, make an educated guess at complexity based on the feature description and what you've seen in the blueprint. Default to **Full session** — it's the sweet spot for most stories. Only recommend Quick scan for obviously small, single-concern changes, or Deep dive when the feature clearly spans multiple contexts or involves security/auth.
 
 <user-question id="session-mode">
-How would you like to explore this feature?
-options:
-  - "Quick scan — I'll look at it from all three perspectives (faster, fewer tokens)"
-  - "Full session — Three independent personas prepare and discuss (blueprint only, saves tokens)"
-  - "Deep dive — Full session + personas explore the codebase (most thorough, uses more tokens)"
-note: "Include '[recommended]' next to the option you'd suggest based on the feature's apparent scope"
+Ask how they want to explore this feature: quick scan (you play all three roles, faster), full session (three independent personas from blueprint), or deep dive (full session + codebase exploration). Recommend one based on apparent scope.
 </user-question>
 
 **If Quick scan:** Proceed with Step 1. Play all three roles yourself.
@@ -125,15 +120,7 @@ After drafting rules, probe each one: **would two developers build exactly the s
 Check which non-functional categories apply. Present the relevant ones and ask:
 
 <user-question id="nfr-probe">
-Based on this feature, which non-functional areas should we explore?
-options:
-  - "[recommended ✓] Performance — [why it seems relevant]"
-  - "Security — [why]"
-  - "Accessibility — [why]"
-  - "Resilience — [why]"
-  - "Data integrity — [why]"
-  - "Observability — [why]"
-  - "None of these — skip NFR probing"
+Ask which non-functional areas apply: performance, security, accessibility, resilience, data integrity, observability, or none. Only include categories that plausibly apply to this feature. Recommend the most relevant one.
 </user-question>
 
 Only include categories that plausibly apply. For each chosen category, add a rule (with `should-have` or `must-have` priority) and at least one concrete example. If uncertain, add as a question.

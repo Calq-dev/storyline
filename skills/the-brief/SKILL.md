@@ -50,13 +50,7 @@ Free text. If "nothing" or "none", record as `["none identified"]`.
 
 If Q1 mentions anything a user would notice — CLI output, file formats, agent behaviour, public API — ask:
 
-```
-AskUserQuestion: "How urgent is this?"
-options:
-  - "Now — something is broken or blocked without it"
-  - "Soon — important but not blocking"
-  - "Whenever — useful but no rush"
-```
+Ask how urgent it is: broken/blocked now, important but not blocking, or no rush.
 
 Record as `moscow` (must_have / should_have / could_have). Infer any quality concerns (performance, security, compatibility) from Q1 — don't ask separately.
 

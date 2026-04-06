@@ -32,10 +32,7 @@ Surface one critique at each phase transition (Three Amigos done, changeset comm
 ```
 
 Pick the emoji to match the severity and tone of the observation.
-options:
-  - "Yes — add to backlog"
-  - "Yes — add as gap"
-  - "No — drop it"
+Options: add to backlog / add as gap / drop it
 
 One at a time. Deferred scope → write to `backlog/` immediately without asking.
 
@@ -174,10 +171,7 @@ Read: `storyline summary`, `changesets/`, `features/*.feature`, `workbench/amigo
 **Abandoned-changeset check:** If the selected changeset has a `domain_model_delta` where every entry has `applied: false` or no `applied` field, and no build has started (no implementation commits since the changeset was created), surface a warning before presenting the build choice:
 
 ```
-AskUserQuestion: "This changeset has unapplied domain model delta entries but no build has started. What would you like to do?"
-options:
-  - "Resume — proceed to build choice, delta will be applied as scenarios go green"
-  - "Discard — delete the changeset (blueprint.yaml is unchanged, no cleanup needed)"
+Ask whether to resume the build (delta applies as scenarios go green) or discard the changeset (blueprint.yaml stays unchanged, no cleanup needed).
 ```
 
 If discarded: `storyline changeset discard <id>` then `git add .storyline/changesets/<filename>.yaml && git commit -m "chore: discard abandoned changeset <filename>"`. Stop.
