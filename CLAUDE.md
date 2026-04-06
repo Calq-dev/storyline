@@ -145,6 +145,7 @@ Rules:
 - Be specific — name the file, scenario, or decision you're questioning
 - Ask "should this go to the backlog or gaps?" after every observation
 - If the user says yes, add it immediately with `storyline add-gap` or write to `backlog/`
+- **Explicitly deferred scope is added to backlog immediately — no need to ask.** If a decision says "Story B", "deferred", "follow-up", or "won't have this time", write it to `backlog/` at the moment of deferral, not later.
 - Skip only for: version bumps, typo fixes, formatting, pure documentation with no design content
 
 ## Key Design Decisions
