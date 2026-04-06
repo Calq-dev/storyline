@@ -5,9 +5,10 @@
  * Subcommands:
  *   changeset init --title "<title>"           Scaffold a new changeset file
  *   changeset validate [--json] [<id>]         Validate one or all changesets
+ *   changeset discard <id>                     Delete a changeset by id or filename prefix
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { parseDocument, Document } from "yaml";
@@ -480,6 +481,27 @@ function cmdValidate(args: { json: boolean; id?: string }, cwd: string) {
 }
 
 // ---------------------------------------------------------------------------
+// Discard command
+// ---------------------------------------------------------------------------
+
+function cmdDiscard(args: { id: string }, cwd: string) {
+  const changesetsDir = join(cwd, CHANGESETS_DIR);
+  const files = existsSync(changesetsDir) ? readdirSync(changesetsDir).filter(f => f.endsWith(".yaml")) : [];
+
+  const match = files.find(f => f === args.id || f === `${args.id}.yaml` || f.startsWith(args.id));
+  if (!match) {
+    console.error(`Error: no changeset found matching "${args.id}"`);
+    console.error(`Available: ${files.join(", ") || "(none)"}`);
+    process.exit(1);
+  }
+
+  const filePath = join(changesetsDir, match);
+  unlinkSync(filePath);
+  console.log(`Discarded: ${match}`);
+  console.log(`Next: git add .storyline/changesets/${match} && git commit -m "chore: discard changeset ${match}"`);
+}
+
+// ---------------------------------------------------------------------------
 // Usage
 // ---------------------------------------------------------------------------
 
@@ -489,6 +511,7 @@ function printUsage() {
 Commands:
   init --title "<title>"           Scaffold a new changeset file
   validate [--json] [<id>]         Validate one or all changesets
+  discard <id>                     Delete a changeset by id or filename prefix
 `);
 }
 
@@ -524,6 +547,20 @@ function main() {
         allowPositionals: true,
       });
       cmdValidate({ json: values.json ?? false, id: positionals[0] }, cwd);
+      break;
+    }
+    case "discard": {
+      const { positionals } = parseArgs({
+        args: rest,
+        options: {},
+        strict: false,
+        allowPositionals: true,
+      });
+      if (!positionals[0]) {
+        console.error("Error: changeset id is required for changeset discard");
+        process.exit(1);
+      }
+      cmdDiscard({ id: positionals[0] }, cwd);
       break;
     }
     default:

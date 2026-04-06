@@ -180,7 +180,7 @@ options:
   - "Discard — delete the changeset (blueprint.yaml is unchanged, no cleanup needed)"
 ```
 
-If discarded: `git rm .storyline/changesets/<filename>.yaml && git commit -m "chore: discard abandoned changeset <filename>"`. Stop.
+If discarded: `storyline changeset discard <id>` then `git add .storyline/changesets/<filename>.yaml && git commit -m "chore: discard abandoned changeset <filename>"`. Stop.
 
 Present: feature name, discovery (N rules, insights), scenarios (N files, M scenarios), domain model (contexts, events/commands), risks, plan (N tasks, M files, first task).
 

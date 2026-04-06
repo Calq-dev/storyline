@@ -571,6 +571,39 @@ test("changeset_validate_accepts_valid_domain_model_delta", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Test 21: discard removes the changeset file by id
+// ---------------------------------------------------------------------------
+test("changeset_discard_removes_file_by_id", () => {
+  const d = tmp();
+  initProject(d);
+  runChangeset(["init", "--title", "My Feature"], d);
+
+  const files = readdirSync(join(d, ".storyline", "changesets"));
+  assert.equal(files.length, 1, "one changeset expected");
+  const id = files[0].replace(".yaml", "");
+
+  const result = runChangeset(["discard", id], d);
+  assert.equal(result.exitCode, 0, `discard should succeed:\n${result.stderr}`);
+  assert.ok(!existsSync(join(d, ".storyline", "changesets", files[0])), "changeset file should be removed");
+});
+
+// ---------------------------------------------------------------------------
+// Test 22: discard errors when id not found
+// ---------------------------------------------------------------------------
+test("changeset_discard_errors_on_unknown_id", () => {
+  const d = tmp();
+  initProject(d);
+  runChangeset(["init", "--title", "My Feature"], d);
+
+  const result = runChangeset(["discard", "CS-9999-does-not-exist"], d);
+  assert.notEqual(result.exitCode, 0, "discard of unknown id should fail");
+  assert.ok(
+    (result.stdout + result.stderr).includes("no changeset found"),
+    `Expected 'no changeset found' in output:\n${result.stdout}\n${result.stderr}`
+  );
+});
+
+// ---------------------------------------------------------------------------
 // Test 14: validate --json on version drift includes warning in output
 // ---------------------------------------------------------------------------
 test("changeset_validate_json_includes_version_drift_warning", () => {
