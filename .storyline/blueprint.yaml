@@ -1,8 +1,8 @@
 meta:
   project: Storyline
   created_at: '2026-04-04'
-  updated_at: '2026-04-06T18:53:07.234Z'
-  version: 45
+  updated_at: '2026-04-06T19:05:47.485Z'
+  version: 46
 tech_stack:
   language: "TypeScript, Markdown, Bash, YAML"
   framework: "Claude Code Plugin SDK"
@@ -445,12 +445,12 @@ bounded_contexts:
             { name: ValidateChangeset, feature_files: [ implementation.feature ] },
             {
                 name: ApplyDomainModelDelta,
-                feature_files: [ technical-brief.yaml ],
+                feature_files: [ sessions/2026-04-06-domain-model-delta-in-changeset/technical-brief.yaml ],
                 spec_type: brief
               },
             {
                 name: DiscardChangeset,
-                feature_files: [ technical-brief.yaml ],
+                feature_files: [ sessions/2026-04-06-domain-model-delta-in-changeset/technical-brief.yaml ],
                 spec_type: brief
               }
           ]
@@ -801,9 +801,10 @@ glossary:
     definitions:
       - context: Discovery
         meaning: Standalone pipeline skill that runs a structured technical intake
-          session. Produces technical-brief.yaml. Entry point for technical
-          tasks that have no user story framing.
-  technical-brief.yaml:
+          session. Produces
+          sessions/2026-04-06-domain-model-delta-in-changeset/technical-brief.yaml.
+          Entry point for technical tasks that have no user story framing.
+  sessions/2026-04-06-domain-model-delta-in-changeset/technical-brief.yaml:
     definitions:
       - context: Discovery
         meaning: Schema-validated YAML artifact produced by The Brief. Contains task
@@ -828,7 +829,8 @@ glossary:
       - context: BlueprintManagement
         meaning: "Field on blueprint commands (values: gherkin or brief). Controls which
           artifact type is accepted in feature_files. brief allows a
-          technical-brief.yaml reference; gherkin requires a .feature file."
+          sessions/2026-04-06-domain-model-delta-in-changeset/technical-brief.y\
+          aml reference; gherkin requires a .feature file."
   Minor tweak:
     definitions:
       - context: Orchestration

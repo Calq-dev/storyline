@@ -579,12 +579,16 @@ function validateReferentialIntegrity(data: any, cwd: string): string[] {
                 "Set spec_type: brief on this command, or change the feature_files reference to a .feature file.",
               ));
             } else {
-              const workbenchPath = join(cwd, ".storyline/workbench", ff);
-              if (!existsSync(workbenchPath)) {
+              // If path contains a slash it's relative to .storyline/ (e.g. sessions/…/technical-brief.yaml)
+              // Otherwise it's a plain filename looked up in workbench/
+              const resolvedPath = ff.includes("/")
+                ? join(cwd, ".storyline", ff)
+                : join(cwd, ".storyline/workbench", ff);
+              if (!existsSync(resolvedPath)) {
                 errors.push(fmtFileError(
                   `${cmdPrefix}.feature_files`,
                   ff,
-                  `.storyline/workbench/${ff}`,
+                  resolvedPath.replace(cwd + "/", ""),
                   "create the brief artifact or update the reference",
                 ));
               }
@@ -1661,6 +1665,7 @@ function archiveSession(feature: string, cwd: string): void {
     { src: join(workbench, "murphy.md"), dest: "murphy.md" },
     { src: join(workbench, "events-raw.md"), dest: "events-raw.md" },
     { src: join(workbench, "estimates"), dest: "estimates" },
+    { src: join(workbench, "technical-brief.yaml"), dest: "technical-brief.yaml" },
   ];
 
   // Project-wide: copy only, keep in workbench
@@ -1685,6 +1690,21 @@ function archiveSession(feature: string, cwd: string): void {
     } else {
       skipped.push(dest);
     }
+  }
+
+  // Update blueprint feature_files references from plain filenames to session-relative paths
+  const bpPath = join(cwd, BLUEPRINT_PATH);
+  if (existsSync(bpPath)) {
+    const relSession = `sessions/${today()}-${slug}`;
+    let bpContent = readFileSync(bpPath, "utf-8");
+    let bpChanged = false;
+    for (const { dest } of sessionArtifacts) {
+      if ((dest.endsWith(".yaml") || dest.endsWith(".yml")) && bpContent.includes(dest)) {
+        bpContent = bpContent.replaceAll(dest, `${relSession}/${dest}`);
+        bpChanged = true;
+      }
+    }
+    if (bpChanged) writeFileSync(bpPath, bpContent, "utf-8");
   }
 
   // Move completed changeset into session dir
