@@ -191,6 +191,12 @@ function cmdInit(args: { title: string }, cwd: string) {
     goal: "",
     constraints: [],
     phases: [],
+    domain_model_delta: {
+      events: [],
+      commands: [],
+      invariants: [],
+      relationships: [],
+    },
     completion_criteria: [],
     open_questions: [],
   });
@@ -236,6 +242,8 @@ function validateChangesetSchema(data: any): ValidationError[] {
     });
   }
 
+  errors.push(...validateDomainModelDelta(data.domain_model_delta));
+
   if (!Array.isArray(data.phases)) {
     errors.push({ field: "phases", message: "phases must be a list.", type: "schema" });
     return errors;
@@ -278,6 +286,53 @@ function validateChangesetSchema(data: any): ValidationError[] {
         });
       }
     }
+  }
+
+  return errors;
+}
+
+// ---------------------------------------------------------------------------
+// domain_model_delta validation
+// ---------------------------------------------------------------------------
+
+function validateDomainModelDelta(delta: any): ValidationError[] {
+  const errors: ValidationError[] = [];
+  if (delta === undefined || delta === null) return errors; // optional — absent is valid
+
+  if (!isDict(delta)) {
+    errors.push({ field: "domain_model_delta", message: "domain_model_delta must be a mapping.", type: "schema" });
+    return errors;
+  }
+
+  const entries: Array<{ key: string; required: string[] }> = [
+    { key: "events",        required: ["context", "aggregate", "name"] },
+    { key: "commands",      required: ["context", "aggregate", "name"] },
+    { key: "invariants",    required: ["context", "aggregate", "value"] },
+    { key: "relationships", required: ["context", "type", "target"] },
+  ];
+
+  for (const { key, required } of entries) {
+    const list = delta[key];
+    if (list === undefined || list === null) continue; // each array is optional
+    if (!Array.isArray(list)) {
+      errors.push({ field: `domain_model_delta.${key}`, message: `domain_model_delta.${key} must be a list.`, type: "schema" });
+      continue;
+    }
+    list.forEach((item: any, i: number) => {
+      if (!isDict(item)) {
+        errors.push({ field: `domain_model_delta.${key}[${i}]`, message: `Entry must be a mapping.`, type: "schema" });
+        return;
+      }
+      for (const field of required) {
+        if (!item[field] || typeof item[field] !== "string") {
+          errors.push({
+            field: `domain_model_delta.${key}[${i}].${field}`,
+            message: `domain_model_delta.${key}[${i}].${field} is required and must be a non-empty string.`,
+            type: "schema",
+          });
+        }
+      }
+    });
   }
 
   return errors;

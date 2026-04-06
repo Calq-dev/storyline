@@ -382,6 +382,195 @@ test("changeset_validate_errors_when_add_context_already_exists", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Test 14: init produces a changeset with an empty domain_model_delta section
+// ---------------------------------------------------------------------------
+test("changeset_init_includes_empty_domain_model_delta", () => {
+  const d = tmp();
+  initProject(d);
+
+  runChangeset(["init", "--title", "My Feature"], d);
+  const files = readdirSync(join(d, ".storyline", "changesets"));
+  const cs = readChangeset(d, files[0]);
+
+  assert.ok("domain_model_delta" in cs, "domain_model_delta section must be present");
+  assert.deepEqual(cs.domain_model_delta.events, []);
+  assert.deepEqual(cs.domain_model_delta.commands, []);
+  assert.deepEqual(cs.domain_model_delta.invariants, []);
+  assert.deepEqual(cs.domain_model_delta.relationships, []);
+});
+
+// ---------------------------------------------------------------------------
+// Test 15: validate accepts a changeset without domain_model_delta (backwards compat)
+// ---------------------------------------------------------------------------
+test("changeset_validate_accepts_missing_domain_model_delta", () => {
+  const d = tmp();
+  initProject(d);
+  mkdirSync(join(d, ".storyline", "changesets"), { recursive: true });
+  writeFileSync(
+    join(d, ".storyline", "changesets", "CS-2026-04-05-test.yaml"),
+    "meta:\n  id: CS-2026-04-05-test\n  title: Old Feature\n  blueprint_version: 1\n  created_at: '2026-04-05'\n  status: draft\ngoal: ''\nphases: []\ncompletion_criteria: []\nopen_questions: []\n",
+    "utf-8",
+  );
+  const result = runChangeset(["validate"], d);
+  assert.equal(result.exitCode, 0, `validate should accept missing domain_model_delta:\n${result.stderr}`);
+});
+
+// ---------------------------------------------------------------------------
+// Test 16: validate accepts a present-but-empty domain_model_delta section
+// ---------------------------------------------------------------------------
+test("changeset_validate_accepts_empty_domain_model_delta", () => {
+  const d = tmp();
+  initProject(d);
+  mkdirSync(join(d, ".storyline", "changesets"), { recursive: true });
+  writeFileSync(
+    join(d, ".storyline", "changesets", "CS-2026-04-05-test.yaml"),
+    [
+      "meta:",
+      "  id: CS-2026-04-05-test",
+      "  title: My Feature",
+      "  blueprint_version: 1",
+      "  created_at: '2026-04-05'",
+      "  status: draft",
+      "goal: ''",
+      "phases: []",
+      "domain_model_delta:",
+      "  events: []",
+      "  commands: []",
+      "  invariants: []",
+      "  relationships: []",
+      "completion_criteria: []",
+      "open_questions: []",
+    ].join("\n"),
+    "utf-8",
+  );
+  const result = runChangeset(["validate"], d);
+  assert.equal(result.exitCode, 0, `validate should accept empty domain_model_delta:\n${result.stderr}`);
+});
+
+// ---------------------------------------------------------------------------
+// Test 17: validate rejects malformed event entry (missing name)
+// ---------------------------------------------------------------------------
+test("changeset_validate_rejects_malformed_delta_event", () => {
+  const d = tmp();
+  initProject(d);
+  mkdirSync(join(d, ".storyline", "changesets"), { recursive: true });
+  writeFileSync(
+    join(d, ".storyline", "changesets", "CS-2026-04-05-test.yaml"),
+    [
+      "meta:",
+      "  id: CS-2026-04-05-test",
+      "  title: My Feature",
+      "  blueprint_version: 1",
+      "  created_at: '2026-04-05'",
+      "  status: draft",
+      "goal: ''",
+      "phases: []",
+      "domain_model_delta:",
+      "  events:",
+      "    - context: Ordering",
+      "      aggregate: Order",
+      "      # name is missing",
+      "completion_criteria: []",
+      "open_questions: []",
+    ].join("\n"),
+    "utf-8",
+  );
+  const result = runChangeset(["validate"], d);
+  assert.notEqual(result.exitCode, 0, "missing event name should fail validation");
+  assert.ok(
+    (result.stdout + result.stderr).includes("domain_model_delta.events"),
+    `Expected error about domain_model_delta.events:\n${result.stdout}\n${result.stderr}`
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Test 18: validate rejects malformed relationship entry (missing target)
+// ---------------------------------------------------------------------------
+test("changeset_validate_rejects_malformed_delta_relationship", () => {
+  const d = tmp();
+  initProject(d);
+  mkdirSync(join(d, ".storyline", "changesets"), { recursive: true });
+  writeFileSync(
+    join(d, ".storyline", "changesets", "CS-2026-04-05-test.yaml"),
+    [
+      "meta:",
+      "  id: CS-2026-04-05-test",
+      "  title: My Feature",
+      "  blueprint_version: 1",
+      "  created_at: '2026-04-05'",
+      "  status: draft",
+      "goal: ''",
+      "phases: []",
+      "domain_model_delta:",
+      "  relationships:",
+      "    - context: Ordering",
+      "      type: customer-supplier",
+      "      # target is missing",
+      "completion_criteria: []",
+      "open_questions: []",
+    ].join("\n"),
+    "utf-8",
+  );
+  const result = runChangeset(["validate"], d);
+  assert.notEqual(result.exitCode, 0, "missing relationship target should fail validation");
+  assert.ok(
+    (result.stdout + result.stderr).includes("domain_model_delta.relationships"),
+    `Expected error about domain_model_delta.relationships:\n${result.stdout}\n${result.stderr}`
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Test 19: validate accepts valid domain_model_delta with proper entries
+// ---------------------------------------------------------------------------
+test("changeset_validate_accepts_valid_domain_model_delta", () => {
+  const d = tmp();
+  initProject(d);
+  mkdirSync(join(d, ".storyline", "changesets"), { recursive: true });
+  writeFileSync(
+    join(d, ".storyline", "changesets", "CS-2026-04-05-test.yaml"),
+    [
+      "meta:",
+      "  id: CS-2026-04-05-test",
+      "  title: My Feature",
+      "  blueprint_version: 1",
+      "  created_at: '2026-04-05'",
+      "  status: draft",
+      "goal: ''",
+      "phases: []",
+      "domain_model_delta:",
+      "  events:",
+      "    - context: Ordering",
+      "      aggregate: Order",
+      "      name: OrderPlaced",
+      "      payload_fields: [orderId, customerId]",
+      "      applied: false",
+      "  commands:",
+      "    - context: Ordering",
+      "      aggregate: Order",
+      "      name: PlaceOrder",
+      "      applied: false",
+      "  invariants:",
+      "    - context: Ordering",
+      "      aggregate: Order",
+      "      value: Order total equals sum of line items",
+      "      applied: false",
+      "  relationships:",
+      "    - context: Ordering",
+      "      type: customer-supplier",
+      "      target: Payment",
+      "      pattern: Published Language",
+      "      via: OrderPlaced event",
+      "      applied: false",
+      "completion_criteria: []",
+      "open_questions: []",
+    ].join("\n"),
+    "utf-8",
+  );
+  const result = runChangeset(["validate"], d);
+  assert.equal(result.exitCode, 0, `valid domain_model_delta should pass:\n${result.stderr}\n${result.stdout}`);
+});
+
+// ---------------------------------------------------------------------------
 // Test 14: validate --json on version drift includes warning in output
 // ---------------------------------------------------------------------------
 test("changeset_validate_json_includes_version_drift_warning", () => {
