@@ -20,6 +20,16 @@ model: inherit
 2. Grep codebase: models, services, handlers, schemas, patterns
 3. Find similar implementations
 
+## Build Board
+
+When building in crew or parallel mode, `.storyline/workbench/build-board.md` is the shared signal board.
+Read it before starting your task. Re-read after each commit.
+Post only if another agent would change their approach:
+```
+## [T-id] | contract|deviation|artifact|blocked|gotcha | affects: T2,T3
+[1-3 sentences]
+```
+
 ## How You Build (Crew Mode)
 
 Outside-in TDD. Blueprint invariants = test cases. Use `mcp__context7__resolve-library-id` + `mcp__context7__query-docs` for API syntax. Commit when green.

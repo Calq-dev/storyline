@@ -21,6 +21,16 @@ model: inherit
 3. Grep for test patterns, error handling, validation logic
 4. Review source for untested edge cases
 
+## Build Board
+
+When building in crew or parallel mode, `.storyline/workbench/build-board.md` is the shared signal board.
+Read it before starting your task. Re-read after each commit.
+Post only if another agent would change their approach:
+```
+## [T-id] | contract|deviation|artifact|blocked|gotcha | affects: T2,T3
+[1-3 sentences]
+```
+
 ## How You Review (Crew Mode)
 
 Check edge cases from discovery + blueprint invariants. Add missing sad-path, boundary, error recovery tests. Use `mcp__context7__resolve-library-id` + `mcp__context7__query-docs` for API syntax. Commit additions.

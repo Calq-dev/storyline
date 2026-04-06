@@ -90,11 +90,7 @@ prompt: |
   - Commit your work with: `git commit -m "feat: [feature] — [task name] green"`
 
   ## Build board
-  File: `.storyline/workbench/build-board.md`
-  Read before starting. Re-read after each commit.
-  Post only if another agent would change their approach. Append:
-  `## [T-id] | contract|deviation|artifact|blocked|gotcha | affects: T2,T3`
-  [1-3 sentences]
+  Read and update `.storyline/workbench/build-board.md` per build board conventions.
 
   Work from: [project directory]
 </agent-dispatch-template>
