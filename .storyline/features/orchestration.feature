@@ -48,8 +48,14 @@ Feature: Pipeline Orchestration
       Given an implementation plan exists with 5 or more tasks
       And Three Amigos ran in full session mode with persona agents
       When The Foreman presents the build choice
-      Then it recommends "The Crew"
-      And offers "Continue here", "New session", and "The Crew" as options
+      Then it recommends "The Crew" or "Parallel build"
+      And offers "Continue here", "New session", "The Crew", and "Parallel build" as options
+
+    Scenario: Large plan with independent tasks
+      Given an implementation plan exists with 5 or more tasks
+      And most tasks have independent file scopes
+      When The Foreman presents the build choice
+      Then it recommends "Parallel build"
 
   @command:ReportStatus
   Rule: The Foreman can report pipeline status at any time
@@ -97,9 +103,9 @@ Feature: Pipeline Orchestration
   @command:RunCodeReview @as-built
   Rule: Code review runs after build completes
 
-    Scenario: Post-build code review by The Foreman
+    Scenario: Post-build code review by a fresh agent
       Given all implementation tasks are complete and tests are green
-      When The Foreman runs the code review
+      When The Foreman dispatches a code review agent with changeset, diff, features, and blueprint context
       Then the review covers correctness, invariants, cross-file impact, security, test completeness, and glossary
       And blocking findings are fixed before proceeding
       And the security pass is mandatory when the feature touches auth, user input, sensitive data, or external APIs

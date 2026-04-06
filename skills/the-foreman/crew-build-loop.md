@@ -125,32 +125,40 @@ Update the in-progress todo:
 
 ### Code review
 
-One focused review of the full diff. No persona agents — just good instructions adapted to this story.
+Dispatch a fresh agent — not the Foreman. Clean context = better review.
 
-**Load context:**
-1. Read `.storyline/changesets/<cs-filename>.yaml` — what was planned
-2. Run `git diff HEAD~[task count]` — what was built
-3. Read `.storyline/features/*.feature` — what behavior was specified
-4. Run `storyline summary` — blueprint invariants and glossary
+<agent-dispatch>
+prompt: |
+  You are reviewing code that was just built. No persona, no role-play — just review the code.
 
-**Review passes (single agent, sequential):**
+  ## Load context
+  1. Read `.storyline/changesets/<cs-filename>.yaml` — what was planned
+  2. Run `git diff HEAD~[task count]` — what was built
+  3. Read `.storyline/features/*.feature` — what behavior was specified
+  4. Run `storyline summary` — blueprint invariants and glossary
 
-| Pass | Check | Skip |
-|---|---|---|
-| **Correctness** | Logic bugs, edge cases, off-by-one, null handling, incorrect conditionals, error handling gaps | Style, naming, formatting (linters handle that) |
-| **Invariants** | Every `invariants[]` from blueprint holds in the code. Every command validates its preconditions. | Generic "consider pattern X" suggestions |
-| **Cross-file impact** | Changes that break assumptions in other files. Dependency chains, call sites, type contracts. | Praise, positive comments |
-| **Security** | Injection, hardcoded secrets, auth gaps, unsafe input handling. Focus on code paths that touch user input or external APIs. | Low-risk utility code |
-| **Test completeness** | New code paths have tests. Sad paths from feature files have test coverage. | Asserting test style preferences |
-| **Glossary** | Code identifiers match `glossary[]` terms exactly. No drift from ubiquitous language. | |
+  ## Review passes (run sequentially)
 
-**Rules:**
-- Only flag issues with high confidence. State confidence if borderline.
-- Every finding: severity (blocking / warning / nit), file:line, what's wrong, suggested fix.
-- Blocking findings must be fixed before proceeding. Warnings and nits go to the user.
-- If the feature touches auth, user input, sensitive data, or external APIs — the security pass is mandatory, not skimmable.
+  | Pass | Check | Skip |
+  |---|---|---|
+  | **Correctness** | Logic bugs, edge cases, off-by-one, null handling, incorrect conditionals, error handling gaps | Style, naming, formatting (linters handle that) |
+  | **Invariants** | Every `invariants[]` from blueprint holds in the code. Every command validates its preconditions. | Generic "consider pattern X" suggestions |
+  | **Cross-file impact** | Changes that break assumptions in other files. Dependency chains, call sites, type contracts. | Praise, positive comments |
+  | **Security** | Injection, hardcoded secrets, auth gaps, unsafe input handling. Focus on code paths that touch user input or external APIs. | Low-risk utility code |
+  | **Test completeness** | New code paths have tests. Sad paths from feature files have test coverage. | Asserting test style preferences |
+  | **Glossary** | Code identifiers match `glossary[]` terms exactly. No drift from ubiquitous language. | |
 
-**After review — fix blocking issues, then proceed.**
+  ## Rules
+  - Only flag issues with high confidence. State confidence if borderline.
+  - Every finding: severity (blocking / warning / nit), file:line, what's wrong, suggested fix.
+  - If the feature touches auth, user input, sensitive data, or external APIs — the security pass is mandatory.
+  - Do NOT comment on style, naming, formatting, or things linters catch.
+  - Do NOT add praise or positive comments.
+
+  Work from: [project directory]
+</agent-dispatch>
+
+**Blocking findings → fix before proceeding. Warnings and nits → present to user.**
 
 ### As-built blueprint update
 

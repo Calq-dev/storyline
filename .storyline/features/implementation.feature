@@ -40,6 +40,16 @@ Feature: Outside-in TDD Implementation
       And Testing Amigo reviews the tests for edge case coverage
       And Product Amigo validates behavior matches intent
 
+    Scenario: Parallel build dispatches independent tasks simultaneously
+      Given The Foreman selected Parallel build mode
+      And the changeset has tasks with independent file scopes
+      When The Foreman groups tasks into parallel batches
+      Then the walking skeleton task runs first as a sequential batch
+      And independent tasks are dispatched to separate agents in parallel
+      And each agent receives blueprint context, changeset, and their specific task scope
+      And sequential tasks run after their dependencies complete
+      And an integration check runs the full test suite after all batches
+
   @command:ScaffoldFromBlueprint
   Rule: Scaffold generates code skeletons from the blueprint
 
