@@ -7,9 +7,9 @@ argument-hint: "[feature description | @backlog-file.md | build [plan-name]]"
 # The Foreman
 
 ## Args
-- `add <feature>` → skip to Three Amigos with feature
-- `build` → list `.storyline/changesets/`, pick one → Role 2
-- `build <name>` → find matching changeset → Role 2
+- `add <feature>` → skip directly to Three Amigos. Do NOT run Role 1.
+- `build` → skip directly to Role 2. Do NOT run Role 1.
+- `build <name>` → skip directly to Role 2 with that changeset. Do NOT run Role 1.
 
 ## Hard Rules
 - NEVER explore codebase (no Explore/Glob/Grep/Read on source). Blueprint = codebase context.
@@ -65,6 +65,7 @@ ls src/ 2>/dev/null || find . -maxdepth 2 -name "*.ts" -o -name "*.py" -o -name 
 | No blueprint, no source | S1 |
 | No blueprint, source exists | S2 |
 | Blueprint stale (`meta.updated_at` < recent `git log --since` on src/) | S3 |
+| Open changeset exists (`status: draft` or `in_progress`), no feature specified | Role 2 |
 | Blueprint current, feature specified, minor tweak signals detected (≥2) | S8 |
 | Blueprint current, feature specified, user-facing/ambiguous | S4a |
 | Blueprint current, feature specified, technical (explicit only) | S5 |
