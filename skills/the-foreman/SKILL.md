@@ -46,6 +46,7 @@ ls src/ 2>/dev/null || find . -maxdepth 2 -name "*.ts" -o -name "*.py" -o -name 
 | No blueprint, no source | S1 |
 | No blueprint, source exists | S2 |
 | Blueprint stale (`meta.updated_at` < recent `git log --since` on src/) | S3 |
+| Blueprint current, feature specified, minor tweak signals detected (≥2) | S8 |
 | Blueprint current, feature specified, user-facing/ambiguous | S4a |
 | Blueprint current, feature specified, technical (explicit only) | S5 |
 | Blueprint current, no feature specified | S6 |
@@ -61,12 +62,79 @@ Dispatch `storyline:surveyor` (full survey → init `blueprint.yaml`). After: �
 Compare `meta.updated_at` vs `git log --since="$DATE" --name-only -- src/`. If commits since: ask refresh or press on (MCQ). Refresh → incremental survey on changed modules. Press on → S4/S6.
 
 ### S4: Feature specified
-Ask MCQ: user-facing or technical? Ambiguous defaults user-facing.
+**Tweak signal pre-check (before S4a/S5):** Count how many of these apply:
+- Names an existing behavior, command, or feature by name
+- Scoped to one aggregate or command
+- No new rules, bounded contexts, or integrations implied
+- Phrased as adjustment: "change X to Y", "rename", "add field to", "update label on", "fix wording of"
+
+≥2 signals → route to S8. Else: ask MCQ: user-facing or technical? Ambiguous defaults user-facing.
 
 **S4a (user-facing):** Reframe as user story ("As a [role] I want [action] so that [value]"), confirm → `Skill: storyline:three-amigos`
 
 ### S5: Technical task
 Dispatch `Skill: storyline:the-brief`
+
+### S8: Lightweight tweak path
+
+**Step 1: Classify**
+
+Display rationale before asking: "Treating as tweak because: [list matched signals from S4 pre-check]"
+
+MCQ (classification):
+- Minor tweak — continue on lightweight path
+- Broad change — route to full pipeline
+
+  Cross-check before routing: verify ≥2 signals from S4 pre-check do NOT match. State which failed. Route → S4a or S5.
+- Unsure — present clarification MCQ:
+  - Does it name an existing behavior/command? → if yes, re-evaluate signals
+  - Does it introduce a new rule or policy? → if yes → S4a/S5
+  - Is the scope undeterminable? → if yes → S4a/S5
+
+**Step 2: Scan for implications**
+
+```bash
+ls .storyline/features/*.feature 2>/dev/null
+storyline view --context "<relevant context from blueprint>"
+```
+
+Search feature files for references to the named behavior/command/aggregate. List all affected **file paths** and **scenario names**. If none → clean scan.
+
+**Step 3: Gate**
+
+*Clean scan:* → Step 4 (execute).
+
+*Affected scenarios, single bounded context:* MCQ:
+- Proceed lightly — update those scenarios post-commit (list them)
+- Run full pipeline → S4a/S5
+
+*Affected scenarios, multiple bounded contexts:* Block lightweight path. State: "This tweak affects [N] bounded contexts ([list]). Lightweight path blocked — run full pipeline." → S4a/S5.
+
+**Step 4a: Execute inline** (session already has context for the affected area)
+
+Make the change. Two-commit pattern:
+```bash
+# Commit 1 — code/skill only, no blueprint or feature edits
+git add <changed files>
+git commit -m "tweak: [description]"
+
+# Commit 2 — artifact reconciliation
+# 1. Edit affected feature files and/or blueprint if needed
+storyline validate && storyline stamp
+git add .storyline/
+git commit -m "reconcile: [description]"
+```
+
+**Step 4b: Execute via Developer Amigo** (session lacks context for the affected area)
+
+Dispatch `storyline:developer-amigo` with:
+- Tweak description: [user's original description]
+- Affected area: [file paths + scenario names from Step 2]
+- Implication scan results: [clean / affected list]
+- Instructions:
+  1. Make the code/skill change
+  2. Commit code only — no blueprint or feature edits: `git commit -m "tweak: [description]"` — **report commit SHA before continuing**
+  3. Second commit: edit affected feature files + blueprint if needed → `storyline validate && storyline stamp` → `git commit -m "reconcile: [description]"`
 
 ### S6: No feature specified
 Read blueprint gaps + `.storyline/backlog/`. Present top 4-5 as MCQ. If empty: ask what to add.
