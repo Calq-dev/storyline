@@ -1,15 +1,15 @@
 meta:
   project: Storyline
   created_at: '2026-04-04'
-  updated_at: '2026-04-06T18:30:24.759Z'
-  version: 43
+  updated_at: '2026-04-06T18:50:52.207Z'
+  version: 44
 tech_stack:
   language: "TypeScript, Markdown, Bash, YAML"
   framework: "Claude Code Plugin SDK"
   runtime: "Node.js 18+ via tsx (ESM), Claude Code CLI (claude.ai/code)"
   package_manager: "npm"
   test_framework: "node:test (scripts/test-blueprint.ts, 60 tests;
-    scripts/test-changeset.ts, 14 tests; scripts/test-scaffold.ts, 36 tests)"
+    scripts/test-changeset.ts, 22 tests; scripts/test-scaffold.ts, 36 tests)"
   key_dependencies:
     - name: "yaml"
       version: "^2.7.0"
@@ -840,6 +840,12 @@ glossary:
         meaning: "Pipeline bypass route: skip Three Amigos through Doctor Context and go
           directly to Developer Amigo execution with artifact reconciliation
           post-commit"
+  Domain Model Delta:
+    definitions:
+      - context: DomainModeling
+        meaning: Staged domain model entries (events, commands, invariants,
+          relationships) held in the changeset until a scenario goes green, at
+          which point The Onion applies them to blueprint.yaml incrementally
 gaps:
   - id: "GAP-003"
     description: "No integration tests verifying the full pipeline flow from Foreman
