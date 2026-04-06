@@ -73,11 +73,13 @@ digraph intake {
     "Source code exists?" [shape=diamond];
     "Blueprint stale?" [shape=diamond];
     "Feature specified?" [shape=diamond];
+    "User-facing or technical?" [shape=diamond];
     "Scenario 1: Empty site" [shape=box];
     "Scenario 2: Dispatch Surveyor" [shape=box];
     "Scenario 3: Offer refresh" [shape=box];
     "Scenario 4: Three Amigos" [shape=box];
-    "Scenario 5: Ask what to build" [shape=box];
+    "Scenario 5: The Brief" [shape=box];
+    "Scenario 6: Ask what to build" [shape=box];
 
     "Blueprint exists?" -> "Source code exists?" [label="no"];
     "Blueprint exists?" -> "Blueprint stale?" [label="yes"];
@@ -85,8 +87,10 @@ digraph intake {
     "Source code exists?" -> "Scenario 2: Dispatch Surveyor" [label="yes"];
     "Blueprint stale?" -> "Scenario 3: Offer refresh" [label="yes"];
     "Blueprint stale?" -> "Feature specified?" [label="no"];
-    "Feature specified?" -> "Scenario 4: Three Amigos" [label="yes"];
-    "Feature specified?" -> "Scenario 5: Ask what to build" [label="no"];
+    "Feature specified?" -> "User-facing or technical?" [label="yes"];
+    "Feature specified?" -> "Scenario 6: Ask what to build" [label="no"];
+    "User-facing or technical?" -> "Scenario 4: Three Amigos" [label="user-facing (or ambiguous)"];
+    "User-facing or technical?" -> "Scenario 5: The Brief" [label="technical/internal"];
 }
 ```
 
@@ -116,7 +120,7 @@ prompt: |
   Execute a full survey for this project. Initialize .storyline/blueprint.yaml with all findings.
 </agent-dispatch>
 
-After survey: "Site's mapped. What do you want to add?" → Scenario 4 or 5.
+After survey: "Site's mapped. What do you want to add?" → Scenario 4 or 6.
 
 ### Scenario 3: Blueprint stale
 
@@ -129,20 +133,44 @@ Check staleness: compare `meta.updated_at` against `git log --since="$BLUEPRINT_
 If commits exist since last update, ask: "Blueprints are from [date], [N] commits to src/ since then. Refresh the survey, or press on?"
 
 - Refresh → incremental survey on changed modules
-- Press on → proceed to Scenario 4 or 5
+- Press on → proceed to Scenario 4 or 6
 
 ### Scenario 4: Blueprint exists AND user specifies a feature
 
 <branch-todos id="scenario-feature-specified">
+- Foreman: blueprint's current — clarifying feature type before routing
 - Foreman: blueprint's current — putting the amigos on the case
 </branch-todos>
+
+First, ask the contributor what kind of change this is:
+
+```
+AskUserQuestion: "Is this a user-facing feature or a technical/internal change?"
+options:
+  - "User-facing feature — visible to end users, needs a user story" → Scenario 4a
+  - "Technical or internal change — refactor, port, tooling, dependency" → Scenario 5
+```
+
+**Ambiguous input defaults to user-facing.** If the contributor does not clearly indicate a technical change, route to Scenario 4a. The technical path requires explicit affirmation.
+
+**Scenario 4a: User-facing feature confirmed**
 
 If not already a user story, reframe it and confirm:
 > "As a [role] I want [action] so that [value]. Does that capture what you mean?"
 
 Then: `Skill: storyline:three-amigos` — pass the confirmed user story.
 
-### Scenario 5: Blueprint exists AND no feature specified
+### Scenario 5: Blueprint exists AND user specifies a technical task
+
+<branch-todos id="scenario-technical-task">
+- Foreman: blueprint's current — dispatching The Brief for technical intake
+</branch-todos>
+
+> "Got it — technical change. The Brief will run a structured intake session."
+
+Then: `Skill: storyline:the-brief`
+
+### Scenario 6: Blueprint exists AND no feature specified
 
 <branch-todos id="scenario-no-feature">
 - Foreman: blueprint's current — asking what to build next
@@ -153,7 +181,7 @@ Read blueprint gaps, questions, and `.storyline/backlog/`. Present as MCQ (top 4
 
 If nothing in gaps/backlog: "Clean site — no gaps. What feature do you want to add?"
 
-### Scenario 6: Feature files exist but no tech-choices.md
+### Scenario 7: Feature files exist but no tech-choices.md
 
 <branch-todos id="scenario-quartermaster">
 - Foreman: scenarios are written — calling in the quartermaster
@@ -282,7 +310,8 @@ Run `storyline summary` — the blueprint is the single source of truth.
 | `bounded_contexts` empty | Surveyor not run | Dispatch Surveyor |
 | `tech_stack` empty | Scout not run | Suggest `/storyline:the-scout` |
 | Commands have no `feature_files` | Mister Gherkin not run | Suggest `/storyline:mister-gherkin` |
-| No `workbench/tech-choices.md` | Quartermaster not run | Scenario 6 |
+| No `workbench/tech-choices.md` | Quartermaster not run | Scenario 7 |
+| `workbench/technical-brief.yaml` exists, no changeset | Technical Brief completed | Present build choice (Role 2) or dispatch The Onion |
 | Aggregates have no `events` | Sticky Storm not run | Dispatch Sticky Storm agent |
 | No `invariants` or `relationships` | Doctor Context not run | Dispatch Doctor Context agent |
 | `changesets/*.yaml` exists | Onion wrote a plan | Present build choice (Role 2) |

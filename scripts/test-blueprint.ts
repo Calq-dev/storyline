@@ -1364,3 +1364,120 @@ test("test_saga_missing_steps_fails", () => {
   assert.notEqual(result.exitCode, 0, "Expected validation to fail when saga has no steps");
   assert.ok(result.stderr.includes("steps"), `Expected 'steps' in error:\nSTDERR: ${result.stderr}`);
 });
+
+// ---------------------------------------------------------------------------
+// Helpers for spec_type tests
+// ---------------------------------------------------------------------------
+
+function makeSpecTypeBlueprintYaml(specType: string | null, featureFile: string): string {
+  const specTypeLine = specType != null ? `\n            spec_type: ${specType}` : "";
+  return (
+    "meta:\n" +
+    "  project: 'SpecType Test'\n" +
+    "  created_at: '2026-01-01'\n" +
+    "  updated_at: '2026-01-01'\n" +
+    "  version: 1\n" +
+    "bounded_contexts:\n" +
+    "  - name: Ordering\n" +
+    "    aggregates:\n" +
+    "      - name: Order\n" +
+    "        commands:\n" +
+    "          - name: PlaceOrder\n" +
+    "            feature_files:\n" +
+    `              - ${featureFile}` +
+    specTypeLine + "\n" +
+    "        events: []\n" +
+    "        policies: []\n" +
+    "    relationships: []\n" +
+    "    read_models: []\n"
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Test 59: no spec_type — .feature file resolves against features/ — passes
+// ---------------------------------------------------------------------------
+test("spec_type_absent_feature_file_passes", () => {
+  const d = tmp();
+  const { featuresDir } = writeBlueprint(d, makeSpecTypeBlueprintYaml(null, "ordering.feature"));
+  writeFileSync(join(featuresDir, "ordering.feature"), "Feature: Ordering\n", "utf-8");
+
+  const result = run(["validate"], d);
+  assert.equal(result.exitCode, 0, `Expected validation to pass:\nSTDERR: ${result.stderr}`);
+});
+
+// ---------------------------------------------------------------------------
+// Test 60: spec_type: gherkin — .feature file resolves against features/ — passes
+// ---------------------------------------------------------------------------
+test("spec_type_gherkin_feature_file_passes", () => {
+  const d = tmp();
+  const { featuresDir } = writeBlueprint(d, makeSpecTypeBlueprintYaml("gherkin", "ordering.feature"));
+  writeFileSync(join(featuresDir, "ordering.feature"), "Feature: Ordering\n", "utf-8");
+
+  const result = run(["validate"], d);
+  assert.equal(result.exitCode, 0, `Expected validation to pass:\nSTDERR: ${result.stderr}`);
+});
+
+// ---------------------------------------------------------------------------
+// Test 61: spec_type: brief — .yaml in workbench — passes when file exists
+// ---------------------------------------------------------------------------
+test("spec_type_brief_yaml_in_workbench_passes_when_file_exists", () => {
+  const d = tmp();
+  writeBlueprint(d, makeSpecTypeBlueprintYaml("brief", "technical-brief.yaml"));
+  const workbenchDir = join(d, ".storyline", "workbench");
+  mkdirSync(workbenchDir, { recursive: true });
+  writeFileSync(join(workbenchDir, "technical-brief.yaml"), "id: brief-test\n", "utf-8");
+
+  const result = run(["validate"], d);
+  assert.equal(result.exitCode, 0, `Expected validation to pass:\nSTDERR: ${result.stderr}`);
+});
+
+// ---------------------------------------------------------------------------
+// Test 62: spec_type: brief — .yaml in workbench — fails when file absent
+// ---------------------------------------------------------------------------
+test("spec_type_brief_yaml_in_workbench_fails_when_file_absent", () => {
+  const d = tmp();
+  writeBlueprint(d, makeSpecTypeBlueprintYaml("brief", "technical-brief.yaml"));
+  // workbench dir exists but no file
+  mkdirSync(join(d, ".storyline", "workbench"), { recursive: true });
+
+  const result = run(["validate"], d);
+  assert.notEqual(result.exitCode, 0, "Expected validation to fail when brief artifact is absent");
+  assert.ok(
+    result.stderr.includes("technical-brief.yaml"),
+    `Expected 'technical-brief.yaml' in stderr:\nSTDERR: ${result.stderr}`,
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Test 63: spec_type: gherkin — .yaml artifact reference — validation error
+// ---------------------------------------------------------------------------
+test("spec_type_gherkin_with_yaml_artifact_fails", () => {
+  const d = tmp();
+  writeBlueprint(d, makeSpecTypeBlueprintYaml("gherkin", "technical-brief.yaml"));
+  // Brief file exists but spec_type is wrong
+  mkdirSync(join(d, ".storyline", "workbench"), { recursive: true });
+  writeFileSync(join(d, ".storyline", "workbench", "technical-brief.yaml"), "id: brief-test\n", "utf-8");
+
+  const result = run(["validate"], d);
+  assert.notEqual(result.exitCode, 0, "Expected validation to fail on spec_type mismatch");
+  assert.ok(
+    result.stderr.toLowerCase().includes("spec_type"),
+    `Expected 'spec_type' mismatch error in stderr:\nSTDERR: ${result.stderr}`,
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Test 64: invalid spec_type value — schema error reported
+// ---------------------------------------------------------------------------
+test("spec_type_invalid_value_fails_schema", () => {
+  const d = tmp();
+  const { featuresDir } = writeBlueprint(d, makeSpecTypeBlueprintYaml("markdown", "ordering.feature"));
+  writeFileSync(join(featuresDir, "ordering.feature"), "Feature: Ordering\n", "utf-8");
+
+  const result = run(["validate"], d);
+  assert.notEqual(result.exitCode, 0, "Expected schema validation to fail on invalid spec_type");
+  assert.ok(
+    result.stderr.includes("spec_type"),
+    `Expected 'spec_type' in stderr:\nSTDERR: ${result.stderr}`,
+  );
+});

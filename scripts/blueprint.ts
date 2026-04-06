@@ -287,6 +287,11 @@ function validateSchema(data: any, strict = false): string[] {
               if (!("feature_files" in cmd)) {
                 errors.push(fmtError(`${cprefix}.feature_files`, "Command must have a 'feature_files' field.", "Add 'feature_files: []' to this command."));
               }
+              if ("spec_type" in cmd && cmd.spec_type != null) {
+                if (!["gherkin", "brief"].includes(cmd.spec_type)) {
+                  errors.push(fmtError(`${cprefix}.spec_type`, `'spec_type' must be 'gherkin' or 'brief'. Got: '${cmd.spec_type}'.`, "Set spec_type to 'gherkin' (default) or 'brief' for technical-brief.yaml artifacts."));
+                }
+              }
               if ("actor" in cmd && cmd.actor != null && typeof cmd.actor !== "string") {
                 errors.push(fmtError(`${cprefix}.actor`, "'actor' must be a string.", "Set 'actor' to a string like 'Customer' or remove it."));
               }
@@ -561,16 +566,40 @@ function validateReferentialIntegrity(data: any, cwd: string): string[] {
         if (!isDict(cmd)) continue;
         const cmdName = cmd.name || `[${k}]`;
         const cmdPrefix = `${aggPrefix}.commands[${cmdName}]`;
+        const specType: string = cmd.spec_type || "gherkin";
         for (const ff of cmd.feature_files || []) {
           if (typeof ff !== "string" || !ff) continue;
-          const featurePath = join(cwd, FEATURES_DIR, ff);
-          if (!existsSync(featurePath)) {
-            errors.push(fmtFileError(
-              `${cmdPrefix}.feature_files`,
-              ff,
-              `${FEATURES_DIR}/${ff}`,
-              "create the feature file or update the reference",
-            ));
+          if (ff.endsWith(".yaml") || ff.endsWith(".yml")) {
+            // YAML artifacts are looked up in workbench/ and require spec_type: brief
+            if (specType !== "brief") {
+              errors.push(fmtRefError(
+                `${cmdPrefix}.feature_files`,
+                `spec_type mismatch: '${ff}' is a YAML artifact but spec_type is '${specType}'.`,
+                "spec_type: gherkin requires a .feature file in .storyline/features/.",
+                "Set spec_type: brief on this command, or change the feature_files reference to a .feature file.",
+              ));
+            } else {
+              const workbenchPath = join(cwd, ".storyline/workbench", ff);
+              if (!existsSync(workbenchPath)) {
+                errors.push(fmtFileError(
+                  `${cmdPrefix}.feature_files`,
+                  ff,
+                  `.storyline/workbench/${ff}`,
+                  "create the brief artifact or update the reference",
+                ));
+              }
+            }
+          } else {
+            // .feature files always resolve against features/
+            const featurePath = join(cwd, FEATURES_DIR, ff);
+            if (!existsSync(featurePath)) {
+              errors.push(fmtFileError(
+                `${cmdPrefix}.feature_files`,
+                ff,
+                `${FEATURES_DIR}/${ff}`,
+                "create the feature file or update the reference",
+              ));
+            }
           }
         }
       }
@@ -1018,7 +1047,7 @@ function cmdAddEvent(args: { context: string; aggregate: string; name: string; p
   console.log(`Added event '${args.name}' to aggregate '${args.aggregate}' in context '${args.context}'.`);
 }
 
-function cmdAddCommand(args: { context: string; aggregate: string; name: string; featureFiles: string }, cwd: string) {
+function cmdAddCommand(args: { context: string; aggregate: string; name: string; featureFiles: string; specType?: string }, cwd: string) {
   const [bp, data] = requireBlueprint(cwd);
   const ctx = findContext(data, args.context);
   if (ctx === null) {
@@ -1043,10 +1072,14 @@ function cmdAddCommand(args: { context: string; aggregate: string; name: string;
     cmds = findDocNode(doc, ["bounded_contexts", ctxIndex, "aggregates", aggIndex, "commands"]);
   }
 
-  const cmd = doc.createNode({
+  const cmdObj: Record<string, any> = {
     name: args.name,
     feature_files: featureFiles,
-  });
+  };
+  if (args.specType && args.specType !== "gherkin") {
+    cmdObj.spec_type = args.specType;
+  }
+  const cmd = doc.createNode(cmdObj);
   cmds.add(cmd);
 
   saveDocument(bp, doc);
@@ -1810,6 +1843,7 @@ function main() {
           aggregate: { type: "string" },
           name: { type: "string" },
           "feature-files": { type: "string", default: "" },
+          "spec-type": { type: "string", default: "gherkin" },
         },
         strict: true,
       });
@@ -1822,6 +1856,7 @@ function main() {
         aggregate: values.aggregate,
         name: values.name,
         featureFiles: values["feature-files"] ?? "",
+        specType: values["spec-type"] ?? "gherkin",
       }, cwd);
       break;
     }
