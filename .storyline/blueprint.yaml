@@ -1,8 +1,8 @@
 meta:
   project: Storyline
   created_at: '2026-04-04'
-  updated_at: '2026-04-06T08:43:57.293Z'
-  version: 29
+  updated_at: '2026-04-06T08:47:17.490Z'
+  version: 30
 tech_stack:
   language: "TypeScript, Markdown, Bash, YAML"
   framework: "Claude Code Plugin SDK"
@@ -829,12 +829,19 @@ gaps:
     affects:
       - BlueprintManagement
   - id: GAP-013
-    description: "No spec-first discipline for skill changes — SKILL.md files are
-      edited without updating the corresponding .feature file first. @surveyed
-      tags on existing feature files are the evidence: specs were written after
-      the fact, not before. Risk: skill drift accumulates silently across
-      sessions."
-    severity: nice_to_know
+    description: "Feature file drift is the existential risk of this methodology.
+      The plugin's whole promise is living documentation — feature files that
+      accurately reflect system behavior at all times. The pipeline has weak
+      drift prevention: the Surveyor runs as-built surveys but only when
+      manually triggered, and nothing enforces that feature files are updated
+      before or after a change. For refactors especially, behavior changes
+      silently and the feature files become archaeology. If this is not solved,
+      the blueprint becomes a lie and the methodology collapses into theatre.
+      Needs a stronger enforcement mechanism — automated drift detection, a
+      pre-commit hook, a mandatory as-built survey step, or a validation gate
+      that warns when feature files have not been touched in N commits but
+      source code has."
+    severity: important
     affects:
       - Specification
 
