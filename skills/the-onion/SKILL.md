@@ -129,8 +129,20 @@ Each invariant → unit test. Each command → verify `feature_files[]` traceabi
 
 ### 2e: Green
 When acceptance test passes:
+
+**Apply domain model delta** — if changeset has `domain_model_delta`, for each entry where `applied` is not `true`:
+1. `storyline view --context <context>` — check if entry already exists (skip if yes)
+2. Apply the missing entry:
+   - Events: `storyline add-event --context X --aggregate Y --name Z`
+   - Commands: `storyline add-command --context X --aggregate Y --name Z --feature-files ...`
+   - Invariants/relationships: edit `blueprint.yaml` directly
+3. Mark `applied: true` in the changeset YAML
+4. `storyline validate && storyline stamp`
+
+If `domain_model_delta` is absent, skip silently.
+
 ```bash
-git add .
+git add .storyline/ src/ tests/
 git commit -m "feat: [feature name] — [scenario name] green"
 ```
 TaskUpdate current → completed. TaskUpdate next → in_progress. Repeat 2b–2e.

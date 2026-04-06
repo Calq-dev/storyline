@@ -21,11 +21,14 @@ Use `storyline view --context "<name>"` to inspect specific contexts in detail.
 
 ```
 Glob: .storyline/features/*.feature
+Glob: .storyline/changesets/*.yaml
 Glob: .storyline/plans/*
 Glob: .storyline/workbench/*
 Glob: .storyline/backlog/*
 Glob: .storyline/personas/*
 ```
+
+Read the open changeset (status: draft or in_progress) if one exists.
 
 ## State Detection from Blueprint Content
 
@@ -37,8 +40,8 @@ Determine phase status by inspecting blueprint content — no file scanning for 
 | blueprint exists, `bounded_contexts` empty or absent | Surveyor hasn't run (or ran with empty project) |
 | blueprint exists, `tech_stack` empty or absent | The Scout hasn't run |
 | Commands exist but `commands[].feature_files` are all empty | Mister Gherkin hasn't run |
-| Aggregates exist but `events` lists are empty or absent | Sticky Storm hasn't run |
-| Events exist but aggregates have no `invariants` and contexts have no `relationships` | Doctor Context hasn't run |
+| No open changeset, or changeset `domain_model_delta.events` and `.commands` both empty/absent | Sticky Storm hasn't run |
+| No open changeset, or changeset `domain_model_delta.invariants` and `.relationships` both empty/absent | Doctor Context hasn't run |
 | `plans/*.md` exists (glob matches one or more files) | The Onion wrote a plan |
 | Feature files exist, aggregates have invariants, contexts have relationships | All design phases complete |
 
@@ -81,18 +84,16 @@ Return a structured status report as JSON:
   },
   "phase3_sticky_storm": {
     "status": "complete|not_started",
-    "domain_events": 12,
-    "aggregates_with_events": 3,
-    "open_questions": 4,
-    "raw_notes_exist": true
+    "delta_events": 3,
+    "delta_commands": 2,
+    "note": "detected from changeset domain_model_delta.events/commands"
   },
   "phase4_doctor_context": {
     "status": "complete|in_progress|not_started",
-    "contexts_with_relationships": 2,
-    "contexts_total": 3,
-    "aggregates_with_invariants": 4,
-    "aggregates_total": 5,
-    "glossary_terms": 18
+    "delta_invariants": 4,
+    "delta_relationships": 2,
+    "glossary_terms": 18,
+    "note": "detected from changeset domain_model_delta.invariants/relationships"
   },
   "phase5_the_onion": {
     "status": "complete|plan_ready|in_progress|not_started",
@@ -102,6 +103,12 @@ Return a structured status report as JSON:
   },
   "persona_agents": {
     "persona_agents_available": false
+  },
+  "abandoned_changeset": {
+    "status": "warning|none",
+    "changeset": "CS-YYYY-MM-DD-filename.yaml",
+    "unapplied_delta_entries": 5,
+    "note": "Changeset has unapplied domain_model_delta entries and no build has started. Foreman will present resume/discard choice."
   },
   "next_recommended_action": "Run /storyline:the-foreman — The Foreman will check the current pipeline status and recommend the next action"
 }

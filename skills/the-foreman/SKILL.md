@@ -171,6 +171,17 @@ Dispatch `storyline:quartermaster` (research packages → write `.storyline/work
 ### Step 1: Briefing
 Read: `storyline summary`, `changesets/`, `features/*.feature`, `workbench/amigo-notes/*.md`. Multiple changesets → list (date, title, task count) → MCQ pick.
 
+**Abandoned-changeset check:** If the selected changeset has a `domain_model_delta` where every entry has `applied: false` or no `applied` field, and no build has started (no implementation commits since the changeset was created), surface a warning before presenting the build choice:
+
+```
+AskUserQuestion: "This changeset has unapplied domain model delta entries but no build has started. What would you like to do?"
+options:
+  - "Resume — proceed to build choice, delta will be applied as scenarios go green"
+  - "Discard — delete the changeset (blueprint.yaml is unchanged, no cleanup needed)"
+```
+
+If discarded: `git rm .storyline/changesets/<filename>.yaml && git commit -m "chore: discard abandoned changeset <filename>"`. Stop.
+
 Present: feature name, discovery (N rules, insights), scenarios (N files, M scenarios), domain model (contexts, events/commands), risks, plan (N tasks, M files, first task).
 
 ### Step 2: Recommend
@@ -237,6 +248,7 @@ Present Site Report: phase status (✅/🔄/⏳), changeset/task counts, current
 | Aggregates lack `events` | Dispatch Sticky Storm |
 | No `invariants`/`relationships` | Dispatch Doctor Context |
 | `changesets/*.yaml` exists | Role 2 |
+| Changeset has unapplied `domain_model_delta`, no build started | Abandoned-changeset check in Role 2 Step 1 |
 | Features + invariants + relationships complete | As-built survey or next feature |
 
 Staleness: `meta.updated_at` vs git log.

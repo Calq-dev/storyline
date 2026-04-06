@@ -1,0 +1,2 @@
+- Brief completed: status inspector detection redesign is in scope but no existing tests cover it — test gap likely
+- Build started: P5 inspector redesign is most likely to drift from spec — watch for detection table completeness

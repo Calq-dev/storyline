@@ -3,7 +3,7 @@ meta:
   title: Domain Model Delta Belongs in the Changeset, Not the Blueprint
   blueprint_version: 42
   created_at: "2026-04-06T18:21:32.081Z"
-  status: draft
+  status: complete
   spec: workbench/technical-brief.yaml
   spec_type: brief
 
