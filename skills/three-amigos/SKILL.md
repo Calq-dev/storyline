@@ -67,27 +67,7 @@ If not — present 2–3 interpretations as MCQ options, plus a free-text option
 
 ### Step 0b: Choose Session Mode
 
-Before presenting options, count what this feature touches in the blueprint (from Step 0a and `storyline summary`):
-
-| Signal | How to count |
-|---|---|
-| **Aggregates** | How many aggregates does this feature read or write? |
-| **Contexts** | How many bounded contexts are involved? |
-| **Commands** | How many new or modified commands? |
-| **Events** | How many domain events does it produce or consume? |
-| **Invariants** | How many existing invariants could be affected? |
-| **Gaps/Questions** | How many open gaps or questions exist for the involved aggregates? |
-| **Auth/Security** | Does it touch authentication, authorization, PII, or payments? |
-
-Score and recommend:
-
-| Indicator | Recommendation |
-|---|---|
-| ≤1 context, ≤2 aggregates, no auth, ≤2 gaps | Recommend **Quick scan** |
-| 2 contexts OR 3–4 aggregates OR 3+ gaps OR modifies existing commands/events | Recommend **Full session** |
-| 3+ contexts OR 5+ aggregates OR auth/security OR 5+ gaps OR new event flows across contexts | Recommend **Deep dive** |
-
-Show your count to the user so the recommendation is transparent.
+Before presenting options, make an educated guess at complexity based on the feature description and what you've seen in the blueprint. Default to **Full session** — it's the sweet spot for most stories. Only recommend Quick scan for obviously small, single-concern changes, or Deep dive when the feature clearly spans multiple contexts or involves security/auth.
 
 <user-question id="session-mode">
 How would you like to explore this feature?
@@ -95,7 +75,7 @@ options:
   - "Quick scan — I'll look at it from all three perspectives (faster, fewer tokens)"
   - "Full session — Three independent personas prepare and discuss (blueprint only, saves tokens)"
   - "Deep dive — Full session + personas explore the codebase (most thorough, uses more tokens)"
-note: "Based on the counts above, include '[recommended]' next to the option you'd suggest"
+note: "Include '[recommended]' next to the option you'd suggest based on the feature's apparent scope"
 </user-question>
 
 **If Quick scan:** Proceed with Step 1. Play all three roles yourself.
