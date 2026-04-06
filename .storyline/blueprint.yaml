@@ -1,8 +1,8 @@
 meta:
   project: Storyline
   created_at: '2026-04-04'
-  updated_at: '2026-04-06T08:47:17.490Z'
-  version: 30
+  updated_at: '2026-04-06T09:43:28.120Z'
+  version: 31
 tech_stack:
   language: "TypeScript, Markdown, Bash, YAML"
   framework: "Claude Code Plugin SDK"
@@ -844,6 +844,13 @@ gaps:
     severity: important
     affects:
       - Specification
+  - id: GAP-014
+    description: When a story is split and sub-stories run through the pre-build
+      pipeline in sequence, amigo notes files (workbench/amigo-notes/*.md) get
+      overwritten between stories — the second story destroys the first's notes
+    severity: important
+    affects:
+      - Discovery
 
 questions:
   - id: "Q-001"

@@ -169,19 +169,10 @@ For each assumption: what it is, confidence level (`high`/`medium`/`low`), conse
 
 Also check: 3+ critical questions without `best_guess` → story not ready for development. Stop.
 
-**When ≥ 8 rules**, find natural seams and propose the split:
-> "This story has [N] rules — too large. Here's how I'd split it:
-> **Story A:** Rules [X, Y, Z] — [one-line description of independent user value]
-> **Story B:** Rules [A, B] — [description]
-> Which one first? The others go to the backlog."
-
-**When 5–7 rules**, offer the choice:
-<user-question id="story-size">
-This story has [N] rules — workable but large. Continue as one story or split?
-options:
-  - "Continue as one story"
-  - "Split — propose how"
-</user-question>
+**When splitting** (≥ 8 required, 5–7 optional):
+1. Present proposed stories with rule sets, confirm split with user
+2. Run each story through the full pre-build pipeline in sequence: Three Amigos → Mister Gherkin → [Sticky Storm + Doctor Context] → changeset
+3. Hand back to The Foreman — all changesets ready, user picks what to build
 
 ### Step 3: MoSCoW Prioritization
 
