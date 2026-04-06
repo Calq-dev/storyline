@@ -1,0 +1,221 @@
+meta:
+  id: CS-2026-04-06-technical-task-entry-point
+  title: Technical task entry point — The Brief (Story A)
+  blueprint_version: 25
+  created_at: 2026-04-06T06:39:33.141Z
+  status: draft
+
+goal: >
+  Add a lightweight technical task entry point to the BDD pipeline. Contributors working on
+  internal changes (refactors, ports, tooling, dependency upgrades) get a structured intake
+  path (The Brief) that bypasses the user-story framing of Three Amigos and produces a
+  schema-validated technical-brief.yaml spec artifact. The Foreman gains an MCQ at intake
+  to route between the existing Three Amigos path and the new Brief path. Blueprint
+  validation gains spec_type awareness so commands can reference .yaml artifacts instead of
+  only .feature files.
+
+constraints:
+  - Story A only — security_surface field, public_interface_change gate, Gherkin bridge,
+    and The Onion guard for no-feature-files are deferred to Story B
+  - No changes to .storyline/features/*.feature file format
+  - No new bounded contexts — StartTechnicalTask and RunTechnicalBrief already added to blueprint
+  - Phase names (Technical Brief) must appear in Foreman skill docs; formal enumeration in
+    Orchestration invariants (R8-E2 rejection of invalid names) is deferred to GAP-010
+  - The Brief does NOT ask the contributor to label their subtype — it detects it internally
+    from intake answers
+  - technical-brief.yaml lives in .storyline/workbench/ and must NOT be cleaned up by
+    storyline housekeeping --cleanup while any blueprint command references it; brief artifact
+    archival lifecycle is a Story B follow-up
+  - The Brief produces technical-brief.yaml (intake artifact), not a CS changeset; the
+    implementation changeset is produced later by The Onion using the brief as input
+  - R3-E2 (brief artifact with missing required fields fails validation) is enforced at the
+    skill level by the acceptance criteria gate in The Brief — no machine-readable schema
+    validates the brief artifact's own fields in Story A; automated schema validation is
+    a Story B item
+  - The Foreman re-entry after The Brief completes (auto-handoff) must not re-trigger the
+    MCQ — Foreman detects existing technical-brief.yaml as project state and routes to
+    Scenario 5 (Ask what to build) or the build choice flow, not intake MCQ
+
+phases:
+  # ── PHASE 1 ─────────────────────────────────────────────────────────────────
+  # Walking skeleton: Foreman MCQ + route to The Brief
+  # Gherkin scenario coverage: R1-E1 (Contributor signals technical task at intake)
+  - id: P1
+    title: "Foreman MCQ + dispatch The Brief (walking skeleton)"
+    type: refactor
+    migration:
+      strategy: additive — new Scenario 5 and MCQ prompt added alongside existing Scenario 4; no existing routing removed
+      rollback: Remove Scenario 5 block and the MCQ from Scenario 4; restore old Scenario 5/6 numbering
+    status: pending
+    touches:
+      - path: skills/the-foreman/SKILL.md
+        reason: >
+          Add MCQ at intake before Scenario 4 routing — asks whether the change is
+          user-facing or technical/internal. Add new Scenario 5 (Blueprint exists AND
+          user specifies a technical task) that dispatches The Brief. Rename old Scenario 5
+          (Ask what to build) to Scenario 6, and old Scenario 6 (Quartermaster) to Scenario 7.
+          Update the decision tree diagram accordingly. Ambiguous input defaults to Three Amigos.
+    acceptance_criteria:
+      - Foreman presents an AskUserQuestion MCQ after "feature specified?" is true — before
+        dispatching Three Amigos
+      - MCQ options include "user-facing feature" (routes to Scenario 4 / Three Amigos) and
+        "technical or internal change" (routes to new Scenario 5 / The Brief)
+      - Ambiguous or no selection defaults to Scenario 4 (Three Amigos)
+      - The secondary re-route path from R1-E3 ("contributor can re-route to The Brief after
+        confirming their intent") is not implemented in Story A — the default to Three Amigos
+        is the terminal state for ambiguous input in this story
+      - Decision tree diagram updated to include the new Scenario 5 branch
+      - Old Scenario 5 (Ask what to build) becomes Scenario 6; old Scenario 6 (Quartermaster) becomes Scenario 7
+      - branch-todos id for Scenario 5: "scenario-technical-task"
+
+  # ── PHASE 2 ─────────────────────────────────────────────────────────────────
+  # The Brief skill — core intake session and subtype detection
+  # Gherkin scenario coverage: R2-E1, R2-E2, R2-E3 (Brief subtype detection and blocking)
+  - id: P2
+    title: "Write skills/the-brief/SKILL.md"
+    type: addition
+    status: pending
+    touches:
+      - path: skills/the-brief/SKILL.md
+        reason: New standalone skill file for the technical intake session
+    acceptance_criteria:
+      - File exists at skills/the-brief/SKILL.md
+      - Skill opens with a HARD-GATE (do NOT explore codebase; read blueprint + any
+        technical-brief.yaml in workbench/)
+      - Skill runs a structured intake session with these required questions, in order:
+          1. What changes and why?
+          2. What is the scope (single file, single module, cross-cutting)?
+          3. What are the acceptance criteria (non-empty list — blocks if absent)?
+          4. What are the risks?
+          5. (Detection) Does the change have any observable behavior or public interface impact?
+             — This answer drives subtype detection internally; contributor is not asked to label
+      - Subtype detection logic (internal, not shown to contributor):
+          - If answer to Q5 indicates observable behavior or interface impact → scoped technical
+            mode: also run NFR probe and MoSCoW prioritization
+          - If answer to Q5 indicates no observable behavior and no interface impact → pure
+            internal mode: lightweight template only (what/why/risks/done criteria)
+      - Acceptance criteria validation gate: if acceptance_criteria list is empty or absent,
+        skill blocks with message "acceptance_criteria[] must be non-empty before proceeding"
+        and does not proceed to artifact production
+      - After successful intake, skill writes technical-brief.yaml to .storyline/workbench/
+      - Artifact format documented inline in the skill (see P3 for format spec)
+      - After writing artifact, skill invokes: Skill storyline:the-foreman
+      - TOOL-REQUIREMENTS block present: AskUserQuestion for all questions, TodoWrite for todos
+      - todo-actions block present covering: intake Q1-Q5, subtype detection, NFR probe
+        (conditional), MoSCoW (conditional), write artifact, link to blueprint, validate
+
+  # ── PHASE 3 ─────────────────────────────────────────────────────────────────
+  # technical-brief.yaml artifact format and blueprint linking
+  # Gherkin scenario coverage: R3-E1, R3-E3 (artifact created and linked; pure internal leaves blueprint unchanged)
+  - id: P3
+    title: "Define technical-brief.yaml format and blueprint linking in The Brief"
+    type: refactor
+    migration:
+      strategy: additive — extends the skill written in P2 with format docs and linking workflow
+      rollback: Remove the artifact format section and linking steps from the Brief skill
+    status: pending
+    touches:
+      - path: skills/the-brief/SKILL.md
+        reason: Document the artifact format and the blueprint linking workflow
+    acceptance_criteria:
+      - technical-brief.yaml format includes these required fields:
+          id: CS-style slug (e.g. brief-2026-04-06-migrate-yaml-format)
+          title: string
+          created_at: ISO timestamp
+          subtype: scoped_technical | pure_internal
+          task_description: string
+          scope: string
+          acceptance_criteria: list of strings (non-empty)
+          risks: list of strings
+          (scoped_technical only) nfr_notes: string
+          (scoped_technical only) moscow: must_have | should_have | could_have
+      - After writing technical-brief.yaml, skill runs storyline validate to confirm
+        referential integrity passes
+      - If the technical task introduces a new blueprint command, skill adds the command with
+        feature_files: [technical-brief.yaml] and spec_type: brief
+      - If the technical task is a pure internal change (no new commands), blueprint is left
+        unchanged; skill notes this explicitly
+      - Skill commits the artifact and any blueprint changes with:
+        git add .storyline/workbench/technical-brief.yaml .storyline/blueprint.yaml
+        git commit -m "brief: [title]"
+
+  # ── PHASE 4 ─────────────────────────────────────────────────────────────────
+  # Blueprint CLI: spec_type field validation
+  # Gherkin scenario coverage: R9-E1, R9-E2 (spec_type: brief accepts yaml; spec_type: gherkin rejects yaml)
+  - id: P4
+    title: "Add spec_type validation to scripts/blueprint.ts"
+    type: refactor
+    migration:
+      strategy: >
+        backwards-compatible — spec_type is optional; existing commands with no spec_type continue
+        to validate as before. Requires P3: the workbench/ lookup path in validateReferentialIntegrity
+        follows from the artifact location established in P3.
+      rollback: Remove spec_type validation branches from validateSchema and validateReferentialIntegrity; remove --spec-type flag from add-command
+    status: pending
+    touches:
+      - path: scripts/blueprint.ts
+        reason: >
+          Two changes:
+          1. Schema validation (validateSchema): add optional spec_type field on commands.
+             Allowed values: "gherkin" | "brief". If absent, default behaviour is "gherkin".
+          2. Referential integrity (validateReferentialIntegrity): when command has
+             spec_type: brief, look for the file in .storyline/workbench/ instead of
+             .storyline/features/. Reject a .yaml file when spec_type is absent or "gherkin".
+      - path: scripts/test-blueprint.ts
+        reason: Add test cases for spec_type validation (schema + referential integrity)
+    acceptance_criteria:
+      - Command with no spec_type field: referential integrity checks .storyline/features/ as before
+      - Command with spec_type: gherkin: same as no spec_type
+      - Command with spec_type: brief and feature_files: [technical-brief.yaml]:
+          referential integrity checks .storyline/workbench/technical-brief.yaml (not features/)
+          → passes when file exists, fails when file absent
+      - Command with spec_type: gherkin and feature_files: [technical-brief.yaml]:
+          validation error: "spec_type: gherkin requires a .feature file"
+      - Command with spec_type: brief and feature_files: [some-feature.feature]:
+          no error — .feature files with spec_type: brief still resolve against features/
+          (lookup path is determined by file extension: .yaml → workbench/, .feature → features/)
+      - spec_type with invalid value (not gherkin/brief): schema error reported
+      - add-command CLI helper gains optional --spec-type flag defaulting to "gherkin"
+      - At least 6 named test cases in test-blueprint.ts:
+          (1) no spec_type — passes
+          (2) spec_type: gherkin with .feature — passes
+          (3) spec_type: brief with .yaml in workbench — passes when file exists
+          (4) spec_type: brief with .yaml in workbench — fails when file absent
+          (5) spec_type: gherkin with .yaml — validation error (requires .feature file)
+          (6) invalid spec_type value — schema error
+
+  # ── PHASE 5 ─────────────────────────────────────────────────────────────────
+  # Phase name documentation: "Technical Brief" as valid phase
+  # Gherkin scenario coverage: R8-E1, R8-E2 (phase tracking)
+  - id: P5
+    title: "Document Technical Brief phase in Foreman and The Brief skills"
+    type: refactor
+    migration:
+      strategy: additive — new rows/sections added to existing tables and pipeline position comments
+      rollback: Remove Technical Brief row from Foreman state table; remove pipeline position line from The Brief skill
+    status: pending
+    touches:
+      - path: skills/the-foreman/SKILL.md
+        reason: >
+          Add "Technical Brief" to the phase state detection reference table.
+          Add "Technical Brief" to the phase sequence description in the brief context.
+      - path: skills/the-brief/SKILL.md
+        reason: >
+          Add phase tracking: The Brief writes its current phase name as "Technical Brief"
+          in TodoWrite and pipeline state. TodoWrite step for phase tracking included.
+    acceptance_criteria:
+      - Foreman state detection table includes row for "Technical Brief" phase
+      - The Brief skill declares its pipeline position as "Orchestration → Technical Brief → Implementation"
+      - "Technical Brief" appears as a named, documented phase (satisfies R8 at skill level;
+        formal blueprint invariant enumeration deferred to GAP-010)
+
+completion_criteria:
+  - storyline validate passes with no errors after all phases
+  - skills/the-brief/SKILL.md exists and is invocable via Skill tool
+  - Foreman MCQ routes technical tasks to The Brief, user-facing features to Three Amigos
+  - technical-brief.yaml format is documented and schema-validated by The Brief
+  - spec_type: brief on blueprint commands passes referential integrity against workbench/ files
+  - test-blueprint.ts includes tests for spec_type validation (run: npx tsx --test scripts/test-blueprint.ts)
+  - All phases committed with conventional commit messages
+
+open_questions: []
