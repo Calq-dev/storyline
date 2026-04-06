@@ -93,6 +93,60 @@ Only Sticky Storm and Doctor Context truly need the complete blueprint.
 - Adding a new sub-command: add `elif [ "$FIRST_ARG" = "X" ]; then shift; exec node --import ... scripts/X.ts "$@"`
 - Usage block lives in bin/storyline for cross-script commands; individual scripts print their own detailed usage on bad args
 
+## Technical Entry Point Feature (2026-04-06)
+
+### The problem being solved
+The pipeline always routes through Three Amigos → Mister Gherkin, which forces a user story framing. Technical tasks (migrations, refactors, dependency replacements, CLI additions) don't fit this frame.
+
+### Key code locations
+- The forced reframe is in `skills/the-foreman/SKILL.md` Scenario 4: "If not already a user story, reframe it..."
+- Three Amigos `skills/three-amigos/SKILL.md` Step 2 hardwires the user story structure
+- Example map format (`skills/three-amigos/example-map-format.yaml`) has top-level `story:` field
+
+### Architecture decision (settled after Ronde 2)
+**Option B (new `the-brief` skill) is the correct architecture.** The Foreman is a coordinator, not a facilitator — intake logic for a new work type belongs in a dedicated agent, not inside the Foreman's decision tree. The brief-facilitator is one agent (not a multi-persona session).
+
+### How the user signals "technical task"
+Must be explicit — MCQ at Foreman intake, not auto-detection. Heuristics will misclassify ambiguous inputs ("add CLI command for X" could go either way).
+
+### feature_files referential integrity — the hard constraint (from Testing Amigo)
+`storyline validate` enforces referential integrity on `feature_files`. Two paths forward:
+- **Option 1 (preferred long-term)**: add `technical_task: true` flag to blueprint commands; validation exempts `feature_files` requirement for those commands. Requires schema + validation code changes.
+- **Option 2 (preferred for MVP)**: require `the-brief` to always produce at least one lightweight feature file (technical acceptance criteria in minimal Gherkin). No schema changes, preserves existing validation invariant unchanged.
+- **Do not let technical tasks create dangling references.** This is a hard constraint, not a preference.
+
+### Phase enumeration gap
+Phase names are not formally enumerated anywhere. Technical path adds "Technical Brief" as a valid phase. Must be added to Orchestration invariants before implementation or phase tracker will reject the sequence: Orchestration → Technical Brief → (optional Specification) → Implementation.
+
+### Required fields in technical-brief.yaml
+- `task:` — what changes and why (replaces `story:`)
+- `criteria[]` — acceptance criteria (replaces `rules[]`)
+- `security_surface: none | input-handling | auth | external-api | data-storage` — explicit triage; if not `none`, dispatch Security Amigo
+- `public_interface_change: yes | no` — forces contributor to declare backward-compatibility impact
+- `scope: single-context | cross-cutting` — feeds changeset `touches[]`
+
+### Blueprint domain objects needed
+- `StartTechnicalTask` command in Orchestration/PipelineSession
+- `RunTechnicalBrief` in Discovery/DiscoverySession (or new context — open question)
+- `TechnicalBriefProduced` event
+
+### Changeset metadata `type:` field — does not exist yet
+The changeset `meta:` block has no `type:` field. Each phase has `type: addition|removal|modification`, but the changeset itself is untyped at the meta level. Adding `type: technical` requires a schema change in the YAML template and a corresponding check in `changeset validate` logic in `scripts/blueprint.ts`. Small but must be deliberate — do not add silently or the validator will ignore it.
+
+### Foreman routing: new Scenario 5, not a branch inside Scenario 4
+Scenario 4 is "blueprint exists AND user specifies a feature." A technical task must be Scenario 5 — "blueprint exists AND user specifies a technical task." Adding a conditional inside Scenario 4 would make it two-headed. The MCQ clarifying question fires before scenario routing; the answer determines which scenario fires.
+
+### The Onion reads feature files directly — not only via changeset
+Confirmed from SKILL.md: The Onion's Step 0 explicitly reads `.storyline/features/*.feature` alongside the blueprint. If a technical task produces no feature files, The Onion has no acceptance tests to start from. Option 2 (technical-brief.yaml listed as a feature_files reference) resolves this. The Onion needs one guard: "If feature files are absent but technical-brief.yaml exists, use its `criteria[]` as acceptance test inputs."
+
+### Testing Amigo's three options — Option 2 is the right fit for Option B
+Option 1 (conditional feature_files exemption): cleanest long-term but requires schema + validation code changes.
+Option 2 (brief as specification artifact, listed in feature_files): no schema changes, preserves validation invariant — start here.
+Option 3 (technical_task: true flag on commands): most invasive, creates two-tier command model — avoid.
+
+### Changeset scope note
+Cross-cutting vs. single-context: the changeset `touches[]` format already handles this. No new data structure needed for The Onion.
+
 ## Workbench Lifecycle Rules
 
 | Artifact | Safe to clean after | Notes |

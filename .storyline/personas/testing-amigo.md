@@ -77,6 +77,17 @@ Full notes at `.storyline/workbench/amigo-notes/testing.md`.
 - The no-args usage test: always assert exit code non-zero AND expected string. Checking only the string is insufficient — a bug could write the right text and exit 0.
 - `main()` uses `parseArgs` with `strict: false` — unknown flags are silently ignored, NOT rejected. This is a design choice that prevents the "unexpected flag" failure mode but also means flag typos (e.g. `--modle`) produce no error, just a missing-value usage error.
 
+## Technical Task Entry Point (Session 2026-04-06) — DECISIONS REACHED
+
+- The new entry point bypasses Discovery and Specification entirely. Primary risk: security-triage and scope-review that normally happen in Three Amigos are never triggered.
+- Phase-tracking invariant ("exactly one phase in_progress") is immediately at risk — the phase sequence for a technical task is not defined. Pre-condition for implementation: enumerate valid phase names as a closed list in Orchestration invariants. Phase sequence for technical path: Technical Brief → (Optional Specification) → Implementation.
+- Blueprint referential integrity: Option 2 agreed as preference — `technical-brief.yaml` IS the specification artifact that satisfies `feature_files` reference check. Add `spec_type: gherkin | brief` to blueprint commands rather than a `type: technical` changeset override. The traceability invariant must hold; only the file type is relaxed.
+- "Who decides a change is technical?" — two-gate model agreed: (1) MCQ at intake as routing signal, (2) required `public_interface_change: yes/no` field in the brief as a catch-for-mistakes gate. If `public_interface_change: yes`, pipeline surfaces a routing warning before proceeding.
+- Security triage: `security_surface` field must be required, non-defaultable, and carry a hard branch consequence. If anything other than `none`, `security_review_requested: true` must be set, Security Amigo must be dispatched before The Onion starts, and the changeset may not begin until a review artifact exists.
+- Developer Amigo proposes Gherkin optional — agreed, but the brief facilitator must explicitly ask "observable behavior?" and record the answer as a structured field, not just skip silently.
+- Option B (`the-brief` as standalone skill) accepted by all. Foreman must auto-route there via MCQ, preserving the single-entry-point promise.
+- Two-codepath risk in The Onion: if The Brief feeds The Onion directly, The Onion's step-1 ("read feature files for acceptance tests") may fail. The Onion needs a guard: "if no feature files exist, use acceptance criteria from the technical brief."
+
 ## Things To Watch Out For
 - Any solution that relies on agent discipline (prompt instructions alone) will fail in long sessions. Already proven by the housekeeping problem.
 - String matching on Bash command content for PostToolUse is fragile — commands can be chained with `&&`, wrapped in subshells, etc.
