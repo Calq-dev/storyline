@@ -71,12 +71,15 @@ If not — present 2–3 interpretations as MCQ options, plus a free-text option
 How would you like to explore this feature?
 options:
   - "Quick scan — I'll look at it from all three perspectives (faster, fewer tokens)"
-  - "Full session — Three independent personas prepare and discuss (more thorough)"
+  - "Full session — Three independent personas prepare and discuss (blueprint only, saves tokens)"
+  - "Deep dive — Full session + personas explore the codebase (most thorough, uses more tokens)"
 </user-question>
 
 **If Quick scan:** Proceed with Step 1. Play all three roles yourself.
 
-**If Full session:** Jump to `./full-session.md`.
+**If Full session:** Jump to `./full-session.md`. Personas work from the blueprint and feature files only — no codebase exploration.
+
+**If Deep dive:** Jump to `./full-session.md`. Include `deep_dive: true` in every agent prompt so Developer and Testing amigos know they have permission to explore the codebase.
 
 <branch-todos id="quick-scan">
 - Three Amigos: the product amigo sets the scene

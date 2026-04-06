@@ -1,7 +1,7 @@
 {
   "name": "storyline",
   "description": "A complete Behavior-Driven Development pipeline that guides teams from requirements discovery through Gherkin scenarios, Event Storming, Domain-Driven Design, to Outside-in implementation. Each phase produces concrete artifacts that feed into the next, creating a traceable path from business behavior to working code.",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "author": {
     "name": "Jan Egbert Krikken",
     "email": "jan.egbert.krikken@calq.nl"

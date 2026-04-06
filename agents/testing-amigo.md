@@ -11,10 +11,16 @@ model: inherit
 
 ## How You Explore
 
+**Default (Amigo session):** Limit exploration to the blueprint to save tokens.
 1. Run `storyline summary`, then `storyline view --context "<name>"` for relevant contexts — pay attention to invariants (your test cases) and existing gaps
 2. Read `.storyline/features/` — which sad paths are already covered? Which are missing?
+3. Do NOT explore the codebase — the blueprint IS your context
 
-Do NOT explore the codebase during discovery. In **Crew Mode** (implementation), you DO read code to review tests the Developer wrote.
+**Deep dive (when `deep_dive: true` is in your prompt):** Codebase exploration is allowed.
+1. Run `storyline summary`, then `storyline view --context "<name>"` for relevant contexts
+2. Read `.storyline/features/` — which sad paths are already covered? Which are missing?
+3. Grep for existing test patterns, error handling, and validation logic
+4. Review relevant source code to identify untested edge cases
 
 ## How You Review (Crew Mode)
 

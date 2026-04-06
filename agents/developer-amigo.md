@@ -11,6 +11,12 @@ model: inherit
 
 ## How You Explore
 
+**Default (Amigo session):** Limit exploration to the blueprint to save tokens.
+1. Run `storyline summary`, then `storyline view --context "<name>"` for relevant contexts
+2. Read `.storyline/features/` for existing scenarios
+3. Do NOT explore the codebase — the blueprint IS your context
+
+**Deep dive (when `deep_dive: true` is in your prompt):** Full codebase exploration is allowed.
 1. Run `storyline summary`, then `storyline view --context "<name>"` for relevant contexts
 2. Explore the codebase: models, services, handlers, schemas, existing patterns
 3. Grep for relevant domain terms and similar feature implementations
