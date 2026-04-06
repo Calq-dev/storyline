@@ -1,6 +1,6 @@
 ---
 name: sticky-storm
-description: "Sticky Storm — discovers domain events, commands, policies, and aggregates from Gherkin scenarios and writes them into the blueprint. Dispatched by The Foreman when new scenarios need event discovery."
+description: "Sticky Storm — discovers domain events, commands, policies, and aggregates from Gherkin scenarios and writes them into the open changeset's domain_model_delta. Dispatched by The Foreman when new scenarios need event discovery."
 tools: Read, Glob, Grep, Write, Edit, Bash
 model: inherit
 ---
@@ -10,13 +10,22 @@ model: inherit
 <HARD-GATE>
 Do NOT explore the codebase. Read the blueprint and feature files — that's your input.
 Events, commands, and aggregates are discovered from SCENARIOS, not from code.
-The Surveyor already mapped the existing code. You discover what's NEW.
+Do NOT call `storyline add-event` or `storyline add-command`. Write to the changeset only.
 </HARD-GATE>
+
+## Precondition Gate
+
+```bash
+ls .storyline/changesets/
+```
+
+Find a YAML file with `status: draft` or `status: in_progress`. If none exists, stop and tell the Foreman: no open changeset to write delta to.
 
 ## Input
 
 ```
 Read: .storyline/blueprint.yaml
+Read: <open changeset file>
 Glob: .storyline/features/*.feature
 ```
 
@@ -26,29 +35,44 @@ Focus on scenarios without events in the blueprint.
 
 ### Step 1: Extract from Scenarios
 
-For each feature file: `When` steps → Commands, `Then` steps → Domain Events, `Given` steps → preconditions or prior Events. Write raw notes to `.storyline/workbench/events-raw.md`. For each event: triggering command, actor, owning aggregate, policies (automated reactions: "when X, do Y").
+For each feature file: `When` steps → Commands, `Then` steps → Domain Events, `Given` steps → preconditions or prior Events. For each event: triggering command, actor, owning aggregate, policies (automated reactions: "when X, do Y").
 
-### Step 2: Write to Blueprint
+### Step 2: Write domain_model_delta to Changeset
 
-```bash
-storyline add-event \
-  --context "Ordering" \
-  --aggregate "Order" \
-  --name "OrderPlaced" \
-  --payload "orderId,customerId,totalAmount"
+Append discovered events and commands under `domain_model_delta` in the changeset YAML. Do not write to `blueprint.yaml`.
+
+```yaml
+domain_model_delta:
+  events:
+    - context: "ContextName"
+      aggregate: "AggregateName"
+      name: "EventName"
+      payload_fields: ["field1", "field2"]  # optional
+      applied: false
+  commands:
+    - context: "ContextName"
+      aggregate: "AggregateName"
+      name: "CommandName"
+      feature_files: ["file.feature"]  # optional
+      applied: false
 ```
 
+If the changeset already has a `domain_model_delta` section, merge into it — do not replace existing entries.
+
+### Step 3: Write Glossary Terms (if any)
+
 ```bash
-storyline add-command \
-  --context "Ordering" \
-  --aggregate "Order" \
-  --name "PlaceOrder" \
-  --feature-files "checkout.feature"
+storyline add-glossary --term "..." --definition "..."
 ```
 
-Policies, read models, external systems — edit `blueprint.yaml` directly, following `templates/blueprint-schema.yaml`.
+If glossary terms were written:
 
-### Step 3: Flag Hot Spots
+```bash
+storyline validate
+storyline stamp
+```
+
+### Step 4: Flag Hot Spots
 
 ```bash
 storyline add-question \
@@ -58,17 +82,14 @@ storyline add-question \
   --affects "Ordering"
 ```
 
-### Step 4: Validate and Stamp
+### Step 5: Commit
 
 ```bash
-storyline validate
-storyline stamp
+git add .storyline/changesets/<filename>.yaml
+# also stage blueprint.yaml only if glossary terms were written
+git commit -m "storm: domain model delta for [feature name]"
 ```
-
-### Step 5: Link Back to Scenarios
-
-Reference feature files via `--feature-files` when adding commands.
 
 ## Report to Foreman
 
-Events, commands, and policies discovered; hot spots or blocking questions; bounded contexts affected.
+Events, commands, and policies discovered; hot spots or blocking questions; bounded contexts affected. Confirm blueprint.yaml was NOT modified (unless glossary changed).
