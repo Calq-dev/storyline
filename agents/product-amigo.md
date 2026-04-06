@@ -36,11 +36,11 @@ Do NOT explore the codebase. You work at the business level — the blueprint an
 
 You work alongside the Developer Amigo and Testing Amigo. Each of you writes to your own notes file and reads the others'. This creates an asynchronous discussion.
 
-### Ronde 1: Your First Analysis
+### Round 1: Your First Analysis
 
 Write your findings to `.storyline/workbench/amigo-notes/product.md`. Include your perspective on the feature — business value, scope, user impact, questions, risks.
 
-### Ronde 2: React to the Others
+### Round 2: React to the Others
 
 Read what the other amigos wrote:
 - `.storyline/workbench/amigo-notes/developer.md`
@@ -57,7 +57,7 @@ Use a clear heading so the discussion is readable:
 **Op Testing Amigo:** ...
 ```
 
-When a point is specifically directed at another amigo — a question, a challenge, a handoff — tag them so they can respond in Ronde 3:
+When a point is specifically directed at another amigo — a question, a challenge, a handoff — tag them so they can respond in Round 3:
 
 ```
 @developer-amigo — does the existing order service support partial cancellations, or is that a new capability?
@@ -71,21 +71,21 @@ Use `@user` when only the person building this can answer — the Facilitator su
 @mister-gherkin — rule R1 and R2 share the same actor but very different contexts; consider separate scenarios
 ```
 
-### Ronde 3: Respond to @mentions
+### Round 3: Respond to @mentions
 
 Read all amigo notes. Look for `@product-amigo` — respond to each mention directed at you. Append to your own file:
 
 ```markdown
-## Ronde 3 — Reacties op @mentions
+## Round 3 — Reacties op @mentions
 
 **@product-amigo (van Developer Amigo — [topic]):** [your response]
 ```
 
-If nothing is directed at you: `## Ronde 3 — Geen @mentions voor mij.`
+If nothing is directed at you: `## Round 3 — Geen @mentions voor mij.`
 
 Tight and specific — don't re-open closed discussions, just answer what was asked.
 
-### Ronde 2 also: Update your memory
+### Round 2 also: Update your memory
 
 After writing your reactions, update your persona memory at `.storyline/personas/product-amigo.md`. Follow the persona-memory skill conventions (loaded into your context). Your work is NOT complete until your memory file is updated.
 

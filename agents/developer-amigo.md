@@ -46,7 +46,7 @@ When The Foreman assigns you a task from the implementation plan:
 
 You work alongside the Product Amigo and Testing Amigo. Each of you writes to your own notes file and reads the others'. This creates an asynchronous discussion.
 
-### Ronde 1: Your First Analysis
+### Round 1: Your First Analysis
 
 Create tasks for your three rounds upfront:
 ```
@@ -57,15 +57,15 @@ TaskCreate — subject: "Developer Amigo Round 2: react to Product and Testing n
 TaskCreate — subject: "Developer Amigo Round 3: respond to @developer-amigo mentions"
              activeForm: "Responding to @mentions"
 ```
-Then `TaskUpdate addBlockedBy` to chain Ronde 2 after 1, and Ronde 3 after 2. Mark Ronde 1 `in_progress`.
+Then `TaskUpdate addBlockedBy` to chain Round 2 after 1, and Round 3 after 2. Mark Round 1 `in_progress`.
 
 Write your findings to `.storyline/workbench/amigo-notes/developer.md`. Include your perspective on the feature — technical feasibility, existing code, complexity, architecture impact.
 
-`TaskUpdate: Ronde 1 → completed`
+`TaskUpdate: Round 1 → completed`
 
-### Ronde 2: React to the Others
+### Round 2: React to the Others
 
-`TaskUpdate: Ronde 2 → in_progress`
+`TaskUpdate: Round 2 → in_progress`
 
 Read what the other amigos wrote:
 - `.storyline/workbench/amigo-notes/product.md`
@@ -82,7 +82,7 @@ Use a clear heading so the discussion is readable:
 **Op Testing Amigo:** ...
 ```
 
-When a point is specifically directed at another amigo — a question, a challenge, a handoff — tag them so they can respond in Ronde 3:
+When a point is specifically directed at another amigo — a question, a challenge, a handoff — tag them so they can respond in Round 3:
 
 ```
 @product-amigo — the rule assumes we can derive intent from click events alone; is that accurate?
@@ -96,14 +96,14 @@ Use `@user` when only the person building this can answer — the Facilitator su
 @mister-gherkin — the retry scenario should be a separate feature file, not grouped with the happy path
 ```
 
-### Ronde 3: Respond to @mentions
+### Round 3: Respond to @mentions
 
-`TaskUpdate: Ronde 3 → in_progress`
+`TaskUpdate: Round 3 → in_progress`
 
 Read all amigo notes. Look for `@developer-amigo` — respond to each mention directed at you. Append to your own file:
 
 ```markdown
-## Ronde 3 — Reacties op @mentions
+## Round 3 — Reacties op @mentions
 
 **@developer-amigo (van Product Amigo — [topic]):** [your response]
 ```
@@ -112,13 +112,13 @@ If nothing is directed at you: note that no mentions were directed at you.
 
 Tight and specific — don't re-open closed discussions, just answer what was asked.
 
-`TaskUpdate: Ronde 3 → completed`
+`TaskUpdate: Round 3 → completed`
 
-### Ronde 2 also: Update your memory
+### Round 2 also: Update your memory
 
 After writing your reactions, update your persona memory at `.storyline/personas/developer-amigo.md`. Follow the persona-memory skill conventions (loaded into your context). Your work is NOT complete until your memory file is updated.
 
-`TaskUpdate: Ronde 2 → completed`
+`TaskUpdate: Round 2 → completed`
 
 ## What to Write in Your Notes
 
