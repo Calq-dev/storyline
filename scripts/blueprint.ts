@@ -1596,11 +1596,18 @@ function cmdHousekeeping(args: { cleanup: boolean; phase?: string }, cwd: string
     if (phase === "three-amigos" || phase === "all") {
       const amigoNotes = join(workbench, "amigo-notes");
       if (existsSync(amigoNotes)) toRemove.push(amigoNotes);
+      const exampleMap = join(workbench, "example-map.yaml");
+      if (existsSync(exampleMap)) toRemove.push(exampleMap);
     }
 
     if (phase === "sticky-storm" || phase === "all") {
       const eventsRaw = join(workbench, "events-raw.md");
       if (existsSync(eventsRaw)) toRemove.push(eventsRaw);
+    }
+
+    if (phase === "all") {
+      const murphy = join(workbench, "murphy.md");
+      if (existsSync(murphy)) toRemove.push(murphy);
     }
 
     if (phase !== "three-amigos" && phase !== "sticky-storm" && phase !== "all") {
@@ -1645,15 +1652,31 @@ function cmdArchive(args: { feature: string }, cwd: string) {
   const copied: string[] = [];
   const skipped: string[] = [];
 
-  // Artifacts to archive (source → dest filename)
-  const artifacts: Array<{ src: string; dest: string }> = [
+  // Session-specific artifacts: copy to session dir, then remove from workbench
+  const sessionArtifacts: Array<{ src: string; dest: string }> = [
     { src: join(workbench, "example-map.yaml"), dest: "example-map.yaml" },
     { src: join(workbench, "amigo-notes"), dest: "amigo-notes" },
-    { src: join(workbench, "tech-choices.md"), dest: "tech-choices.md" },
+    { src: join(workbench, "murphy.md"), dest: "murphy.md" },
+    { src: join(workbench, "events-raw.md"), dest: "events-raw.md" },
     { src: join(workbench, "estimates"), dest: "estimates" },
   ];
 
-  for (const { src, dest } of artifacts) {
+  // Project-wide artifacts: copy only (keep in workbench for future sessions)
+  const persistentArtifacts: Array<{ src: string; dest: string }> = [
+    { src: join(workbench, "tech-choices.md"), dest: "tech-choices.md" },
+  ];
+
+  for (const { src, dest } of sessionArtifacts) {
+    if (existsSync(src)) {
+      cpSync(src, join(sessionDir, dest), { recursive: true });
+      rmSync(src, { recursive: true, force: true });
+      copied.push(dest);
+    } else {
+      skipped.push(dest);
+    }
+  }
+
+  for (const { src, dest } of persistentArtifacts) {
     if (existsSync(src)) {
       cpSync(src, join(sessionDir, dest), { recursive: true });
       copied.push(dest);
