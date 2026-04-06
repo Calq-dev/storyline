@@ -1,0 +1,28 @@
+id: brief-2026-04-06-domain-model-delta-in-changeset
+title: "Domain Model Delta Belongs in the Changeset, Not the Blueprint"
+created_at: "2026-04-06T00:00:00.000Z"
+subtype: scoped_technical
+task_description: >
+  Sticky Storm and Doctor Context currently write new domain model entries (events, commands,
+  invariants, relationships) directly into blueprint.yaml before anything is built. This means
+  the blueprint describes things that don't exist in code yet — you can't tell what's built vs
+  what's planned. Move those deltas into the changeset instead. The blueprint only gets updated
+  after each scenario goes green (incremental, commit by commit). Fixes blueprint trustworthiness
+  after interrupted sessions.
+scope: cross_cutting
+acceptance_criteria:
+  - "blueprint.yaml only contains domain model entries that exist in the codebase"
+  - "If a session stops after Sticky Storm/Doctor Context but before The Onion builds, blueprint.yaml is unchanged and the next session can resume cleanly from the changeset"
+  - "The Onion writes each domain model delta entry to blueprint.yaml after the corresponding scenario goes green — not all at once at the end"
+  - "The Foreman status inspector correctly detects whether Sticky Storm and Doctor Context have run, without relying on domain model entries being present in blueprint.yaml"
+  - "If a changeset with a domain_model_delta is abandoned, blueprint.yaml remains consistent with the codebase"
+risks:
+  - "Status inspector redesign is the hardest part — agents/foreman.md has a fixed state detection table driven entirely by blueprint content; removing domain model entries from the blueprint breaks every phase-detection rule that checks for events, invariants, or relationships"
+  - "Sticky Storm and Doctor Context no longer write to blueprint.yaml directly — a fundamental behavior change that reshapes what both agents do and how contributors understand the pipeline"
+  - "Partially-applied delta if a session stops mid-build — requires idempotent delta application (re-applying an already-applied entry is a no-op)"
+nfr_notes: >
+  Compatibility: existing changesets without domain_model_delta must be treated as empty delta
+  (missing section = no delta to apply) — fully backwards compatible, no migration required.
+  Resilience: delta application must be idempotent — The Onion checks whether a delta entry
+  already exists in the blueprint before writing, so re-running after an interrupted session is safe.
+moscow: should_have
