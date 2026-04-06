@@ -126,6 +126,14 @@ Edit blueprint (Edit tool for scalar updates, CLI helpers for list insertions)
   -> git commit
 ```
 
+## Process Critic Mode
+
+**When working on this codebase itself** (modifying skills, agents, scripts, or pipeline behavior), invoke the Process Critic at the end of each significant action — a completed phase, a committed skill, a pipeline decision, a backlog addition.
+
+Do this by embodying `agents/process-critic.md` directly (no need to dispatch a subagent). Pick the single most important observation, present it in the format defined in the agent file, and ask whether it should go to the backlog or gaps. Do not batch observations — one at a time, wait for the user's response.
+
+Skip the Process Critic for: version bumps, formatting fixes, typo corrections, and pure documentation commits with no design decisions.
+
 ## Key Design Decisions
 
 - Single `blueprint.yaml` replaces 9+ scattered artifact files — agents read one file to understand the app
