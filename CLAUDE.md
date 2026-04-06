@@ -27,13 +27,11 @@ Rules:
 - **Explicitly deferred scope is added to backlog immediately — no need to ask.** If a decision says "Story B", "deferred", "follow-up", or "won't have this time", write it to `backlog/` at the moment of deferral, not later.
 - Skip only for: version bumps, typo fixes, formatting, pure documentation with no design content
 
-**Critical distinction — always ask before flagging a discoverability gap:**
-This CLAUDE.md is only read when developing this plugin. It is NEVER seen by plugin users.
-Plugin users only see what is inside the skills, agents, and CLI output.
-Before flagging something as "not discoverable", check whether it is reachable through
-the plugin itself (Foreman routing, skill instructions, `storyline summary` output).
-NEVER suggest putting user-facing documentation into this CLAUDE.md — that would create
-a false sense of coverage while being completely invisible to the 1M users who matter.
+**Know your audience before raising an observation.**
+This repo has two distinct audiences: contributors (who see this file) and users (who never do).
+A gap only matters if it affects the right audience. Before flagging anything, ask: who would
+actually experience this problem, and does the fix reach them? A fix that lives in this repo
+but not in the plugin is not a fix for users — it is theatre.
 
 ## Agent Workflow
 
