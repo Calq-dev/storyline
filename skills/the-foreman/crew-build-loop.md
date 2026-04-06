@@ -1,5 +1,9 @@
 # The Crew — Build Loop
 
+```bash
+echo "# Build Board\n" > .storyline/workbench/build-board.md
+```
+
 **Before starting:** Check permission mode. If `default`, agents will be prompted for every file edit. Ask:
 
 > "The crew needs to write code. Want me to switch to acceptEdits mode so the crew can work uninterrupted?"
@@ -46,6 +50,7 @@ prompt: |
   Write the acceptance test BEFORE any implementation exists.
   Verify the test fails (RED), commit the failing test, and report back.
   Use context7 for test framework docs.
+  Read `.storyline/workbench/build-board.md` before starting. Post if another agent needs to know something: `## [T-id] | contract|deviation|artifact|blocked|gotcha | affects: [tasks]` + 1-3 sentences.
   Work from: [project directory]
 </agent-dispatch>
 
@@ -68,6 +73,7 @@ prompt: |
   Implement until the acceptance test is GREEN. Outside-in TDD: the acceptance test is there —
   write unit tests for the inner loop, then implement. Commit when green and report back.
   Use context7 for framework/library docs.
+  Read `.storyline/workbench/build-board.md` before starting. Post if another agent needs to know something: `## [T-id] | contract|deviation|artifact|blocked|gotcha | affects: [tasks]` + 1-3 sentences.
   Work from: [project directory]
 </agent-dispatch>
 
@@ -89,6 +95,7 @@ prompt: |
   Confirm the acceptance test is green. Check: are the edge cases you flagged during discovery covered?
   Add any missing tests, commit additions, and report back.
   Use context7 for test framework docs.
+  Read `.storyline/workbench/build-board.md` before starting. Post if another agent needs to know something: `## [T-id] | contract|deviation|artifact|blocked|gotcha | affects: [tasks]` + 1-3 sentences.
   Work from: [project directory]
 </agent-dispatch>
 

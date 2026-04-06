@@ -18,6 +18,12 @@ Do NOT use when:
 
 ---
 
+## Step 0: Initialize build board
+
+```bash
+echo "# Build Board\n" > .storyline/workbench/build-board.md
+```
+
 ## Step 1: Dependency analysis
 
 Read the changeset. Classify each task:
@@ -82,6 +88,13 @@ prompt: |
   - ONLY touch files in your scope. Do not modify files outside your task.
   - If you discover you need something from another task's scope, note it and move on.
   - Commit your work with: `git commit -m "feat: [feature] — [task name] green"`
+
+  ## Build board
+  File: `.storyline/workbench/build-board.md`
+  Read before starting. Re-read after each commit.
+  Post only if another agent would change their approach. Append:
+  `## [T-id] | contract|deviation|artifact|blocked|gotcha | affects: T2,T3`
+  [1-3 sentences]
 
   Work from: [project directory]
 </agent-dispatch-template>
