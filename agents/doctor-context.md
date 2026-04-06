@@ -13,11 +13,22 @@ Bounded contexts, aggregates, and relationships are modeled from BLUEPRINT data,
 not by scanning source code. The Surveyor already did that work.
 </HARD-GATE>
 
+## Precondition
+
+Find the open changeset:
+
+```bash
+ls .storyline/changesets/
+```
+
+Look for a YAML file with `status: draft` or `status: in_progress`. If none exists, stop and tell the Foreman: no open changeset to write delta to.
+
 ## Input
 
 ```
 Read: .storyline/blueprint.yaml
 Glob: .storyline/features/*.feature
+Read: .storyline/changesets/<open-changeset>.yaml
 ```
 
 Blueprint has bounded contexts, aggregates, events, and commands. Your job: REFINE — draw better boundaries, add invariants, define relationships, build the glossary.
@@ -26,37 +37,37 @@ Blueprint has bounded contexts, aggregates, events, and commands. Your job: REFI
 
 ### 1. Refine Bounded Context Boundaries
 
-Move aggregates between contexts or rename contexts using standard DDD context-mapping rules.
+Move aggregates between contexts or rename contexts using standard DDD context-mapping rules. Boundary decisions inform what you write to the changeset.
 
-### 2. Add Invariants to Aggregates
+### 2. Write Invariants and Relationships to the Changeset
 
-```yaml
-invariants:
-  - "Order total equals sum of line item totals"
-  - "Cannot confirm a cancelled order"
-```
-
-### 3. Define Context Relationships
+Do NOT edit blueprint.yaml for invariants or relationships. Append to `domain_model_delta` in the open changeset file:
 
 ```yaml
-relationships:
-  - type: "customer-supplier"
-    target: "Payment"
-    pattern: "Published Language"
-    via: "OrderPlaced event"
+domain_model_delta:
+  invariants:
+    - context: "ContextName"
+      aggregate: "AggregateName"
+      value: "Invariant text as a string"
+      applied: false
+  relationships:
+    - context: "ContextName"
+      type: "customer-supplier"
+      target: "OtherContextName"
+      pattern: "Published Language"
+      via: "SomeEvent or mechanism"
+      applied: false
 ```
 
-Types: shared-kernel, customer-supplier, conformist, anti-corruption-layer, published-language, open-host-service, separate-ways.
+If `domain_model_delta` already exists in the changeset, merge into it rather than replacing it.
 
-### 4. Fill Domain Services
+### 3. Fill Domain Services
 
-```yaml
-domain_services:
-  - name: "PricingService"
-    description: "Calculates totals including discounts and tax"
-```
+Domain services belong in the changeset too if they are net-new for the feature, or directly in the blueprint if they are corrections to existing structure — use your judgment.
 
-### 5. Build the Glossary
+### 4. Build the Glossary
+
+Glossary terms go directly to the blueprint via CLI (safe to pre-populate):
 
 ```bash
 storyline add-glossary \
@@ -67,6 +78,8 @@ storyline add-glossary \
 
 ## Validate and Stamp
 
+Only run if glossary terms were written:
+
 ```bash
 storyline validate
 storyline stamp
@@ -76,6 +89,14 @@ storyline stamp
 
 `references/ddd-patterns.md`
 
+## Commit
+
+```bash
+git add .storyline/changesets/<filename>.yaml
+# Only include blueprint.yaml if glossary terms were written
+git commit -m "context: domain model delta for [feature name]"
+```
+
 ## Report to Foreman
 
-Bounded contexts (any restructured), invariants added per aggregate, relationships defined, glossary terms added, concerns about aggregate sizing or boundary placement.
+Bounded contexts (any restructured), invariants and relationships written to changeset, glossary terms added to blueprint, concerns about aggregate sizing or boundary placement.

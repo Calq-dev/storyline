@@ -76,7 +76,7 @@ The view does NOT need to be referentially complete -- it's a read-aid for conte
 - Developer Amigo, The Onion: tech_stack + full target context + relationship names
 - Mister Gherkin: specific aggregate/command detail only
 - Sticky Storm: all events/commands/aggregates across all contexts (event uniqueness invariant)
-- Doctor Context: full blueprint (refines context boundaries)
+- Doctor Context: full blueprint (refines context boundaries) + open changeset (writes invariants and relationships to domain_model_delta, not to blueprint)
 
 Only Sticky Storm and Doctor Context truly need the complete blueprint.
 
@@ -169,6 +169,14 @@ Option 3 (technical_task: true flag on commands): most invasive, creates two-tie
 
 ### Changeset scope note
 Cross-cutting vs. single-context: the changeset `touches[]` format already handles this. No new data structure needed for The Onion.
+
+## Sticky Storm — Changeset delta pattern (2026-04-06)
+
+- Sticky Storm no longer calls `storyline add-event` or `storyline add-command`
+- Discoveries go into `domain_model_delta` in the open changeset YAML (`.storyline/changesets/`)
+- `applied: false` on all entries — The Onion or a later phase applies them to blueprint.yaml
+- Precondition gate: no open changeset (`draft` or `in_progress`) → Sticky Storm stops and tells Foreman
+- Commit includes only the changeset file unless glossary terms were written (blueprint stays clean)
 
 ## Workbench Lifecycle Rules
 
