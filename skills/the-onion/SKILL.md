@@ -65,16 +65,36 @@ After writing changeset, targeted codebase exploration:
 
 Update changeset if anything unexpected.
 
-### 1d: Self-Review
-Before handing off, check your own changeset:
+### 1d: Review
 
+**Self-check first:**
 1. **Coverage** — every scenario in `.storyline/features/` has a task. No scenario left out.
 2. **Invariants** — every `invariants[]` entry in the blueprint maps to a test assertion in the plan.
 3. **Gaps** — blueprint `gaps[]` and `questions[]` acknowledged. Addressed or explicitly deferred.
 4. **Walking skeleton** — first task is simplest happy path end-to-end. Not a partial slice.
 5. **Dependencies** — build order respects `relationships[]`. Nothing depends on something built later.
 
-Fix any holes. If unsure about scope or priority → AskUserQuestion.
+Fix any holes found. Then dispatch Testing Amigo for a quick scan:
+
+<agent-dispatch subagent_type="storyline:testing-amigo">
+prompt: |
+  Quick scan only — no rounds, no notes file. Report back directly.
+
+  Read the changeset: `.storyline/changesets/<cs-filename>.yaml`
+  Read the feature file(s) it covers: `.storyline/features/`
+  Run `storyline summary` for invariants and glossary.
+
+  Check:
+  1. Sad paths — are the obvious failure scenarios covered?
+  2. Edge cases — boundary conditions, empty states, concurrent actions?
+  3. Invariant coverage — does the test strategy actually assert the blueprint invariants?
+  4. Anything in the feature file that has no corresponding task in the changeset?
+
+  Flag issues only. No praise. One sentence per finding.
+  Work from: [project directory]
+</agent-dispatch>
+
+Flags → adjust changeset. No flags → proceed.
 
 ### 1e: Hand Off
 ```bash
