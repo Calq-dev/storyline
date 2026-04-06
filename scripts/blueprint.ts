@@ -1589,7 +1589,16 @@ function cmdHousekeeping(args: { cleanup: boolean; phase?: string }, cwd: string
       process.exit(1);
     }
 
-    // Determine what to remove
+    // Archive session artifacts first (if a completed changeset exists to name the session)
+    if (!args.phase || args.phase === "all") {
+      const feature = completedChangesetTitle(cwd);
+      if (feature) {
+        archiveSession(feature, cwd);
+        return; // archiveSession already moved session artifacts — nothing left to remove
+      }
+    }
+
+    // No completed changeset — fall back to removing known session artifacts directly
     const phase = args.phase || "all";
     const toRemove: string[] = [];
 
@@ -1627,17 +1636,10 @@ function cmdHousekeeping(args: { cleanup: boolean; phase?: string }, cwd: string
 }
 
 // ---------------------------------------------------------------------------
-// New command: archive
+// Archive logic (shared between housekeeping --cleanup and archive command)
 // ---------------------------------------------------------------------------
 
-function cmdArchive(args: { feature: string }, cwd: string) {
-  const feature = args.feature.trim();
-  if (!feature) {
-    console.error("Error: --feature cannot be empty");
-    process.exit(1);
-  }
-
-  // Slug: lowercase, spaces → hyphens, strip non-alphanumeric except hyphens
+function archiveSession(feature: string, cwd: string): void {
   const slug = feature.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
   const sessionDir = join(cwd, ".storyline", "sessions", `${today()}-${slug}`);
 
@@ -1652,7 +1654,7 @@ function cmdArchive(args: { feature: string }, cwd: string) {
   const copied: string[] = [];
   const skipped: string[] = [];
 
-  // Session-specific artifacts: copy to session dir, then remove from workbench
+  // Session-specific: move out of workbench
   const sessionArtifacts: Array<{ src: string; dest: string }> = [
     { src: join(workbench, "example-map.yaml"), dest: "example-map.yaml" },
     { src: join(workbench, "amigo-notes"), dest: "amigo-notes" },
@@ -1661,7 +1663,7 @@ function cmdArchive(args: { feature: string }, cwd: string) {
     { src: join(workbench, "estimates"), dest: "estimates" },
   ];
 
-  // Project-wide artifacts: copy only (keep in workbench for future sessions)
+  // Project-wide: copy only, keep in workbench
   const persistentArtifacts: Array<{ src: string; dest: string }> = [
     { src: join(workbench, "tech-choices.md"), dest: "tech-choices.md" },
   ];
@@ -1685,12 +1687,27 @@ function cmdArchive(args: { feature: string }, cwd: string) {
     }
   }
 
-  // Write session manifest
+  // Move completed changeset into session dir
+  const changesetsDir = join(cwd, ".storyline", "changesets");
+  if (existsSync(changesetsDir)) {
+    const slug = feature.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+    for (const file of readdirSync(changesetsDir).filter(f => f.endsWith(".yaml"))) {
+      try {
+        const cs = loadYaml(join(changesetsDir, file));
+        if (cs?.meta?.status === "complete") {
+          cpSync(join(changesetsDir, file), join(sessionDir, file));
+          rmSync(join(changesetsDir, file));
+          copied.push(file);
+        }
+      } catch { /* skip */ }
+    }
+  }
+
   const data = existsSync(join(cwd, BLUEPRINT_PATH)) ? loadYaml(join(cwd, BLUEPRINT_PATH)) : {};
   const featureFiles = globFiles(join(cwd, ".storyline", "features"), "*.feature");
   const planFiles = globFiles(join(cwd, ".storyline", "plans"), "*.md");
 
-  const manifest = {
+  writeFileSync(join(sessionDir, "session.yaml"), stringify({
     date: today(),
     feature,
     project: data?.meta?.project ?? "(unknown)",
@@ -1698,15 +1715,38 @@ function cmdArchive(args: { feature: string }, cwd: string) {
     artifacts_archived: copied,
     feature_files: featureFiles.map(f => f.replace(cwd + "/", "")),
     plans: planFiles.map(f => f.replace(cwd + "/", "")),
-  };
-
-  writeFileSync(join(sessionDir, "session.yaml"), stringify(manifest));
+  }));
 
   const relDir = sessionDir.replace(cwd + "/", "");
   console.log(`Archived session to ${relDir}/`);
   if (copied.length > 0) console.log(`  Archived: ${copied.join(", ")}`);
-  if (skipped.length > 0) console.log(`  Skipped (not found): ${skipped.join(", ")}`);
   console.log(`  session.yaml written`);
+}
+
+function completedChangesetTitle(cwd: string): string | null {
+  const dir = join(cwd, ".storyline", "changesets");
+  if (!existsSync(dir)) return null;
+  const files = readdirSync(dir).filter(f => f.endsWith(".yaml")).sort().reverse();
+  for (const file of files) {
+    try {
+      const data = loadYaml(join(dir, file));
+      if (data?.meta?.status === "complete") return data.meta.title ?? null;
+    } catch { /* skip */ }
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// New command: archive
+// ---------------------------------------------------------------------------
+
+function cmdArchive(args: { feature: string }, cwd: string) {
+  const feature = args.feature.trim();
+  if (!feature) {
+    console.error("Error: --feature cannot be empty");
+    process.exit(1);
+  }
+  archiveSession(feature, cwd);
 }
 
 // Helper: list files in a directory matching a suffix
