@@ -78,14 +78,3 @@ export class PlaceOrderHandler { ... }
 
 This lets anyone trace a line of code back to a Gherkin scenario back to a business requirement.
 
-## Walking Skeleton Wire-Up
-
-```
-HTTP Request → Controller → Command Handler → Domain → Repository → Database
-```
-
-Typical walking skeleton setup:
-1. Read `tech_stack` from blueprint — language, framework, test runner already known
-2. Generate: entry point (route/controller), command handler, domain aggregate, repository interface, in-memory repository
-3. Wire with dependency injection (or manual wiring)
-4. Run acceptance test — should pass for the simplest case

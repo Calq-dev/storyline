@@ -1,6 +1,6 @@
 # Three Amigos — Full Session Mode
 
-> **Note:** The persona agents share the same underlying knowledge base. The "disagreements" they generate are constructed variations, not genuine information asymmetry between people with different interests. Use full session mode for deeper structuring of complex features — not as a substitute for real multidisciplinary input.
+> Persona agents share the same knowledge base. Use full session mode for deeper structuring, not as a substitute for real multidisciplinary input.
 
 When the user chooses "Full session", you become the **Facilitator** — you don't play the three roles yourself. Instead, you dispatch three independent persona agents who explore the feature, discuss via shared notes, and then you synthesize their findings.
 
@@ -119,19 +119,7 @@ Agent (subagent_type: "storyline:security-amigo"):
     Work from: [project directory]
 </agent-dispatch>
 
-While agents work, share an insight with the user and ask a contextual question:
-
-```
-★ Insight ─────────────────────────────────────
-[Quote about discovery, requirements, or multiple perspectives]
-
-The amigos are doing their homework. While we wait, a question for you:
-───────────────────────────────────────────────
-```
-
-Ask something relevant to the specific feature — "Are there terms your team uses that might not be in the glossary?", "Has this been attempted before?", "Who cares most about this feature?" — always with a "skip" option.
-
-Wait for all agents to finish.
+While agents work, ask the user a contextual question relevant to the feature (glossary terms, prior attempts, key stakeholder) — always with a "skip" option. Wait for all agents to finish.
 
 ## Step F3: Ronde 2 — Discussion (parallel)
 
@@ -174,8 +162,6 @@ Agent (subagent_type: "storyline:testing-amigo"):
     Work from: [project directory]
 </agent-dispatch>
 
-While agents discuss, share a brief insight about the value of different perspectives challenging each other. No question this time.
-
 Wait for all agents to finish.
 
 ## Step F3b: Ronde 3 — @mention Responses (parallel)
@@ -210,8 +196,6 @@ Agent (subagent_type: "storyline:testing-amigo"):
 </agent-dispatch>
 
 If Frontend Amigo was dispatched, also dispatch in Ronde 3 with the same pattern for `@frontend-amigo`.
-
-While agents work, share a brief insight about the value of direct questions in a team setting.
 
 Wait for all agents to finish.
 

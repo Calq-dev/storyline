@@ -1,13 +1,5 @@
 # Consolidation Guide
 
-## Purpose
-
-This document describes how to merge the outputs of the three estimation sub-agents (PERT, WBS,
-T-Shirt) into a single, coherent estimation document. It also contains the document templates
-for each audience type.
-
----
-
 ## Part 1: Consolidation Methodology
 
 ### Step 1: Load and Parse Results
@@ -345,62 +337,4 @@ Use for: hybrid audience + standard or comprehensive detail level.
 
 ## Part 3: Visual Element Guidelines
 
-### When to Include Visuals
-
-The rule: visuals should accelerate comprehension, not decorate. Use the matrix from SKILL.md
-to decide which visuals to include based on audience and detail level.
-
-### Mermaid Diagram Examples
-
-**WBS Tree:**
-```mermaid
-graph TD
-    A[Project] --> B[Phase 1: Discovery]
-    A --> C[Phase 2: Development]
-    A --> D[Phase 3: Testing]
-    B --> B1[Requirements Gathering]
-    B --> B2[Technical Spike]
-    C --> C1[Backend API]
-    C --> C2[Frontend UI]
-    C --> C3[Integration]
-    D --> D1[Unit Testing]
-    D --> D2[Integration Testing]
-    D --> D3[UAT]
-```
-
-**Gantt Chart:**
-```mermaid
-gantt
-    title Project Timeline
-    dateFormat  YYYY-MM-DD
-    section Discovery
-    Requirements    :a1, 2025-01-06, 10d
-    Tech Spike      :a2, after a1, 5d
-    section Development
-    Backend API     :b1, after a2, 20d
-    Frontend UI     :b2, after a2, 15d
-    Integration     :b3, after b1, 10d
-    section Testing
-    Testing         :c1, after b3, 10d
-```
-
-**Risk Matrix (as a table):**
-```
-|              | Low Impact | Medium Impact | High Impact |
-|--------------|-----------|---------------|-------------|
-| High Prob.   | ⚠️ Watch  | 🔴 Mitigate   | 🔴 Mitigate  |
-| Medium Prob. | ✅ Accept  | ⚠️ Watch      | 🔴 Mitigate  |
-| Low Prob.    | ✅ Accept  | ✅ Accept      | ⚠️ Watch     |
-```
-
-### Language Adaptation
-
-All template headings, labels, and prose must be translated to the user's chosen language.
-Translate naturally — don't do literal word-for-word translation. Adapt idioms and business
-terminology to what professionals in that language would actually use:
-
-- "Bottom Line" → "Kernboodschap" (NL), "Fazit" (DE), "L'essentiel" (FR)
-- "Risk Register" → "Risicoregister" (NL), "Risikoregister" (DE)
-- "Assumptions" → "Aannames" (NL), "Annahmen" (DE), "Hypothèses" (FR)
-
-Use the language that feels professional and natural in local business contexts.
+Visuals should accelerate comprehension. Use the audience/detail matrix from SKILL.md to decide which to include. All headings and prose must be in the user's language — translate idioms naturally, not word-for-word.

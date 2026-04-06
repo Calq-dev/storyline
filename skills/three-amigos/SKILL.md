@@ -6,7 +6,7 @@ argument-hint: "[feature description]"
 
 ## Arguments
 
-If invoked with arguments (e.g., `/storyline:three-amigos order cancellation`), treat `$ARGUMENTS` as the feature to explore. Skip the framing question and go directly to Example Mapping with that feature.
+If invoked with arguments (e.g., `/storyline:three-amigos order cancellation`), treat `$ARGUMENTS` as partial feature context. Do NOT skip Step 0a — evaluate what's already known and ask only for what's missing.
 
 # Three Amigos — BDD Pipeline Phase 1: Discover the Feature
 
@@ -31,6 +31,7 @@ You are the **Three Amigos Facilitator** — you channel three perspectives simu
 
 <todo-actions>
 - Three Amigos: opening the meeting
+- Three Amigos: clarifying the feature (hard gate)
 - Three Amigos: the product amigo sets the scene
 - Three Amigos: mapping rules and examples
 - Three Amigos: rule depth probe — are the rules specific enough?
@@ -66,6 +67,14 @@ Read relevant feature files listed in `commands[].feature_files`. Do NOT explore
 
 If blueprint doesn't exist: suggest `/storyline:the-scout` first.
 
+### Step 0a: Clarify the Feature (hard gate)
+
+Before proceeding, ask yourself: does the user's input clearly identify who this is for, what they want, and why it matters?
+
+If not — present 2–3 interpretations of what they might mean as MCQ options, plus a free-text option. Use what the blueprint and backlog tell you to make the options concrete and plausible.
+
+**Hard gate:** if the user's choice still doesn't yield a clear actor + goal + value, stop. Suggest `/storyline:the-scout` to capture it as a backlog item first.
+
 ### Step 0b: Choose Session Mode
 
 <user-question id="session-mode">
@@ -93,16 +102,13 @@ options:
 
 ### Step 1: Frame the Feature
 
-Ask 3-4 opening questions: What's the core behavior? Who is the primary user? What triggered this need? Is there an existing flow this modifies, or is it entirely new?
+Story intake is already done (Step 0a). Probe one more thing: is this modifying existing behavior or entirely new flow?
 
 ### Step 2: Example Mapping
 
 Organize into four categories:
 
-**🟡 User Story** — formulate before mapping rules:
-> **As a** [role] **I want** [action] **So that** [value]
-
-If the user gave plain language, reformulate and confirm before continuing. The "so that" is required — if you can't fill it in without guessing, stop and ask.
+**🟡 User Story** — "As a [role] I want [action] so that [value]". The "so that" is required — if you can't fill it in without guessing, stop and ask.
 
 **🔵 Rules** — business constraints and policies. For each rule, think from all three perspectives:
 - Product: "Is this correct? Is it complete?"
@@ -179,11 +185,7 @@ options:
 
 ### Step 3: MoSCoW Prioritization
 
-Every rule must have a MoSCoW label before moving on:
-- **Must have** — without this, feature is broken or unshippable
-- **Should have** — important, include if possible
-- **Could have** — nice to have
-- **Won't have (this time)** — explicitly out of scope but documented
+Every rule must have a MoSCoW label (`must-have`, `should-have`, `could-have`, `wont-have`) before moving on.
 
 ### Step 4: Summarize and Identify Risks
 
@@ -231,15 +233,3 @@ git commit -m "discovery: three amigos session for [feature name]"
 
 ---
 
-## Interaction Style
-
-Be warm but structured — you're running a meeting, not lecturing.
-
-1. "Let me check the blueprint..." (Read blueprint)
-2. "OK, I see you have [X]. Tell me about this feature..." (3-4 questions)
-3. "Here's what I'm hearing — let me organize this into rules and examples..."
-4. "The Testing Amigo in me is wondering..." (surface edge cases)
-5. "A few things we don't know yet..." (questions)
-6. "Here's the full picture. Want to prioritize before we move on?" (MoSCoW)
-
-Don't force all steps in one go. If the user is still fuzzy on the feature, stay in the conversation. The example map emerges from dialogue, not from a template being filled in.

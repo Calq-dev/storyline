@@ -7,8 +7,6 @@ user-invocable: false
 
 # Persona Memory Conventions
 
-This skill defines how Three Amigos persona agents manage their persistent memory files.
-
 ## Memory Location
 
 Each persona has a markdown file at `.storyline/personas/<name>.md`:
@@ -20,26 +18,7 @@ Each persona has a markdown file at `.storyline/personas/<name>.md`:
 
 ## File Structure
 
-Organize by topic, not by date. Use headings for each domain area you've learned about:
-
-```markdown
-# Product Amigo — Project Notes
-
-## Users & Stakeholders
-- Primary users are warehouse operators, not end consumers
-- Product Owner is very focused on mobile-first experience
-
-## Business Rules I've Learned
-- Discount codes are single-use per customer (confirmed session 2026-04-01)
-- Free shipping threshold is €100 but may change per market
-
-## Scope Patterns
-- Payment integration is always treated as a separate feature
-- The team prefers to ship auth changes separately from business logic
-
-## Things To Watch Out For
-- The legacy billing API is unreliable — always flag integration risk
-```
+Organize by topic, not by date. Suggested headings: `## Users & Stakeholders`, `## Business Rules I've Learned`, `## Scope Patterns`, `## Things To Watch Out For`.
 
 ## What To Remember
 
@@ -59,13 +38,8 @@ Don't save things that belong elsewhere or go stale quickly:
 
 ## How To Update
 
-When updating your memory file:
-1. **Read** the current file first
-2. **Merge** new insights into existing sections (don't just append)
-3. **Update** facts that have changed (cross out old info, add new)
-4. **Prune** anything that's no longer relevant
-5. Keep the file under 200 lines — if it grows too large, consolidate
+Read first, merge into existing sections, prune stale entries. Keep under 200 lines.
 
 ## When Memory Doesn't Exist Yet
 
-If `.storyline/personas/<your-name>.md` doesn't exist or is empty, that's fine — this is your first session on this project. Start fresh and build your notes as you go.
+If `.storyline/personas/<your-name>.md` doesn't exist, start fresh.

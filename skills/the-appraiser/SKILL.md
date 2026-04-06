@@ -14,7 +14,6 @@ Produces a **triangulated estimation** by dispatching three sub-agents in parall
 | **Bottom-Up WBS** | Analytical | Granular task decomposition, resource mapping |
 | **T-Shirt Sizing** | Intuitive/Agile | Fast relative sizing, stakeholder-friendly |
 
-When all three agree, confidence is high. When they diverge, the gaps tell you where risk lives.
 
 ## Pipeline Context
 
@@ -45,15 +44,7 @@ TodoWrite([
 
 ### Mid-Phase Todo Updates
 
-The Appraiser has a natural wait period (parallel agent dispatch) where the user benefits most from progress updates.
-
-- **After gathering preferences**: "Appraiser: executive audience, standard detail, person-days — sending the estimators out"
-- **When agents are dispatched**: "Appraiser: three estimators working in parallel — PERT, WBS, and T-Shirt"
-- **As agents return**: "Appraiser: PERT is back — waiting on WBS and T-Shirt" → "Appraiser: all three in — comparing the numbers"
-- **During consolidation**: If estimates agree: "Appraiser: all three within 15% — high confidence". If they diverge: "Appraiser: PERT and WBS disagree by 40% — investigating the gap"
-- **When writing the report**: "Appraiser: final appraisal: [X]–[Y] person-days with [N]% confidence"
-
-Match the tone to the results. If estimates diverge wildly, show that tension. If they agree, show confidence. The user should feel whether this estimate is solid or shaky before they even read the report.
+Update todos at each phase transition. During the parallel wait, report progress as agents return. Reflect alignment or divergence in tone — if estimates agree, signal confidence; if they diverge, signal uncertainty before the report arrives.
 
 ## Step 0: Gather Preferences
 

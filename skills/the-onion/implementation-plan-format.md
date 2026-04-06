@@ -1,6 +1,6 @@
-# Implementation Changeset — Annotated Format Example
+# Implementation Changeset — Format Reference
 
-This shows the structure of a well-formed implementation changeset for a feature. The changeset is a YAML file in `.storyline/changesets/CS-YYYY-MM-DD-<slug>.yaml`.
+Changeset file: `.storyline/changesets/CS-YYYY-MM-DD-<slug>.yaml`
 
 ## Scenario Execution Order
 

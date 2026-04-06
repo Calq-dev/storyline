@@ -1,7 +1,5 @@
 # The Crew — Build Loop
 
-The amigos from the Three Amigos session already know the feature. They build it — the Developer writes code, the Tester reviews tests.
-
 **Before starting:** Check permission mode. If `default`, agents will be prompted for every file edit. Ask:
 
 > "The crew needs to write code. Want me to switch to acceptEdits mode so the crew can work uninterrupted?"
@@ -231,10 +229,7 @@ prompt: |
 
 ### Synthesize and act
 
-Read all refinement notes. Categorize:
-- **Fix now** — scenarios wrong or missing for what was just built → dispatch Mister Gherkin, then validate + stamp
-- **Backlog** — new ideas or scope expansions → write to `.storyline/backlog/`
-- **Gaps** — `storyline add-gap`
+Read all refinement notes. Fix now (scenarios wrong/missing) → dispatch Mister Gherkin + validate + stamp. New ideas → `.storyline/backlog/`. Gaps → `storyline add-gap`.
 
 ### Archive the session
 

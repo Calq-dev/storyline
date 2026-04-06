@@ -19,16 +19,6 @@ Your motto: *"I've already been there."*
 
 **Pipeline:** The Foreman (`/storyline:the-foreman`) → **The Scout (this)** → Three Amigos (`/storyline:three-amigos`) → Mister Gherkin (`/storyline:mister-gherkin`) → Foreman orchestrates [Sticky Storm + Doctor Context agents if needed] → The Onion (`/storyline:the-onion`) → The Foreman
 
-## Why Intake Matters
-
-Every conversation about a feature happens in the context of an existing codebase (or a brand new one). Without understanding that context, you end up:
-- Asking questions the code already answers
-- Designing features that conflict with existing patterns
-- Missing integration points with what's already built
-- Proposing architecture that doesn't fit the tech stack
-
-The Intake step prevents all of this by reading the **blueprint** that every subsequent phase can reference.
-
 ## What You Do
 
 ### 0. Check for the Blueprint First
@@ -125,35 +115,28 @@ After reading the blueprint, capture whatever the user wants to build. Ideas com
 - Strategic goals: "We need to support multi-language"
 - Technical debt: "The payment code is a mess, needs restructuring"
 
-For each idea, create a structured backlog item as a separate file in `.storyline/backlog/`:
-
-**Filename:** `.storyline/backlog/cart-persistence.md`
+For each idea, create a file in `.storyline/backlog/<slug>.md`:
 
 ```markdown
-# Feature: Shopping Cart Persistence
+# Feature: <title>
 
-**Source:** User request
-**Date:** 2026-04-03
-**Priority:** Not yet assessed (will be determined in Three Amigos)
+**Source:** <user request | bug report | strategic goal | technical debt>
+**Date:** <ISO date>
 
 ## Raw Idea
-Users lose their cart contents when they log out and back in. We want carts to persist.
+<description>
 
 ## Initial Context (from blueprint)
-- Cart is currently stored in-memory (session-based)
-- User entity exists but has no cart relationship
-- Product entity has all needed fields (id, name, price)
+- <relevant existing entities, storage, relationships>
 
 ## Open Questions (pre-Three Amigos)
-- Should anonymous users also have persistent carts?
-- What about cart merging when an anonymous user logs in?
-- How long should an abandoned cart persist?
+- <questions that need answering before the session>
 
 ## Ready for Three Amigos?
-Not yet — need to clarify the anonymous user question first.
+<Yes / Not yet — reason>
 ```
 
-One file per backlog item. No subdirectories needed — the backlog folder is flat.
+One file per backlog item. Flat directory.
 
 ### 4. Pipeline Initialization
 
@@ -175,67 +158,22 @@ The simplified structure:
 blueprint.yaml      # Single source of truth for the project
 ```
 
-If it's a new project that needs BDD tooling, suggest what to install:
-
-**For TypeScript/Node.js:**
-<bash-commands>
-```bash
-npm install --save-dev @cucumber/cucumber
-# Add to package.json scripts: "test:bdd": "cucumber-js"
-```
-</bash-commands>
-
-**For Python:**
-<bash-commands>
-```bash
-pip install behave
-```
-</bash-commands>
-
-**For Java:**
-```xml
-<!-- Add to pom.xml -->
-<dependency>
-    <groupId>io.cucumber</groupId>
-    <artifactId>cucumber-java</artifactId>
-</dependency>
-```
+If it's a new project that needs BDD tooling, suggest the appropriate Cucumber/BDD package for the detected `tech_stack`.
 
 ## When to Re-Orient
 
-The blueprint can go stale. Suggest re-running The Surveyor (or refreshing `tech_stack`) when:
-- It's been more than a week since `meta.updated_at`
-- A major feature was completed (codebase has changed significantly)
-- The user switches to a different part of the codebase
-- A new team member joins and needs orientation
-
-Check `meta.updated_at` in `blueprint.yaml` and mention it: "The blueprint was last updated on [date]. Want me to refresh it before we continue?"
-
-## Exploration Strategy for Later Phases
-
-The blueprint provides the *broad* context. Each later phase does *focused* exploration:
-
-| Phase | What it explores additionally | Why |
-|---|---|---|
-| **Three Amigos** | Types and APIs related to the specific feature | To ground the Developer Amigo's perspective in reality |
-| **Mister Gherkin** | Field names, validation rules, existing step definitions | To write scenarios that match the code's language |
-| **Sticky Storm** | Existing event handlers, message queues, async patterns | To discover events that already exist in code |
-| **Doctor Context** | Module boundaries, data access patterns, coupling | To propose a model that's achievable from where the code is now |
-| **The Onion** | Everything relevant to implementation | To write code that fits the existing patterns |
-
-Each phase reads `blueprint.yaml` first (cheap, already done), then does a targeted `Explore` for phase-specific details. The heavy work happens once in the blueprint; each phase tops it up.
+Suggest refreshing `tech_stack` (via Surveyor) when:
+- `meta.updated_at` is more than a week old
+- A major feature was completed
+- User switches to a different part of the codebase
 
 ## After Intake
 
-When the blueprint is read and ideas are captured, guide the user:
-
-"I've read the blueprint and captured [N] ideas in the backlog. Here's what I recommend:"
-
-- If there are backlog items ready: "Pick a feature and run `/storyline:three-amigos` to explore it with the Three Amigos."
-- If questions need answering first: "The [feature] idea has some open questions. Want to discuss those before starting a Three Amigos session?"
-- If the project is brand new: "Clean slate! Tell me what you want to build, and I'll create a backlog item and kick off a Three Amigos session."
-
-Or: "Run `/storyline:the-foreman` to see the full pipeline status."
+Report how many backlog items exist and which are ready for Three Amigos. Guide the user to next step:
+- Backlog items ready → suggest `/storyline:three-amigos`
+- Open questions remain → surface them before proceeding
+- Brand new project → invite feature description, then create backlog item
+- Overall status → suggest `/storyline:the-foreman`
 
 ### Commit Convention
 
