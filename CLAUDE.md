@@ -1,6 +1,64 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file has two sections: **Instructions for Claude Code** (top) and **Reference** (bottom).
+Claude Code reads both. Human contributors can skip to Reference for documentation.
+
+---
+
+# Instructions for Claude Code
+
+## ⚠ Process Critic — ALWAYS ON when working on this codebase
+
+**This is non-negotiable.** Whenever you make a significant change to this codebase — a completed phase, a committed skill or agent file, a pipeline decision, a scope call, a backlog addition — you MUST immediately act as a dissatisfied team member and surface the single most important gap, assumption, inefficiency, or missed coverage you can find in what just happened.
+
+Format every observation as:
+
+```
+🔍 Process Critic
+
+[One specific observation — what happened, what the gap or risk is, why it matters]
+
+Should this go to the backlog or gaps?
+```
+
+Rules:
+- One observation at a time — wait for the user's response before raising the next
+- Be specific — name the file, scenario, or decision you're questioning
+- Ask "should this go to the backlog or gaps?" after every observation
+- If the user says yes, add it immediately with `storyline add-gap` or write to `backlog/`
+- **Explicitly deferred scope is added to backlog immediately — no need to ask.** If a decision says "Story B", "deferred", "follow-up", or "won't have this time", write it to `backlog/` at the moment of deferral, not later.
+- Skip only for: version bumps, typo fixes, formatting, pure documentation with no design content
+
+## Agent Workflow
+
+After editing the blueprint, every skill follows this workflow:
+```
+Edit blueprint (Edit tool for scalar updates, CLI helpers for list insertions)
+  -> storyline validate
+  -> fix errors if any, re-validate
+  -> storyline stamp
+  -> git commit
+```
+
+## Blueprint Read Convention
+
+Skills follow this convention for reading the blueprint:
+1. **Summary by default** — `storyline summary` for orientation (most agents)
+2. **Context view for targeted work** — `storyline view --context X` when editing a specific context
+3. **Full read only for cross-context agents** — Sticky Storm (event uniqueness) and Doctor Context (boundary modeling)
+
+## Plugin Versioning
+
+**Bump the version in `.claude-plugin/plugin.json` with every feature commit.** Claude Code's `/plugin upgrade` only triggers when the version changes — users won't get updates otherwise. Use semver: `MAJOR.MINOR.PATCH`.
+
+## Git Commits
+
+- Do NOT add `Co-Authored-By` lines to commit messages
+- Use conventional commits: `feat:`, `fix:`, `docs:`, `refactor:`, `chore:`, `test:`
+
+---
+
+# Reference
 
 ## What This Is
 
@@ -12,7 +70,7 @@ A Claude Code plugin (`storyline`) that provides a complete Behavior-Driven Deve
 .claude-plugin/plugin.json        <- Plugin manifest (name, version, author)
 scripts/
   blueprint.ts                    <- Blueprint CLI (TypeScript) — validate, stamp, summary, view, housekeeping, add-*
-  test-blueprint.ts               <- Tests for the CLI (node:test, 30 tests)
+  test-blueprint.ts               <- Tests for the CLI (node:test, 64 tests)
 templates/
   blueprint-schema.yaml           <- Full example blueprint showing all fields and types
 skills/
@@ -22,10 +80,8 @@ skills/
   persona-memory/SKILL.md         <- Shared conventions for persona memory files
   mister-gherkin/SKILL.md         <- Phase 2: Gherkin scenario formalization
   the-brief/SKILL.md              <- Technical task intake — The Brief (no user story framing)
-  the-appraiser/SKILL.md           <- Triangulated estimation — The Appraiser (PERT, WBS, T-Shirt)
+  the-appraiser/SKILL.md          <- Triangulated estimation — The Appraiser (PERT, WBS, T-Shirt)
   the-onion/SKILL.md              <- Phase 5: Outside-in TDD implementation
-scripts/
-  scaffold.ts                     <- Code scaffolding from blueprint (TypeScript port)
 agents/
   foreman.md                      <- Subagent: The Foreman's site inspector
   surveyor.md                     <- Subagent: reverse-engineers codebase into blueprint
@@ -103,55 +159,6 @@ storyline changeset validate [--json] [<id>]       # Validate one or all changes
 # Run tests
 npx tsx --test scripts/test-blueprint.ts
 ```
-
-## Blueprint Read Convention (Decision Tree)
-
-Skills follow this convention for reading the blueprint:
-1. **Summary by default** — `storyline summary` for orientation (most agents)
-2. **Context view for targeted work** — `storyline view --context X` when editing a specific context
-3. **Full read only for cross-context agents** — Sticky Storm (event uniqueness) and Doctor Context (boundary modeling)
-
-## Plugin Versioning
-
-**Bump the version in `.claude-plugin/plugin.json` with every feature commit.** Claude Code's `/plugin upgrade` only triggers when the version changes — users won't get updates otherwise. Use semver: `MAJOR.MINOR.PATCH`.
-
-## Git Commits
-
-- Do NOT add `Co-Authored-By` lines to commit messages
-- Use conventional commits: `feat:`, `fix:`, `docs:`, `refactor:`, `chore:`, `test:`
-
-## Agent Workflow
-
-After editing the blueprint, every skill follows this workflow:
-```
-Edit blueprint (Edit tool for scalar updates, CLI helpers for list insertions)
-  -> storyline validate
-  -> fix errors if any, re-validate
-  -> storyline stamp
-  -> git commit
-```
-
-## ⚠ Process Critic — ALWAYS ON when working on this codebase
-
-**This is non-negotiable.** Whenever you make a significant change to this codebase — a completed phase, a committed skill or agent file, a pipeline decision, a scope call, a backlog addition — you MUST immediately act as a dissatisfied team member and surface the single most important gap, assumption, inefficiency, or missed coverage you can find in what just happened.
-
-Format every observation as:
-
-```
-🔍 Process Critic
-
-[One specific observation — what happened, what the gap or risk is, why it matters]
-
-Should this go to the backlog or gaps?
-```
-
-Rules:
-- One observation at a time — wait for the user's response before raising the next
-- Be specific — name the file, scenario, or decision you're questioning
-- Ask "should this go to the backlog or gaps?" after every observation
-- If the user says yes, add it immediately with `storyline add-gap` or write to `backlog/`
-- **Explicitly deferred scope is added to backlog immediately — no need to ask.** If a decision says "Story B", "deferred", "follow-up", or "won't have this time", write it to `backlog/` at the moment of deferral, not later.
-- Skip only for: version bumps, typo fixes, formatting, pure documentation with no design content
 
 ## Key Design Decisions
 
