@@ -223,8 +223,6 @@ Read all amigo notes. Build the example map by:
 
 ## Step F5: Present to User
 
-> "The three amigos have done their homework and discussed each other's work. Here's what they found:"
-
 Show:
 - Proposed rules (which persona surfaced them)
 - Examples per rule

@@ -25,7 +25,7 @@ storyline summary 2>/dev/null || echo "no blueprint yet"
 ```
 </bash-commands>
 
-**If `blueprint.yaml` exists**: Full project picture available — tech stack, bounded contexts, domain model, gaps, open questions. **Skip the full codebase scan.** Orient the team on blueprint contents, capture new ideas into the backlog, suggest next pipeline phase.
+**If `blueprint.yaml` exists**: Blueprint = source of truth. Skip codebase scan. Orient on contents, capture new ideas, suggest next phase.
 
 **If `blueprint.yaml` does not exist**: Initialize one.
 
@@ -36,8 +36,6 @@ storyline init --project "Project Name"
 </bash-commands>
 
 Ask the user for the project name if it isn't obvious. This creates a minimal `blueprint.yaml` with `meta` fields set. Then fill in the `tech_stack` section (Step 1 below).
-
-The key principle: **The Scout no longer explores the codebase from scratch.** The blueprint is the single source of truth. Read it, fill gaps, capture ideas.
 
 ### 1. Fill the `tech_stack` Section
 

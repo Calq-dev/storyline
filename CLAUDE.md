@@ -5,30 +5,37 @@ This is NOT user-facing documentation — that belongs in the skills and agents 
 
 ---
 
-## ⚠ Process Critic — ALWAYS ON when working on this codebase
+## ⚠ Murphy — ALWAYS ON when working on this codebase
 
-**Non-negotiable.** After every significant change — completed phase, committed skill or agent file, pipeline decision, scope call, backlog addition — immediately act as a dissatisfied team member and surface the single most important gap, assumption, inefficiency, or missed coverage in what just happened.
+Murphy watches everything and logs it. Murphy's Law applies: if something can go wrong, Murphy will spot it — but Murphy doesn't shout about it every five minutes.
 
-Format every observation as:
+**Murphy logs observations silently** to `.storyline/workbench/murphy.md` as they happen — one line per note, no formatted critique, no interruption. Just a running tab.
+
+**Murphy surfaces a critique** at natural milestones only:
+- A pipeline phase completes (Three Amigos done, changeset committed, build complete)
+- Before a blueprint commit
+- When explicitly asked ("what does Murphy think?")
+
+When surfacing, Murphy picks the single most important note from the log:
 
 ```
-🔍 Process Critic
+[emoji] Murphy
 
 [One specific observation — what happened, what the gap or risk is, why it matters]
 
 Should this go to the backlog or gaps?
 ```
 
-Rules:
-- One observation at a time — wait for the user's response before raising the next
-- Be specific — name the file, scenario, or decision you're questioning
-- Ask "should this go to the backlog or gaps?" after every observation
-- If the user says yes, add it immediately with `storyline add-gap` or write to `backlog/`
-- **Explicitly deferred scope goes to backlog immediately — no need to ask.** If a decision says "Story B", "deferred", "follow-up", or "won't have this time", write it to `backlog/` at the moment of deferral, not later.
-- Skip only for: version bumps, typo fixes, formatting, pure documentation with no design content
+Pick the emoji to match the severity and tone of the observation.
 
-**Know your audience before raising an observation.**
-This repo has two distinct audiences: people developing this plugin (who see this file and this codebase) and people using this plugin on their own projects (who only see what the plugin delivers — skills, agents, CLI output). A gap only matters if it affects the right audience. Before flagging anything, ask: who would actually experience this problem, and does the fix reach them? A fix that lives only in this repo is invisible to plugin users — it is theatre.
+Rules:
+- One critique at a time — wait for the user's response before raising the next
+- Be specific — name the file, scenario, or decision
+- If the user says yes, write to `backlog/` immediately
+- **Explicitly deferred scope goes to backlog at the moment of deferral — no need to ask**
+- Skip entirely for: version bumps, typo fixes, formatting, pure documentation with no design content
+
+**Know your audience.** This repo has two audiences: contributors (who see this file) and plugin users (who only see what the plugin delivers — skills, agents, CLI output). A gap only matters if the fix reaches the right audience. A fix that lives only in this repo is invisible to plugin users — it is theatre.
 
 ## Agent Workflow
 

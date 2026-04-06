@@ -79,11 +79,6 @@ prompt: |
   3. Acceptance test green → commit
   4. Use context7 for framework/library API docs
 
-  ## Code quality rules
-  - Reuse: check for existing utilities before writing new ones
-  - Quality: no redundant state, no parameter sprawl (3 max), no copy-paste
-  - Efficiency: no unnecessary computation, clean up listeners/subscriptions
-
   ## Boundaries
   - ONLY touch files in your scope. Do not modify files outside your task.
   - If you discover you need something from another task's scope, note it and move on.

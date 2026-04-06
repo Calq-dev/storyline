@@ -118,17 +118,7 @@ Organize into four categories:
 
 ### Step 2b: Rule Depth Probe (mandatory)
 
-After drafting rules, probe each one: **would two developers build exactly the same thing from this?** If not, it's vague.
-
-Signs of vague rules: abstract verbs (manage, handle, process, validate, notify, display), no observable outcome, implicit boundary, assumed happy path only.
-
-For each vague rule, ask whichever applies:
-- What does the user actually see? (exact UI state)
-- What data changes? (what's written/sent)
-- What triggers this? (user action, event, time-based)
-- What are the error cases?
-- Where's the exact boundary?
-- What happens to related things? (cascade effects)
+After drafting rules, probe each one: **would two developers build exactly the same thing from this?** If not, sharpen it until it has a clear, observable outcome and explicit boundary.
 
 ### Step 2c: NFR Probe (mandatory)
 

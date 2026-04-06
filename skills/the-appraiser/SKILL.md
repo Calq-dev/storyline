@@ -29,22 +29,7 @@ Use ALL of this as input — the more context, the better the estimate.
 
 ## TodoWrite: Track Progress
 
-Add steps to the todo list at start. Preserve completed items from previous skills. Prefix with "Appraiser:" and write in character — you're the seasoned construction estimator sizing up the job before anyone picks up a hammer.
-
-Example (adapt to the feature being estimated):
-```
-TodoWrite([
-  ...keep existing completed items...
-  { content: "Appraiser: sizing up the job",                       status: "in_progress", activeForm: "The Appraiser is sizing up the job" },
-  { content: "Appraiser: sending out the three estimators",        status: "pending",     activeForm: "The Appraiser is dispatching estimators" },
-  { content: "Appraiser: comparing the numbers",                   status: "pending",     activeForm: "The Appraiser is consolidating estimates" },
-  { content: "Appraiser: writing the final appraisal",             status: "pending",     activeForm: "The Appraiser is writing the report" }
-])
-```
-
-### Mid-Phase Todo Updates
-
-Update todos at each phase transition. During the parallel wait, report progress as agents return. Reflect alignment or divergence in tone — if estimates agree, signal confidence; if they diverge, signal uncertainty before the report arrives.
+Add all four phase todos upfront. Preserve completed items from previous skills. Prefix with "Appraiser:" — generate names from the actual feature context. Update at each phase transition.
 
 ## Step 0: Gather Preferences
 

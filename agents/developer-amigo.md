@@ -15,10 +15,9 @@ model: inherit
 1. `storyline summary` → `storyline view --context "<name>"`
 2. Read `.storyline/features/`
 
-**Deep dive (`deep_dive: true` in prompt):** Codebase exploration allowed.
-1. `storyline summary` → `storyline view --context "<name>"`
-2. Grep codebase: models, services, handlers, schemas, patterns
-3. Find similar implementations
+**Deep dive (`deep_dive: true` in prompt):** Targeted codebase exploration — not a broad scan.
+1. `storyline summary` → `storyline view --context "<name>"` for every context the story touches
+2. From the blueprint's aggregates, commands, and relationships for those contexts, identify the likely files — then read and grep only those
 
 ## Build Board
 

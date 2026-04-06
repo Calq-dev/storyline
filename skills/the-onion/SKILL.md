@@ -16,12 +16,6 @@ Peel back layers outside-in, one test at a time. Tests tell you what to build ne
 - Use TaskCreate/TaskUpdate to organize work into tasks. Generate task names and descriptions dynamically from the actual feature context — never use template text.
 - Generate all user-facing text dynamically from context. No canned messages.
 
-## Code Quality Rules (apply while writing, not after)
-
-- **Reuse** — check for existing utilities/helpers before writing. No duplicates, no hand-rolled logic where abstractions exist.
-- **Quality** — no redundant state, no parameter sprawl (≤3 params), no copy-paste (extract it), no raw strings where enums belong.
-- **Efficiency** — no unnecessary computation, use concurrency for independent ops, no expensive logic in tight loops, no TOCTOU, clean up listeners/subscriptions/timers.
-
 ## The Double Loop
 ```
 OUTER (Acceptance Test from Gherkin)
@@ -30,7 +24,6 @@ OUTER (Acceptance Test from Gherkin)
 │   │   │   ❌ Failing unit → ✅ Pass (simplest) → 🔄 Refactor → ↺ Next
 │   ✅ Acceptance green → commit → next scenario
 ```
-Outer = what to build (behavior). Inner = how (design). Outer stays red during inner cycles.
 
 ---
 

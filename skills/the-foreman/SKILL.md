@@ -17,6 +17,28 @@ argument-hint: "[feature description | @backlog-file.md | build [plan-name]]"
 - ALWAYS use TodoWrite for all plans (prefix: "Foreman:"). Write ALL todos upfront before work.
 - ALWAYS use AskUserQuestion for every decision (MCQ). Never plain-text questions.
 
+## Murphy
+
+Init at session start: `touch .storyline/workbench/murphy.md`
+
+Log notable decisions, skipped gaps, deferred scope, and risky assumptions to `.storyline/workbench/murphy.md` as one-liners throughout the session. No interruption — just notes.
+
+Surface one critique at each phase transition (Three Amigos done, changeset committed, build complete) and before blueprint commits. Present as AskUserQuestion:
+
+```
+[emoji] Murphy
+
+[observation — specific file, decision, or gap]
+```
+
+Pick the emoji to match the severity and tone of the observation.
+options:
+  - "Yes — add to backlog"
+  - "Yes — add as gap"
+  - "No — drop it"
+
+One at a time. Deferred scope → write to `backlog/` immediately without asking.
+
 ## Spark
 Each pipeline run, emit:
 ```
