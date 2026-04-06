@@ -79,7 +79,36 @@ If no example map exists, use `AskUserQuestion` to explore the feature with the 
 
 ## Gherkin Principles
 
-**Declarative over imperative.** Describe *what* the system does, not *how* a user clicks through it. Scenarios should survive a UI redesign.
+Feature files are **high-level executable specifications written in business language**. They describe *what* the system does from a user's perspective, not *how* it's built. A product owner, tester, and developer should all be able to read them without any knowledge of the codebase.
+
+### No implementation details in feature files
+
+**This is a hard rule.** Feature files must never contain:
+
+- **File paths or directory references** — no `src/models/User.ts`, no `app/controllers/`, no `config/database.yml`. The system under test is a black box.
+- **Class names, function names, or variable names** — no `UserRepository`, no `handleSubmit()`, no `orderStatus`. Use ubiquitous language instead.
+- **Database details** — no table names, column names, SQL, or migration references.
+- **API endpoints or HTTP verbs** — no `POST /api/orders`, no `GET /users/:id`. Describe the behavior, not the route.
+- **Framework or library specifics** — no `Rails controller`, no `React component`, no `Express middleware`.
+- **Architecture jargon** — no `aggregate`, `repository`, `service layer`, `event bus` in step text. Those belong in the blueprint, not in scenarios.
+
+```gherkin
+# ❌ Implementation-coupled — avoid
+Given the UserService has a registered user in the "users" table
+When a POST request is sent to "/api/v1/sessions" with valid credentials
+Then the AuthController returns a JWT token with status 200
+
+# ✅ Business-focused — aim for this
+Given a registered user "Alice"
+When Alice logs in with valid credentials
+Then she is authenticated and sees her dashboard
+```
+
+The only acceptable references to project internals are **traceability tags** (`@command:PlaceOrder`, `@context:Ordering`, `@aggregate:Order`) — these are metadata for pipeline integration, not step text.
+
+### Declarative over imperative
+
+Describe *what* the system does, not *how* a user clicks through it. Scenarios should survive a UI redesign.
 
 ```gherkin
 # ❌ Imperative — avoid
@@ -93,11 +122,17 @@ When "Bob" logs in
 Then he sees the welcome page
 ```
 
-**One scenario, one behavior.** Each scenario tests exactly one rule or aspect. Multiple `Then` steps asserting different things → consider splitting.
+### One scenario, one behavior
 
-**Use personas.** `Given Premium Pete has an active subscription` reads better than `Given a user with subscription_type="premium"`.
+Each scenario tests exactly one rule or aspect. Multiple `Then` steps asserting different things → consider splitting.
 
-**Background for incidental setup, not key context.** If the Background is essential to understanding a scenario, move those steps into the scenario itself.
+### Use personas
+
+`Given Premium Pete has an active subscription` reads better than `Given a user with subscription_type="premium"`.
+
+### Background for incidental setup, not key context
+
+If the Background is essential to understanding a scenario, move those steps into the scenario itself.
 
 ## Gherkin Syntax
 
@@ -190,12 +225,23 @@ If a scenario has more than one `When` step (including `And` after a `When` that
 **3. Scenarios longer than 7 steps**
 Count `Given`, `When`, `Then`, and `And` steps together. If any scenario has more than 7, either simplify it or extract shared setup into a `Background:` block.
 
-**4. Missing sad-path coverage**
+**4. Implementation leakage**
+Scan every step for file paths (`/`, `.ts`, `.py`, `.js`, `.yaml`), class/function names (PascalCase or camelCase identifiers that refer to code, not domain concepts), API endpoints (`/api/`, HTTP verbs), database references (table names, SQL), or framework jargon. These are implementation details leaking into business specifications. Rewrite them using ubiquitous language — describe what the user experiences or what the system does, not how the code is structured.
+
+```gherkin
+# Leaky — fix this
+Then the OrderRepository persists the order to the "orders" table
+
+# Clean — aim for this
+Then the order is saved and appears in the customer's order history
+```
+
+**5. Missing sad-path coverage**
 For every rule that has at least one happy-path scenario: check that at least one sad-path scenario also exists for that rule. A rule with only success cases is not fully specified. Add the missing sad-path scenario, tagged `@sad-path`.
 
 After running this check, report what was corrected:
 
-> "Quality gate: found and fixed [N] issues — [X imperative steps rewritten, Y scenarios split, Z sad paths added]. No issues remaining."
+> "Quality gate: found and fixed [N] issues — [X imperative steps rewritten, Y scenarios split, Z implementation leaks cleaned, W sad paths added]. No issues remaining."
 
 If nothing needed fixing: "Quality gate: all [N] scenarios pass — no issues found."
 
