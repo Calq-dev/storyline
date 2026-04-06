@@ -1,171 +1,123 @@
-feature: "Technical task entry point — The Brief (Story A: core intake and routing)"
-story: "As a plugin contributor I want a technical task entry point in the pipeline so that I can start a structured implementation without forcing my change into a user story format"
-session_date: "2026-04-06"
-participants:
-  - "Product Amigo (full session)"
-  - "Developer Amigo (full session)"
-  - "Testing Amigo (full session)"
-
+feature: lightweight-tweak-path
+story: "As a plugin user, when I describe a minor adjustment to an existing feature, I want The Foreman to recognize it as a small tweak and offer a lighter path, so that I skip the full discovery pipeline for trivial changes — but still see any implications for existing scenarios and the blueprint before proceeding."
+session_date: 2026-04-06
 codebase_context:
-  existing_models:
-    - "PipelineSession (Orchestration context) — StartPipeline, ChooseFeature, RunThreeAmigos, RunQuickScan commands"
-    - "DiscoverySession (Discovery context) — RunQuickScan, RunFullSession commands"
-    - "The Foreman skill (skills/the-foreman/SKILL.md) — decision tree with Scenarios 1-6"
-    - "Three Amigos skill (skills/three-amigos/SKILL.md) — hardwired around user story format"
-    - "Changeset format (CS-YYYY-MM-DD-slug.yaml) — phases, touches, acceptance criteria"
-  related_features:
-    - "orchestration.feature"
-    - "discovery.feature"
-    - "implementation.feature"
-  technical_notes: >
-    The Foreman's Scenario 4 unconditionally reframes all input as a user story before dispatching
-    Three Amigos — no escape hatch exists. The example-map.yaml format has a required `story:` field.
-    Blueprint CLI `validate` enforces referential integrity: commands must have `feature_files` entries.
-    The Onion reads `.storyline/features/*.feature` in Step 0 — if no feature files exist, it has no
-    acceptance tests to make red. Phase names are not formally enumerated anywhere.
+  relevant_contexts:
+    - Orchestration   # Foreman routing lives here (PipelineSession aggregate)
+  existing_commands:
+    - context: Orchestration
+      notes: "Current routing has S1-S7 scenarios. New route (S8 or modified S4a) needed for minor-tweak detection."
 
 rules:
-  - id: "R1"
-    description: "The Foreman presents an MCQ at intake ('user-facing feature or technical/internal change?') before routing to Scenario 4 (Three Amigos) or new Scenario 5 (The Brief). Ambiguous input defaults to Three Amigos."
-    priority: "must-have"
+  - id: R1
+    description: "Foreman classifies a request as a minor tweak based on observable signals: references existing named behavior, uses scoping language (just/small change/tweak/adjust/fix), introduces no new actors/use cases/domain events, scope bounded to ≤1 command or rule."
+    moscow: must-have
     examples:
-      - id: "R1-E1"
-        name: "Contributor signals technical task at intake"
-        context: "Blueprint exists, contributor describes a technical change"
-        action: "Foreman runs intake MCQ, contributor selects 'technical/internal change'"
-        outcome: "Foreman routes to Scenario 5 — dispatches The Brief skill"
-        type: "happy-path"
-      - id: "R1-E2"
-        name: "Contributor signals user-facing feature at intake"
-        context: "Blueprint exists, contributor describes a new feature"
-        action: "Foreman runs intake MCQ, contributor selects 'user-facing feature'"
-        outcome: "Foreman routes to Scenario 4 — dispatches Three Amigos as before"
-        type: "happy-path"
-      - id: "R1-E3"
-        name: "Ambiguous input defaults to Three Amigos"
-        context: "Contributor says 'add CLI command for X' — could be either path"
-        action: "Contributor does not explicitly select technical path"
-        outcome: "Foreman routes to Scenario 4 (Three Amigos) — technical path requires explicit affirmation"
-        type: "sad-path"
+      - name: "Recognized tweak"
+        context: "User says 'just update the error message on failed blueprint validation'"
+        action: "Foreman reads the description"
+        outcome: "Classifies as minor tweak, shows rationale to user"
+      - name: "Not a tweak"
+        context: "User says 'add multi-language support for error messages'"
+        action: "Foreman reads the description"
+        outcome: "Routes to full pipeline (Three Amigos)"
+      - name: "Ambiguous — fallback to clarification"
+        context: "User says 'fix the validation'"
+        action: "Foreman cannot determine scope"
+        outcome: "Clarifying MCQ, not auto-classified as tweak"
 
-  - id: "R2"
-    description: "The Brief is a standalone skill (skills/the-brief/SKILL.md) that runs a structured technical intake session. It internally detects task subtype (scoped technical vs pure internal) from the contributor's answers — no explicit subtype label required from the contributor."
-    priority: "must-have"
+  - id: R2
+    description: "User must confirm before pipeline is bypassed. Foreman shows the classification rationale and offers 'run full pipeline instead' as an escape hatch."
+    moscow: must-have
     examples:
-      - id: "R2-E1"
-        name: "Scoped technical task detected internally"
-        context: "Contributor describes porting scaffold.py to TypeScript"
-        action: "The Brief asks structured intake questions; answers reveal observable CLI behavior"
-        outcome: "Brief runs in 'scoped technical' mode — includes NFR probe and MoSCoW; produces technical-brief.yaml"
-        type: "happy-path"
-      - id: "R2-E2"
-        name: "Pure internal change detected internally"
-        context: "Contributor describes reorganizing internal module layout"
-        action: "The Brief asks intake questions; answers reveal no observable behavior, no interface changes"
-        outcome: "Brief runs in 'pure internal' mode — lightweight template (what/why/risks/done); produces technical-brief.yaml"
-        type: "happy-path"
-      - id: "R2-E3"
-        name: "Acceptance criteria absent — brief blocks"
-        context: "Contributor provides task description but no acceptance criteria"
-        action: "The Brief validates completeness of intake answers"
-        outcome: "Brief blocks with a validation message — 'acceptance_criteria[] must be non-empty before proceeding'"
-        type: "sad-path"
+      - name: "Correct classification, confirmed"
+        context: "Foreman correctly identifies a tweak"
+        action: "User confirms lightweight path"
+        outcome: "Lightweight path proceeds"
+      - name: "Misclassified, overridden"
+        context: "Foreman misclassifies a real feature as a tweak"
+        action: "User selects 'Run full pipeline instead'"
+        outcome: "Routes to Three Amigos as normal"
 
-  - id: "R3"
-    description: "The Brief produces a schema-validated technical-brief.yaml in .storyline/workbench/. This file is listed in feature_files for any blueprint commands created by the technical task, preserving referential integrity without schema changes."
-    priority: "must-have"
+  - id: R3
+    description: "Implication scan runs before bypass is finalized. Foreman reads .storyline/features/ and blueprint commands/invariants. Reports: affected feature files, affected commands/events."
+    moscow: must-have
     examples:
-      - id: "R3-E1"
-        name: "technical-brief.yaml created and referenced in blueprint"
-        context: "Technical task adds a new CLI command to the blueprint"
-        action: "The Brief completes intake and saves technical-brief.yaml; adds command to blueprint with feature_files: [technical-brief.yaml]"
-        outcome: "storyline validate passes — command has a traceable specification file"
-        type: "happy-path"
-      - id: "R3-E2"
-        name: "technical-brief.yaml fails schema validation"
-        context: "technical-brief.yaml is missing required acceptance_criteria[] field"
-        action: "The Brief runs storyline validate after saving"
-        outcome: "Validation error returned; brief cannot proceed to The Onion until fixed"
-        type: "sad-path"
-      - id: "R3-E3"
-        name: "Technical task adds no new blueprint commands"
-        context: "Pure internal refactor — no new commands added to blueprint"
-        action: "The Brief completes intake; no blueprint commands added"
-        outcome: "technical-brief.yaml saved to workbench; blueprint unchanged; validation passes"
-        type: "edge-case"
+      - name: "Clean tweak — no implications"
+        context: "No feature files reference the changed behavior"
+        action: "Scan runs"
+        outcome: "'No implications found — safe to proceed lightly'"
+      - name: "Implications found"
+        context: "2 scenarios reference the rule being changed"
+        action: "Scan runs"
+        outcome: "Foreman lists affected files and scenarios"
 
-  - id: "R8"
-    description: "The Orchestration context invariants formally enumerate 'Technical Brief' as a valid phase name alongside existing phases. This is a pre-condition for implementation — must be done before any scenario is written for the technical task path."
-    priority: "must-have"
+  - id: R4
+    description: "Cross-context implication blocks the lightweight path. Any implication that touches more than one bounded context forces full pipeline. Single-context implications (≤3 scenarios) can proceed lightly."
+    moscow: must-have
     examples:
-      - id: "R8-E1"
-        name: "Technical Brief appears as valid phase in pipeline sequence"
-        context: "A technical task is in progress"
-        action: "Pipeline tracks phase as 'Technical Brief'"
-        outcome: "Phase tracking accepts 'Technical Brief'; single-active-phase invariant is enforceable"
-        type: "happy-path"
-      - id: "R8-E2"
-        name: "Invalid phase name rejected"
-        context: "An agent passes an unrecognized phase name"
-        action: "Pipeline receives phase update with name not in enum"
-        outcome: "Phase update rejected — only enumerated phase names are accepted"
-        type: "sad-path"
+      - name: "Single-context implications — proceed"
+        context: "2 scenarios in one context affected"
+        action: "Scan returns single-context results"
+        outcome: "MCQ: proceed lightly (update those scenarios too) or full pipeline"
+      - name: "Cross-context — blocked"
+        context: "Scan finds implications across Orchestration and Discovery"
+        action: "Scan detects multi-context impact"
+        outcome: "Lightweight path blocked. Foreman recommends full pipeline."
 
-  - id: "R9"
-    description: "Blueprint commands carry spec_type: gherkin | brief. When spec_type is 'brief', storyline validate accepts a technical-brief.yaml in feature_files instead of a .feature file. The traceability invariant holds — nothing in the blueprint is unreachable."
-    priority: "must-have"
+  - id: R5
+    description: "Lightweight execution: Foreman dispatches Developer Amigo with tweak details + implication scan results. Developer Amigo makes the change and commits. Post-commit: Developer Amigo (or Surveyor) updates affected feature files and blueprint. Exception: inline execution if main session already has sufficient context."
+    moscow: must-have
     examples:
-      - id: "R9-E1"
-        name: "spec_type: brief allows yaml reference in feature_files"
-        context: "Blueprint command has spec_type: brief and feature_files: [technical-brief.yaml]"
-        action: "storyline validate runs"
-        outcome: "Validation passes — yaml file is accepted as a valid specification artifact"
-        type: "happy-path"
-      - id: "R9-E2"
-        name: "spec_type: gherkin rejects non-.feature file"
-        context: "Blueprint command has spec_type: gherkin and feature_files: [technical-brief.yaml]"
-        action: "storyline validate runs"
-        outcome: "Validation error — spec_type: gherkin requires a .feature file"
-        type: "sad-path"
+      - name: "Delegate to Developer Amigo"
+        context: "Implication scan passes, user confirms"
+        action: "Foreman dispatches Developer Amigo"
+        outcome: "Change made, committed, feature files and blueprint updated"
+      - name: "Inline execution"
+        context: "Main session already explored the area (session has context)"
+        action: "Foreman executes inline without dispatching agent"
+        outcome: "Same result — change committed, artifacts updated"
 
-questions: []
+questions:
+  - id: Q1
+    question: "What is the exact threshold for 'scope bounded to ≤1 command or rule' in R1? Is counting commands in the blueprint the right metric?"
+    severity: important
+    who_can_answer: internal
+    best_guess: "Count blueprint commands touched by the described change. If >1 command affected, not a tweak."
+
+  - id: Q2
+    question: "When post-commit feature file update is needed, is a lightweight edit (update existing scenario text) always sufficient, or might a full Mister Gherkin pass be needed?"
+    severity: important
+    who_can_answer: internal
+    best_guess: "Lightweight edit is sufficient if only wording/value changes. New scenarios needed only if behavior changed — that implies it wasn't a tweak (R1 should have caught it)."
 
 assumptions:
-  - id: "A1"
-    assumption: "The Brief's internal subtype detection (via intake questions) is accurate enough without explicit user selection"
-    confidence: "medium"
-    consequence_if_wrong: "Brief may over-probe (run NFR/MoSCoW on a pure-internal change) or under-probe (skip NFRs for a scoped technical task with real behavioral impact). Low structural risk — output artifact is still produced; detection can be refined without changing the format"
-  - id: "A2"
-    assumption: "Listing technical-brief.yaml in feature_files requires no schema changes to the validator — adding spec_type: gherkin | brief to commands is sufficient"
-    confidence: "high"
-    consequence_if_wrong: "Would require additional schema changes; Developer confirmed in Round 3 that Option 2 (brief as artifact) preserves the invariant without validator rewrites"
-  - id: "A3"
-    assumption: "An MCQ at Foreman intake adds acceptable friction for contributors"
-    confidence: "medium"
-    consequence_if_wrong: "Contributors bypass or resent the gate; can be mitigated later by making the MCQ smarter or by supporting /storyline:the-foreman tech 'description' as a direct argument"
+  - id: A1
+    assumption: "Detection is purely language/heuristic-based in the Foreman prompt — no code scanning"
+    confidence: high
+    consequence_if_wrong: "n/a"
+  - id: A2
+    assumption: "Implication scan only reads .storyline/features/ and blueprint — no src/ exploration needed"
+    confidence: high
+    consequence_if_wrong: "Code-level implications (e.g., type changes) missed"
+  - id: A3
+    assumption: "Developer Amigo can execute correctly from Foreman's description + scan results alone"
+    confidence: medium
+    consequence_if_wrong: "Agent needs more context and may make incorrect change"
+  - id: A4
+    assumption: "Post-commit feature/blueprint updates are mechanical edits, not full re-specification"
+    confidence: medium
+    consequence_if_wrong: "Mister Gherkin pass needed, which negates the lightweight benefit"
 
 glossary_candidates:
-  - term: "The Brief"
-    definition: "Standalone skill (skills/the-brief/SKILL.md) that runs a structured technical intake session. Produces technical-brief.yaml. Entry point for technical tasks that do not have a user story framing."
-  - term: "technical-brief.yaml"
-    definition: "Schema-validated YAML artifact produced by The Brief. Contains task description, acceptance criteria, security_surface, public_interface_change, and subtype. Serves as the specification artifact for blueprint commands created by technical tasks."
-  - term: "Scoped technical task"
-    definition: "A technical change with observable behavior or interface impact (e.g., porting a module, adding a CLI command). Detected internally by The Brief. Runs NFR probe and MoSCoW in addition to core intake."
-  - term: "Pure internal change"
-    definition: "A technical change with no observable behavior or interface impact (e.g., reorganizing file layout, renaming internal modules). Detected internally by The Brief. Uses a lightweight intake template."
-  - term: "spec_type"
-    definition: "Field on blueprint commands (gherkin | brief). Controls which file type is accepted in feature_files. spec_type: brief allows a technical-brief.yaml reference; spec_type: gherkin requires a .feature file."
+  - term: "Minor tweak"
+    definition: "A change that references existing behavior, introduces no new domain concepts, and is bounded to ≤1 command in the blueprint"
+  - term: "Implication scan"
+    definition: "Foreman's pre-bypass check: reads feature files and blueprint to surface scenarios and commands affected by the described change"
+  - term: "Lightweight path"
+    definition: "The pipeline bypass route: skip Three Amigos, Mister Gherkin, Sticky Storm, Doctor Context — go directly to Developer Amigo execution with artifact reconciliation post-commit"
 
 risks:
-  technical:
-    - "Phase enumeration is a pre-condition — Orchestration invariants must be updated before any scenario is written for the technical path"
-    - "The Onion's Step 0 needs a guard for the no-feature-files case (Story B R7) — without it, the outer loop has no acceptance test to make red; this is a Story B item but blocks real use of Story A"
-    - "spec_type field on blueprint commands requires a schema and validator change in scripts/blueprint.ts"
-  scope:
-    - "Story B (security_surface, public_interface_change, Gherkin bridge, Onion guard) is deferred to backlog — Story A alone is usable but lacks safety gates"
-    - "The Brief's internal subtype detection logic needs design work — not just a checklist but a decision function based on intake answers"
-  backlog:
-    - "Story B: security_surface required field with Security Amigo dispatch"
-    - "Story B: public_interface_change warning at intake"
-    - "Story B: optional Gherkin in technical mode via Mister Gherkin"
-    - "Story B: The Onion guard for no-feature-files — use criteria[] as acceptance test inputs"
+  - "Detection heuristic false positive: real feature bypasses pipeline — mitigated by R2 (user confirmation)"
+  - "A2 miss: code-level implication not caught by blueprint+feature scan — accepted risk for this story"
+  - "A4 failure: post-commit artifact reconciliation requires more than a mechanical edit — falls back to Mister Gherkin"
