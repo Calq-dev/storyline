@@ -1,8 +1,8 @@
 meta:
   project: Storyline
   created_at: '2026-04-04'
-  updated_at: '2026-04-06T10:45:07.431Z'
-  version: 34
+  updated_at: '2026-04-06T10:50:31.977Z'
+  version: 36
 tech_stack:
   language: "TypeScript, Markdown, Bash, YAML"
   framework: "Claude Code Plugin SDK"
@@ -108,11 +108,42 @@ bounded_contexts:
             payload_fields:
               - "criticalIssues"
               - "findings"
+          - name: MinorTweakIdentified
+            payload_fields:
+              - sessionId
+              - changeDescription
+              - rationale
+              - affectedCommand
+          - name: TweakClassificationDeferred
+            payload_fields:
+              - sessionId
+              - clarificationQuestion
+          - name: TweakRoutedToFullPipeline
+            payload_fields:
+              - sessionId
+              - reason
+          - name: TweakImplicationScanCompleted
+            payload_fields:
+              - sessionId
+              - affectedFeatureFiles
+              - affectedScenarioNames
+              - contextCount
+          - name: TweakBlockedByCrossContextImplications
+            payload_fields:
+              - sessionId
+              - affectedContexts
+          - name: TweakPathExecuted
+            payload_fields:
+              - sessionId
+              - executionMode
+              - artifactsReconciled
         invariants:
           - "Exactly one pipeline phase may be in_progress at a time"
           - "The Foreman never explores the codebase directly — reads the
             blueprint only"
-          - "Blueprint must be validated and stamped before any commit"
+          - "Blueprint must be validated and stamped before any commit that
+            touches the blueprint — code-only commits on the lightweight tweak
+            path are exempt"
     policies:
       - name: "DispatchSurveyorOnMissingBlueprint"
         triggered_by: "ProjectStateDetected"
@@ -120,6 +151,14 @@ bounded_contexts:
       - name: "StartThreeAmigosAfterSurvey"
         triggered_by: "PhaseTransitioned"
         issues_command: "StartPipeline"
+      - name: InitiateImplicationScanOnConfirmation
+        triggered_by: MinorTweakIdentified
+        issues_command: ScanTweakImplications
+        session_id: 02c128d0-31a3-4c72-87c9-ee54c45557dc
+      - name: RouteToFullPipelineOnCrossContextBlock
+        triggered_by: TweakBlockedByCrossContextImplications
+        issues_command: StartPipeline
+        session_id: 02c128d0-31a3-4c72-87c9-ee54c45557dc
     read_models: []
     external_systems: []
     domain_services: []
@@ -913,3 +952,36 @@ questions:
     affects:
       - "Orchestration"
     status: "open"
+  - id: Q-003
+    question: ExecuteTweakPath scenarios say artifact updates happen after the
+      change is committed — this conflicts with the invariant that the blueprint
+      must be validated and stamped before every commit. Is post-commit
+      reconciliation a first-class exception to that invariant, or must artifact
+      updates happen pre-commit?
+    severity: critical
+    raised_during: Sticky Storm
+    affects:
+      - Orchestration
+    status: open
+  - id: Q-004
+    question: The user confirmation of the lightweight path is modeled as a scenario
+      under IdentifyMinorTweak rather than a distinct command. Should
+      ConfirmLightweightPath be a separate command so that the
+      InitiateImplicationScanOnConfirmation policy has an unambiguous trigger,
+      or is absorbing the confirmation into IdentifyMinorTweak sufficient?
+    severity: important
+    raised_during: Sticky Storm
+    affects:
+      - Orchestration
+    status: open
+  - id: Q-005
+    question: "TweakRoutedToFullPipeline covers two distinct reasons: Foreman
+      classification (change introduces new behavior) and user override (user
+      rejects lightweight path). Should these be separate events so downstream
+      policies can distinguish between an automated routing decision and a
+      deliberate user choice?"
+    severity: important
+    raised_during: Sticky Storm
+    affects:
+      - Orchestration
+    status: open
