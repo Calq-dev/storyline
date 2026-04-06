@@ -117,46 +117,81 @@ Update the in-progress todo:
 
 ## After All Tasks Complete
 
-### Memory update (parallel)
+### As-built update + scenario refinement (parallel)
 
-<agent-dispatch subagent_type="storyline:developer-amigo">
-prompt: |
-  The feature is built. Read .storyline/changesets/<cs-filename>.yaml and run
-  `git log --oneline -20` to understand what was implemented and any deviations.
-  Update your persona memory at .storyline/personas/developer-amigo.md
-  Work from: [project directory]
-</agent-dispatch>
-
-<agent-dispatch subagent_type="storyline:testing-amigo">
-prompt: |
-  The feature is built. Update your persona memory at .storyline/personas/testing-amigo.md
-  with what you learned during implementation — edge cases found, test patterns that worked.
-  Work from: [project directory]
-</agent-dispatch>
-
-<agent-dispatch subagent_type="storyline:product-amigo">
-prompt: |
-  The feature is built. Update your persona memory at .storyline/personas/product-amigo.md
-  with how the implementation matched (or deviated from) the discovery session.
-  Work from: [project directory]
-</agent-dispatch>
-
-### As-built survey
+The amigos already have the right context from building — no need for a separate Surveyor.
+Developer updates the blueprint, Testing flags gaps, Product reviews from user perspective.
 
 <branch-todos id="after-build">
-- Foreman: building's done — sending the surveyor for final inspection
+- Foreman: building's done — crew does as-built update and scenario refinement
 - Foreman: calling in the security inspector
 - Foreman: final walkthrough — do the specs still match the building?
 - Foreman: final inspection done — archiving the session
 </branch-todos>
 
-<agent-dispatch subagent_type="storyline:surveyor">
+<bash-commands>
+```bash
+mkdir -p .storyline/workbench/amigo-notes
+```
+</bash-commands>
+
+<agent-dispatch subagent_type="storyline:developer-amigo">
 prompt: |
-  Run an as-built survey. Compare what was planned (in the blueprint) with what was actually built.
-  Update blueprint.yaml to match reality. Read .storyline/changesets/<cs-filename>.yaml to see which
-  bounded contexts were touched, then focus your survey on those.
+  The feature is built. You have two jobs:
+
+  ## 1. As-built blueprint update
+  You just built this — you know what changed. Read .storyline/changesets/<cs-filename>.yaml
+  and compare with what you actually implemented. Update blueprint.yaml to match reality:
+  - Changed payloads, invariants, glossary → edit directly
+  - New structures discovered during build → use CLI helpers (storyline add-command, etc.)
+  - Planned but not implemented → `storyline add-gap --description "Planned <X> not built" --severity "important" --affects "<Ctx>"`
+  - Never delete existing entries — reconcile and extend
+  - `storyline validate` + `storyline stamp` when done
+
+  ## 2. Scenario refinement
+  Review .storyline/features/ against what was actually implemented.
+  Write refinement notes to .storyline/workbench/amigo-notes/developer.md:
+  - Scenarios that no longer match implementation
+  - Missing scenarios for behavior that emerged during implementation
+  - Scenario language that doesn't match the updated glossary
+  - Anything you had to build that wasn't specified
+
+  Also update your persona memory at .storyline/personas/developer-amigo.md
   Work from: [project directory]
 </agent-dispatch>
+
+<agent-dispatch subagent_type="storyline:testing-amigo">
+prompt: |
+  The feature is built. You have two jobs:
+
+  ## 1. Flag gaps and questions
+  You just reviewed all the tests — you know where coverage is thin. Flag what's missing:
+  - Use `storyline add-gap` for behaviors that need more coverage
+  - Use `storyline add-question` for uncertainties that surfaced during testing
+
+  ## 2. Scenario refinement
+  Review .storyline/features/ for completeness.
+  Write refinement notes to .storyline/workbench/amigo-notes/testing.md:
+  - Edge cases tested in code but missing from feature files
+  - Sad paths discovered during implementation
+  - Scenarios too vague given what we know about actual behavior
+
+  Also update your persona memory at .storyline/personas/testing-amigo.md
+  Work from: [project directory]
+</agent-dispatch>
+
+<agent-dispatch subagent_type="storyline:product-amigo">
+prompt: |
+  The feature is built. Review .storyline/features/ from the user's perspective.
+  Write refinement notes to .storyline/workbench/amigo-notes/product.md:
+  - Scenarios where described behavior doesn't match user expectations
+  - Missing user-facing scenarios
+  - Scope changes that happened during implementation
+  Also update your persona memory at .storyline/personas/product-amigo.md
+  Work from: [project directory]
+</agent-dispatch>
+
+(Include frontend-amigo if they were active in this session.)
 
 ### Security audit (if applicable)
 
@@ -182,50 +217,6 @@ prompt: |
 </agent-dispatch>
 
 If critical issues found → Developer Amigo fixes, Security Amigo reviews.
-
-### Scenario refinement (parallel)
-
-<bash-commands>
-```bash
-mkdir -p .storyline/workbench/amigo-notes
-```
-</bash-commands>
-
-<agent-dispatch subagent_type="storyline:developer-amigo">
-prompt: |
-  The feature is built. Review .storyline/features/ against what was actually implemented.
-  Write refinement notes to .storyline/workbench/amigo-notes/developer.md:
-  - Scenarios that no longer match implementation
-  - Missing scenarios for behavior that emerged during implementation
-  - Scenario language that doesn't match the updated glossary
-  - Anything you had to build that wasn't specified
-  Also update your persona memory at .storyline/personas/developer-amigo.md
-  Work from: [project directory]
-</agent-dispatch>
-
-<agent-dispatch subagent_type="storyline:testing-amigo">
-prompt: |
-  The feature is built. Review .storyline/features/ for completeness.
-  Write refinement notes to .storyline/workbench/amigo-notes/testing.md:
-  - Edge cases tested in code but missing from feature files
-  - Sad paths discovered during implementation
-  - Scenarios too vague given what we know about actual behavior
-  Also update your persona memory at .storyline/personas/testing-amigo.md
-  Work from: [project directory]
-</agent-dispatch>
-
-<agent-dispatch subagent_type="storyline:product-amigo">
-prompt: |
-  The feature is built. Review .storyline/features/ from the user's perspective.
-  Write refinement notes to .storyline/workbench/amigo-notes/product.md:
-  - Scenarios where described behavior doesn't match user expectations
-  - Missing user-facing scenarios
-  - Scope changes that happened during implementation
-  Also update your persona memory at .storyline/personas/product-amigo.md
-  Work from: [project directory]
-</agent-dispatch>
-
-(Include frontend-amigo if they were active in this session.)
 
 ### Synthesize and act
 

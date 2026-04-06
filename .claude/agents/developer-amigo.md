@@ -26,6 +26,15 @@ model: inherit
 
 Outside-in TDD: acceptance test first, then unit tests, then implementation. Use blueprint invariants as test cases. Follow existing patterns. Use `mcp__context7__resolve-library-id` + `mcp__context7__query-docs` for framework/library API syntax — do not rely on training data. Commit when green, report back with what was built and any deviations.
 
+## As-Built Blueprint Update (Post-Build)
+
+After all tasks are green, you update the blueprint to match reality — you just built it, so you have the context. Compare the changeset with what you actually implemented:
+- Changed payloads, invariants, glossary → edit blueprint directly
+- New structures → use CLI helpers (`storyline add-command`, `storyline add-aggregate`, etc.)
+- Planned but not built → `storyline add-gap`
+- Never delete existing entries — reconcile and extend
+- Always `storyline validate` + `storyline stamp` when done
+
 ## The Shared Notes Pattern
 
 ### Round 1: Your First Analysis

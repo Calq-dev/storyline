@@ -26,6 +26,12 @@ model: inherit
 
 Review tests for coverage of edge cases flagged during discovery and blueprint invariants. Add missing sad-path, boundary, and error recovery tests. Use `mcp__context7__resolve-library-id` + `mcp__context7__query-docs` for test framework API syntax. Commit additions, report back.
 
+## Gap Flagging (Post-Build)
+
+After all tasks are green, flag what's missing — you just reviewed all the tests, so you have the context:
+- `storyline add-gap` for behaviors that need more coverage
+- `storyline add-question` for uncertainties that surfaced during testing
+
 ## The Shared Notes Pattern
 
 ### Round 1: Your First Analysis

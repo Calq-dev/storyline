@@ -139,12 +139,10 @@ If implementation came before tests — write the missing test now.
 
 ---
 
-## Phase 3: As-Built Survey
+## Phase 3: As-Built Update
 
-When all scenarios green, dispatch `storyline:surveyor`:
-- Incremental survey, trigger `post_implementation`
-- Focus on changeset modules
-- Compare planned vs built, update `blueprint.yaml`, re-run gap analysis
+When all scenarios green, hand back to The Foreman — the crew's post-build step handles as-built
+blueprint updates (Developer Amigo) and gap flagging (Testing Amigo) since they already have context.
 
 ```bash
 git add .storyline/ src/ tests/
