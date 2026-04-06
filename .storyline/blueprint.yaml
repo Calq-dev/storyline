@@ -1,8 +1,8 @@
 meta:
   project: Storyline
   created_at: '2026-04-04'
-  updated_at: '2026-04-06T11:31:35.531Z'
-  version: 38
+  updated_at: '2026-04-06T11:32:42.039Z'
+  version: 39
 tech_stack:
   language: "TypeScript, Markdown, Bash, YAML"
   framework: "Claude Code Plugin SDK"
@@ -935,6 +935,14 @@ gaps:
       command name? Read each file? Blueprint view only?). Without explicit
       instruction the Foreman may read all files sequentially or skip the scan
       entirely."
+    severity: important
+    affects:
+      - Orchestration
+  - id: GAP-018
+    description: "Implication scan error handling not implemented: if the scan fails
+      (malformed feature file, missing blueprint context, CLI error), S8 has no
+      fallback branch. Q-006 was left open in the changeset. Skill should
+      surface the error and offer full pipeline as fallback."
     severity: important
     affects:
       - Orchestration
