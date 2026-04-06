@@ -21,6 +21,7 @@ skills/
   three-amigos/SKILL.md           <- Phase 1: Discovery sessions (Example Mapping)
   persona-memory/SKILL.md         <- Shared conventions for persona memory files
   mister-gherkin/SKILL.md         <- Phase 2: Gherkin scenario formalization
+  the-brief/SKILL.md              <- Technical task intake — The Brief (no user story framing)
   the-appraiser/SKILL.md           <- Triangulated estimation — The Appraiser (PERT, WBS, T-Shirt)
   the-onion/SKILL.md              <- Phase 5: Outside-in TDD implementation
 scripts/
@@ -48,6 +49,10 @@ The Foreman -> The Scout -> Three Amigos -> Mister Gherkin -> Quartermaster -> T
                                                                                     |
                                                                             Sticky Storm (agent, if needed)
                                                                             Doctor Context (agent, if needed)
+
+Technical task path (no user story):
+The Foreman -> The Brief -> The Onion -> The Foreman
+(Entry, MCQ)   (Intake)     (Build)      (Build Director)
 ```
 
 ## The Blueprint
@@ -85,7 +90,7 @@ storyline housekeeping --cleanup --phase three-amigos  # Phase-specific cleanup
 storyline add-context "Payment"
 storyline add-aggregate --context "Payment" --name "Invoice"
 storyline add-event --context "Payment" --aggregate "Invoice" --name "InvoiceSent" --payload "invoiceId,amount"
-storyline add-command --context "Payment" --aggregate "Invoice" --name "SendInvoice" --feature-files "invoicing.feature"
+storyline add-command --context "Payment" --aggregate "Invoice" --name "SendInvoice" --feature-files "invoicing.feature" [--spec-type "gherkin|brief"]
 storyline add-glossary --term "Invoice" --context "Payment" --meaning "A request for payment"
 storyline add-gap --description "Missing tests" --severity "important" --affects "Payment"
 storyline add-question --question "How do refunds work?" --severity "important" --raised-during "Three Amigos" --affects "Payment"
