@@ -1447,7 +1447,7 @@ function cmdSummary(_args: unknown, cwd: string) {
   lines.push('  storyline add-context "<name>"');
   lines.push('  storyline add-aggregate --context "<name>" --name "<name>"');
   lines.push('  storyline add-event --context "<ctx>" --aggregate "<agg>" --name "<name>" --payload "field1,field2"');
-  lines.push('  storyline add-command --context "<ctx>" --aggregate "<agg>" --name "<name>" --feature-files "file.feature"');
+  lines.push('  storyline add-command --context "<ctx>" --aggregate "<agg>" --name "<name>" --feature-files "file.feature" [--spec-type "gherkin|brief"]');
   lines.push('  storyline add-glossary --term "<term>" --context "<name>" --meaning "<meaning>"');
   lines.push('  storyline add-gap --description "<desc>" --severity "critical|important|nice_to_know" --affects "<name>"');
   lines.push('  storyline add-question --question "<q>" --severity "critical|important|nice_to_know" --raised-during "<phase>" --affects "<name>"');
