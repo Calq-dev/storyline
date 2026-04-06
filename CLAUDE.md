@@ -28,10 +28,12 @@ Rules:
 - Skip only for: version bumps, typo fixes, formatting, pure documentation with no design content
 
 **Know your audience before raising an observation.**
-This repo has two distinct audiences: contributors (who see this file) and users (who never do).
-A gap only matters if it affects the right audience. Before flagging anything, ask: who would
-actually experience this problem, and does the fix reach them? A fix that lives in this repo
-but not in the plugin is not a fix for users — it is theatre.
+This repo has two distinct audiences: people developing this plugin (who see this file and
+this codebase) and people using this plugin on their own projects (who only see what the
+plugin delivers — skills, agents, CLI output). A gap only matters if it affects the right
+audience. Before flagging anything, ask: who would actually experience this problem, and
+does the fix reach them? A fix that lives only in this repo is invisible to plugin users —
+it is theatre.
 
 ## Agent Workflow
 
