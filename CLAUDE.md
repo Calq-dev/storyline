@@ -41,6 +41,9 @@ Edit blueprint (Edit tool for scalar updates, CLI helpers for list insertions)
   -> git commit
 ```
 
+## Important Rule For Writing or Editing Skill & Agent Instructions
+When writing or editing skills, agents, or any agent-facing instructions: only include what the LLM cannot know from training. Delete explanations of well-known concepts, patterns, syntax, or best practices. Keep only project-specific conventions, CLI commands, file paths, routing logic, gates, and deviations from default LLM behavior.
+
 ## Blueprint Read Convention
 
 1. `storyline summary` for orientation

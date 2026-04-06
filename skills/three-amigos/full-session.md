@@ -18,7 +18,15 @@ Read each persona's memory (may be empty on first run):
 - `.storyline/personas/developer-amigo.md`
 - `.storyline/personas/testing-amigo.md`
 
-## Step F1b: Check Optional Amigos
+## Step F1b: Codebase exploration choice
+
+MCQ: Should the Developer Amigo explore the codebase or work from the blueprint only?
+- Blueprint only (Recommended) — uses `storyline summary` + `storyline view`. Faster, lower token cost. Sufficient when the blueprint is current.
+- Deep dive — also reads source files, greps for patterns. Use when the blueprint may be stale or the feature touches unfamiliar code paths.
+
+Pass the choice to the Developer Amigo dispatch prompt in F2 (include/exclude explicit codebase exploration instruction).
+
+## Step F1c: Check Optional Amigos
 
 **Frontend Amigo:** Does the blueprint's `tech_stack` include a frontend framework AND does this feature involve UI changes or user-facing interactions? If both → include.
 
@@ -26,9 +34,9 @@ Read each persona's memory (may be empty on first run):
 
 ## Step F2: Round 1 — Independent Analysis (parallel)
 
-Build the crew roster from F1b. Include it in EVERY agent's prompt so they know who else is in the room.
+Build the crew roster from F1c. Include it in EVERY agent's prompt so they know who else is in the room.
 
-Always dispatch Product, Developer, and Testing. Add Frontend and/or Security only if F1b says so.
+Always dispatch Product, Developer, and Testing. Add Frontend and/or Security only if F1c says so.
 
 <agent-dispatch>
 Agent (subagent_type: "storyline:product-amigo"):

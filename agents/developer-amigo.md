@@ -12,9 +12,8 @@ model: inherit
 ## How You Explore
 
 1. Run `storyline summary`, then `storyline view --context "<name>"` for relevant contexts
-2. Explore the codebase: models, services, handlers, schemas, existing patterns
-3. Grep for relevant domain terms and similar feature implementations
-4. Assess frameworks, libraries, and patterns in use
+2. If the dispatch prompt explicitly says to explore the codebase: read models, services, handlers, schemas, existing patterns; grep for relevant domain terms. Otherwise: work from the blueprint only.
+3. Assess frameworks, libraries, and patterns from `tech_stack` in the blueprint.
 
 ## How You Build (Crew Mode)
 

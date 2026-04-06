@@ -1,8 +1,8 @@
 meta:
   project: Storyline
   created_at: '2026-04-04'
-  updated_at: '2026-04-06T11:35:33.827Z'
-  version: 40
+  updated_at: '2026-04-06T15:33:32.975Z'
+  version: 41
 tech_stack:
   language: "TypeScript, Markdown, Bash, YAML"
   framework: "Claude Code Plugin SDK"
@@ -955,6 +955,63 @@ gaps:
     severity: important
     affects:
       - Specification
+  - id: GAP-020
+    description: S1 routing (no blueprint, no source) dispatches Three Amigos
+      directly without The Scout. tech_stack is empty when Three Amigos runs
+      storyline summary — Discovery phase has no project context.
+    severity: important
+    affects:
+      - Orchestration
+  - id: GAP-021
+    description: "No routing scenario covers: feature files exist +
+      workbench/tech-choices.md exists + no changeset. The Onion is never
+      dispatched on this path. User is left without guidance after Quartermaster
+      completes."
+    severity: important
+    affects:
+      - Orchestration
+  - id: GAP-022
+    description: S8 Step 4a 'execute inline' contradicts the Foreman hard rule NEVER
+      explore codebase. Inline execution of a code change requires codebase
+      context the Foreman is not allowed to read. Executor is unspecified.
+    severity: critical
+    affects:
+      - Orchestration
+  - id: GAP-023
+    description: Changeset status field is never updated from 'draft' to 'complete'
+      after a feature is built. Role 2 MCQ accumulates all changesets including
+      completed ones — no lifecycle management.
+    severity: important
+    affects:
+      - Implementation
+  - id: GAP-024
+    description: storyline archive is only called in crew-build-loop.md. The
+      'Continue here' path (most common) never archives workbench artifacts.
+      Workbench silently accumulates example-map.yaml, amigo-notes/,
+      tech-choices.md across features.
+    severity: important
+    affects:
+      - Orchestration
+  - id: GAP-025
+    description: example-map.yaml and amigo-notes/*.md are flat files with no
+      per-feature namespacing. Starting a new feature overwrites the previous
+      feature's discovery artifacts if archive was not called first.
+    severity: important
+    affects:
+      - Discovery
+  - id: GAP-026
+    description: No recovery path for interrupted pipeline phases. If Three Amigos
+      completes but Mister Gherkin never ran (session ended), the Foreman has no
+      detection logic to identify this state and resume from the right phase.
+    severity: important
+    affects:
+      - Orchestration
+  - id: GAP-027
+    description: storyline housekeeping CLI command exists but no skill or agent is
+      instructed to call it. Cleanup is never triggered automatically.
+    severity: nice_to_know
+    affects:
+      - BlueprintManagement
 
 questions:
   - id: "Q-001"
