@@ -6,6 +6,23 @@ The amigos from the Three Amigos session already know the feature. They build it
 
 > "The crew needs to write code. Want me to switch to acceptEdits mode so the crew can work uninterrupted?"
 
+<TOOL-REQUIREMENTS>
+**Fetch TaskCreate, TaskUpdate, and TaskGet before starting the loop:**
+```
+ToolSearch: select:TaskCreate,TaskUpdate,TaskGet
+```
+
+For each task in the changeset, create three linked tasks upfront:
+```
+TaskCreate — "RED [task-name]: Testing Amigo writes failing test"
+TaskCreate — "GREEN [task-name]: Developer Amigo implements", then TaskUpdate addBlockedBy: [RED task id]
+TaskCreate — "VERIFY [task-name]: Testing Amigo confirms + edge cases", then TaskUpdate addBlockedBy: [GREEN task id]
+```
+
+Then set the first RED task `in_progress` before dispatching.
+Update each task's status (`in_progress` → `completed`) as agents report back.
+</TOOL-REQUIREMENTS>
+
 ---
 
 ## The Build Loop (per task)
@@ -13,6 +30,8 @@ The amigos from the Three Amigos session already know the feature. They build it
 For each task in the implementation changeset:
 
 ### 1. Testing Amigo writes the acceptance test (RED)
+
+`TaskUpdate: RED task → in_progress`
 
 <agent-dispatch subagent_type="storyline:testing-amigo">
 prompt: |
@@ -34,6 +53,8 @@ prompt: |
 
 ### 2. Developer Amigo implements (GREEN)
 
+`TaskUpdate: RED task → completed` · `TaskUpdate: GREEN task → in_progress`
+
 <agent-dispatch subagent_type="storyline:developer-amigo">
 prompt: |
   ## Your notes from previous sessions:
@@ -53,6 +74,8 @@ prompt: |
 </agent-dispatch>
 
 ### 3. Testing Amigo verifies and adds edge cases
+
+`TaskUpdate: GREEN task → completed` · `TaskUpdate: VERIFY task → in_progress`
 
 <agent-dispatch subagent_type="storyline:testing-amigo">
 prompt: |
@@ -87,7 +110,9 @@ prompt: |
 
 ### 5. Update progress and move to next task
 
-When each task completes, update the in-progress todo:
+`TaskUpdate: VERIFY task → completed`
+
+Update the in-progress todo:
 `Foreman: task [N] of [total] — walls are going up`
 
 ---

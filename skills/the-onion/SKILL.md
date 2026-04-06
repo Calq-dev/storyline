@@ -144,6 +144,21 @@ Then: `Skill: storyline:the-foreman` — The Foreman presents the build choice. 
 Confirm the execution order with the user:
 > "I recommend starting with '[scenario name]' — simplest path through the core domain, establishes [key components]. Full sequence: [list]. Does this order make sense?"
 
+**After the user confirms,** create a task for each scenario in the agreed order:
+
+```
+ToolSearch: select:TaskCreate,TaskUpdate
+```
+
+For each scenario (in execution order):
+```
+TaskCreate — subject: "Scenario: [name]"
+             description: "Outer loop: acceptance test → inner loop TDD → green commit"
+             activeForm: "Building [name]"
+```
+
+Then use `TaskUpdate addBlockedBy` to chain them in sequence (each blocks the next), and mark the first scenario `in_progress`.
+
 ## Step 3: Generate Step Definitions
 
 Detect language + framework from `tech_stack` in the blueprint. Generate **declarative** step definitions — business actions, not UI interactions. See `./step-definition-examples.md` for TypeScript/Cucumber.js and Python/Behave examples.
@@ -209,7 +224,11 @@ git commit -m "feat: [feature name] — [scenario name] green"
 ```
 </bash-commands>
 
+`TaskUpdate: current scenario task → completed`
+
 ## Step 7: Next Scenario
+
+`TaskUpdate: next scenario task → in_progress`
 
 Pick the next scenario (next most important happy path, then edge cases). Each new scenario incrementally builds on what exists. Repeat Steps 3–6 for each scenario.
 
