@@ -1,0 +1,127 @@
+feature: VERIFY Invariant Integration Tests
+story: "As a developer running The Crew, I want VERIFY agents to write one integration test per changeset invariant that exercises the real code path, so that bugs masked by mocked fixtures are caught at VERIFY time rather than final code review."
+session_date: "2026-04-06"
+codebase_context: "Storyline plugin — TypeScript/Node.js. Crew build loop in skills/the-foreman/crew-build-loop.md. Testing Amigo agent in agents/testing-amigo.md (if exists) or inline VERIFY dispatch prompt. Blueprint invariants live in blueprint.yaml under bounded_contexts[].aggregates[].invariants[]. Changeset touches use bracket-notation paths."
+
+rules:
+  - id: R1
+    text: "VERIFY identifies in-scope invariants by reading changeset phases[].touches[], extracting bounded_contexts[Name].aggregates[Name] paths, then reading those aggregates' invariants[] via storyline view --context <name>"
+    priority: must-have
+    examples:
+      - name: "Find invariants from changeset touches"
+        context: "Changeset phase touches bounded_contexts[Implementation].aggregates[Changeset]"
+        action: "VERIFY reads changeset, extracts context=Implementation, aggregate=Changeset, runs storyline view --context Implementation"
+        outcome: "VERIFY has the two Changeset invariants from the blueprint and proceeds to write tests for them"
+
+  - id: R2
+    text: "One integration test per in-scope invariant — written during the VERIFY phase, after Developer Amigo has implemented"
+    priority: must-have
+    examples:
+      - name: "Two invariants → two tests"
+        context: "Changeset touches Changeset aggregate which has 2 invariants"
+        action: "VERIFY writes two integration tests, one per invariant"
+        outcome: "Both tests are in tests/integration/, both run green"
+
+  - id: R3
+    text: "Integration tests mock only at infrastructure edges (HTTP clients, file system drivers, external APIs) — never the aggregate, command handler, or domain service"
+    priority: must-have
+    examples:
+      - name: "ApplyDomainModelDelta integration test"
+        context: "Invariant: delta entries applied incrementally per scenario"
+        action: "VERIFY invokes ApplyDomainModelDelta command against real YAML files on disk (no mock), asserts applied flags flip"
+        outcome: "Test fails if the command was implemented with a mock that doesn't actually write YAML"
+
+  - id: R4
+    text: "Integration tests go in tests/integration/<context>_invariants_test.<ext> — separate from unit tests and acceptance step defs"
+    priority: must-have
+    examples:
+      - name: "Correct file placement"
+        context: "VERIFY writes test for Changeset aggregate in Implementation context"
+        action: "VERIFY creates tests/integration/implementation_changeset_invariants_test.ts"
+        outcome: "Test is discoverable by the project's test runner as an integration test"
+
+  - id: R5
+    text: "VERIFY reports which invariants were covered, already covered, or skipped — one line per invariant in the commit message or as a comment in the test file header"
+    priority: must-have
+    examples:
+      - name: "Coverage report in commit"
+        context: "3 invariants in scope, 2 written, 1 skipped (architectural)"
+        action: "VERIFY commits with message: 'verify: invariant tests for Changeset — 2 written, 1 skipped (architectural)'"
+        outcome: "Reviewers can see at a glance what was and wasn't tested"
+
+  - id: R6
+    text: "If an invariant is already asserted end-to-end in the acceptance test step definitions (not just named in the feature file), VERIFY skips writing a new test and reports 'already covered'"
+    priority: must-have
+    examples:
+      - name: "Skip duplicate coverage"
+        context: "Invariant: outside-in TDD acceptance test first; step definition 'a failing acceptance test is written first' already asserts this"
+        action: "VERIFY reads the step definition file, finds the assertion, marks invariant as already covered"
+        outcome: "No duplicate test written"
+
+  - id: R7
+    text: "Architectural/process invariants that are not programmatically assertable (e.g. 'acceptance test before unit test') are skipped with reason 'architectural' — VERIFY flags if >50% of in-scope invariants were skipped"
+    priority: must-have
+    examples:
+      - name: "Skip process invariant"
+        context: "Invariant: 'Outer loop stays red while inner loop cycles'"
+        action: "VERIFY identifies no runtime assertion is possible, skips with reason"
+        outcome: "Reported as skipped-architectural; no test written; no false positive"
+
+questions:
+  - id: Q1
+    text: "Where does the VERIFY instruction live — crew-build-loop VERIFY prompt only, or also in Testing Amigo persona file?"
+    severity: critical
+    raised_by: developer
+    best_guess: "crew-build-loop.md VERIFY dispatch prompt is the primary location. If a Testing Amigo persona file exists (.storyline/personas/testing-amigo.md), add it there too as a standing rule."
+    confidence: medium
+
+  - id: Q2
+    text: "What is the canonical integration test directory convention?"
+    severity: important
+    raised_by: developer
+    best_guess: "tests/integration/ — document in VERIFY prompt, note projects may override via tech-choices.md"
+    confidence: medium
+
+  - id: Q3
+    text: "How does VERIFY parse bracket-notation touches paths to find the right context+aggregate names?"
+    severity: critical
+    raised_by: developer
+    best_guess: "VERIFY reads changeset YAML, regex-extracts bounded_contexts[X].aggregates[Y], then runs storyline view --context X and scans for aggregate Y"
+    confidence: high
+
+  - id: Q4
+    text: "How does VERIFY distinguish architectural/process invariants from assertable runtime invariants?"
+    severity: important
+    raised_by: testing
+    best_guess: "VERIFY uses heuristic: if invariant text contains no observable state or event (only describes an action sequence or discipline), classify as architectural. Document the heuristic in the prompt."
+    confidence: low
+
+assumptions:
+  - text: "Testing Amigo has enough context from the VERIFY dispatch prompt alone"
+    confidence: low
+    consequence: "VERIFY skips invariant testing in practice because the prompt is too vague — must write explicit step-by-step instruction, not just a rule"
+  - text: "Architectural invariants are obvious enough that VERIFY classifies them correctly"
+    confidence: low
+    consequence: "VERIFY either writes unmaintainable meta-tests or skips real runtime invariants — heuristic must be explicit in the prompt"
+  - text: "tests/integration/ works across project tech stacks"
+    confidence: medium
+    consequence: "Tests land in wrong place, not run by CI — mitigated by noting projects can override via tech-choices.md"
+
+glossary_candidates:
+  - term: "Invariant integration test"
+    definition: "An integration test written by the VERIFY agent that asserts a specific blueprint aggregate invariant holds against the real code path, with no mocks at the domain boundary"
+  - term: "In-scope invariants"
+    definition: "The invariants[] entries for aggregates named in the changeset's phases[].touches[] paths"
+  - term: "Assertable invariant"
+    definition: "An invariant that can be expressed as a runtime assertion (state check or event check) — as opposed to architectural invariants that describe process discipline"
+
+risks:
+  - "VERIFY prompt must be very specific about the bracket-notation parsing heuristic — vague instruction will cause the agent to miss invariants or error"
+  - "Integration tests that hit real files need setup/teardown or they leave state that breaks subsequent runs"
+  - "This adds time to every VERIFY phase — acceptable for Crew mode, but should be noted in the changeset"
+  - "Projects with no tests/integration/ directory need it created — VERIFY prompt must include mkdir"
+
+nfr_notes:
+  - "Test isolation: each integration test must set up a clean temp directory and tear it down (no shared fixture files)"
+  - "Speed: integration tests should complete in <30s per VERIFY pass; if a test suite grows beyond that, log a gap"
+  - "Observability: coverage report in commit message (R5) ensures it's visible in git log and CI output"

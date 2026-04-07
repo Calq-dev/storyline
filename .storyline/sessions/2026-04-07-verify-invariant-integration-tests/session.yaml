@@ -1,0 +1,24 @@
+date: 2026-04-07
+feature: verify-invariant-integration-tests
+project: Storyline
+blueprint_version: 49
+artifacts_archived:
+  - example-map.yaml
+  - tech-choices.md
+feature_files:
+  - .storyline/features/blueprint-cli-mutations.feature
+  - .storyline/features/blueprint-management.feature
+  - .storyline/features/blueprint-views.feature
+  - .storyline/features/discovery.feature
+  - .storyline/features/domain-modeling.feature
+  - .storyline/features/housekeeping.feature
+  - .storyline/features/implementation.feature
+  - .storyline/features/lightweight-tweak-path.feature
+  - .storyline/features/orchestration.feature
+  - .storyline/features/scaffold.feature
+  - .storyline/features/specification.feature
+  - .storyline/features/technical-task-entry-point.feature
+plans:
+  - .storyline/plans/2026-04-05-blueprint-cli-mutations.md
+  - .storyline/plans/2026-04-05-blueprint-views-and-housekeeping.md
+  - .storyline/plans/2026-04-05-changeset-yaml.md
