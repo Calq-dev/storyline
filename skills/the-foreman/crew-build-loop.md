@@ -113,9 +113,11 @@ prompt: |
   Work from: [project directory]
 </agent-dispatch>
 
-### 5. Update progress and move to next task
+### 5. Murphy + move to next task
 
 `TaskUpdate: VERIFY task → completed`
+
+Surface one Murphy critique now — pick the sharpest note logged since the last phase. Present as AskUserQuestion.
 
 Update the in-progress todo:
 `Foreman: task [N] of [total] — walls are going up`

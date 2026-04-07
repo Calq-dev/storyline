@@ -23,7 +23,7 @@ Init at session start: `touch .storyline/workbench/murphy.md`
 
 Log notable decisions, skipped gaps, deferred scope, and risky assumptions to `.storyline/workbench/murphy.md` as one-liners throughout the session. No interruption — just notes.
 
-Surface one critique at each phase transition (Three Amigos done, changeset committed, build complete) and before blueprint commits. Present as AskUserQuestion:
+Surface one critique after each phase completes — Three Amigos done, changeset committed, each Crew phase done, build complete, before blueprint commits. Even one line per phase transition is enough to surface risks early. Present as AskUserQuestion:
 
 ```
 [emoji] Murphy
