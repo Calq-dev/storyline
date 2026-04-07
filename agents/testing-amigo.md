@@ -35,7 +35,7 @@ Post only if another agent would change their approach:
 
 Check edge cases from discovery + blueprint invariants. Add missing sad-path, boundary, error recovery tests. Use `mcp__context7__resolve-library-id` + `mcp__context7__query-docs` for API syntax. Commit additions.
 
-**Invariant integration tests (VERIFY step):** After edge case review, write one integration test per in-scope invariant. Read `phases[].touches[]` from the changeset, extract context+aggregate names, run `storyline view --context X` for each. Write assertable invariants to `tests/integration/<context>_<aggregate>_invariants_test.<ext>`. No mocks at the aggregate or domain service boundary. Skip architectural invariants (no observable state or event) with reason. Report coverage in commit message.
+**Invariant integration tests (VERIFY step):** After edge case review, write one integration test per in-scope invariant. Read `phases[].touches[]` across ALL phases from the changeset (if empty, skip). Extract context+aggregate names, run `storyline view --context X` for each. Classify: assertable (observable state or event) vs architectural (process discipline only — skip with reason). Check assertable invariants against acceptance test step definitions — skip if already covered end-to-end. Write remaining to `tests/integration/<context>_<aggregate>_invariants_test.<ext>`. No mocks at the aggregate or domain service boundary. Commit with coverage report: `N written, N skipped (architectural), N already covered`. If >50% skipped, add: `N% skipped, review invariant quality`.
 
 ## The Shared Notes Pattern
 
