@@ -80,37 +80,25 @@ prompt: |
 
   ## Invariant integration tests
 
-  After edge case review, write one integration test per in-scope invariant:
+  Write one integration test per in-scope invariant:
 
-  **Pre-check:** Collect all `phases[].touches[]` entries across ALL phases. If the list is empty,
-  report "no aggregates touched — no invariant integration tests required" and skip the rest of this section.
+  **Pre-check:** If `phases[].touches[]` is empty across all phases, report "no aggregates touched — no invariant integration tests required" and skip.
 
-  1. For each touch entry, extract `bounded_contexts[X].aggregates[Y]` — X is context name, Y is aggregate name.
-     Iterate ALL phases, not just the first.
+  1. Extract `bounded_contexts[X].aggregates[Y]` from all touches. Iterate ALL phases.
 
-  2. For each (X, Y): run `storyline view --context X` and read `aggregates[Y].invariants[]`.
-     If the aggregate has no invariants, report "no invariants defined for Y" and skip it.
+  2. For each (X, Y): run `storyline view --context X`, read `aggregates[Y].invariants[]`. If none, report "no invariants defined for Y" and skip.
 
-  3. For each invariant, classify it before writing any test:
-     - **Assertable**: has observable state or emitted events you can assert in code → write a test.
-       Example: "delta entries are applied to blueprint.yaml incrementally per scenario" — assertable
-       because you can inspect the YAML file and the `applied` flags after the command runs.
-     - **Architectural**: describes a process discipline with no observable outcome in the running system
-       (e.g. "acceptance test must be written before unit test") → skip with reason "architectural".
+  3. Classify each invariant before writing:
+     - **Assertable**: observable state or emitted events → write a test.
+       (Edge case: "delta entries are applied to blueprint.yaml incrementally" IS assertable — inspect `applied` flags after the command runs.)
+     - **Architectural**: process discipline, no observable outcome (e.g. "acceptance test must be written before unit test") → skip with reason "architectural".
 
-  4. For each assertable invariant: check whether it is already covered end-to-end by the acceptance
-     test step definitions (not just named in the feature file — read the step def code). If yes,
-     mark it "already covered" and do not write a duplicate test.
+  4. Check each assertable invariant against acceptance test step definitions (read the step def code — not just the feature file). Mark "already covered" and skip if asserted end-to-end.
 
-  5. Write or update `tests/integration/<context>_<aggregate>_invariants_test.<ext>` — one test per
-     assertable, not-already-covered invariant. If the file already exists, update it (do not skip).
-     Mock only at infrastructure edges (HTTP clients, file system drivers, external APIs).
-     Do NOT mock the aggregate, command handler, or domain service.
+  5. Write or update `tests/integration/<context>_<aggregate>_invariants_test.<ext>`. If file exists, update (do not skip). Do NOT mock the aggregate, command handler, or domain service.
 
-  6. Commit with a message that includes the coverage report:
-     `verify: invariant tests for [feature] — N written, N skipped (architectural), N already covered`
-     If more than 50% of in-scope invariants were skipped (any reason), add:
-     `— N% skipped, review invariant quality`
+  6. Commit: `verify: invariant tests for [feature] — N written, N skipped (architectural), N already covered`
+     If >50% skipped (any reason): append `— N% skipped, review invariant quality`
 
   Work from: [project directory]
 </agent-dispatch>
