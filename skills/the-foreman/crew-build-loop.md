@@ -77,6 +77,37 @@ prompt: |
   Add missing tests, commit, report back.
   Use context7 for test framework docs.
   Update .storyline/workbench/build-board.md per build board conventions.
+
+  ## Invariant integration tests
+
+  After edge case review, write one integration test per in-scope invariant:
+
+  1. Read the changeset YAML. For every entry in `phases[].touches[]`, extract the
+     `bounded_contexts[X].aggregates[Y]` path — X is the context name, Y is the aggregate name.
+     Iterate ALL phases, not just the first.
+
+  2. For each (X, Y) pair: run `storyline view --context X` and read `aggregates[Y].invariants[]`.
+     If the aggregate has no invariants, report "no invariants defined for Y" and skip it.
+     If there are no touches at all, report "no aggregates touched — no invariant integration tests required" and stop.
+
+  3. For each invariant, classify it:
+     - **Assertable**: has observable state or emitted events you can assert in code → write a test
+     - **Architectural**: describes a process discipline with no observable state or event (e.g. "acceptance test must be written before unit test") → skip with reason "architectural"
+
+  4. Write or update `tests/integration/<context>_<aggregate>_invariants_test.<ext>` — one test per
+     assertable invariant. If the file already exists, update it (do not skip).
+     Mock only at infrastructure edges (HTTP clients, file system drivers, external APIs).
+     Do NOT mock the aggregate, command handler, or domain service.
+
+  5. Commit with a message that includes the coverage report:
+     `verify: invariant tests for [feature] — N written, N skipped (architectural), N already covered`
+     If more than 50% of in-scope invariants were skipped (any reason), add:
+     `— N% skipped, review invariant quality`
+
+  6. Check if any assertable invariant is already covered end-to-end by the acceptance test step
+     definitions (not just named in the feature file — check the step def code). If yes, mark it
+     "already covered" and do not write a duplicate test.
+
   Work from: [project directory]
 </agent-dispatch>
 

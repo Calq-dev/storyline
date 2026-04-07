@@ -35,6 +35,8 @@ Post only if another agent would change their approach:
 
 Check edge cases from discovery + blueprint invariants. Add missing sad-path, boundary, error recovery tests. Use `mcp__context7__resolve-library-id` + `mcp__context7__query-docs` for API syntax. Commit additions.
 
+**Invariant integration tests (VERIFY step):** After edge case review, write one integration test per in-scope invariant. Read `phases[].touches[]` from the changeset, extract context+aggregate names, run `storyline view --context X` for each. Write assertable invariants to `tests/integration/<context>_<aggregate>_invariants_test.<ext>`. No mocks at the aggregate or domain service boundary. Skip architectural invariants (no observable state or event) with reason. Report coverage in commit message.
+
 ## The Shared Notes Pattern
 
 ### Round 1: First Analysis
