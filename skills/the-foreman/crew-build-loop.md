@@ -37,20 +37,13 @@ For each task in the implementation changeset:
 
 <agent-dispatch subagent_type="storyline:testing-amigo">
 prompt: |
-  ## Your notes from previous sessions:
-  Read your persona memory from .storyline/personas/testing-amigo.md (may not exist yet).
+  Read persona memory: .storyline/personas/testing-amigo.md
+  Read changeset: .storyline/changesets/<cs-filename>.yaml — identify next pending task and its Gherkin scenario(s) in .storyline/features/
+  Read discovery notes: .storyline/workbench/amigo-notes/testing.md
 
-  ## Your task:
-  Read the current changeset from .storyline/changesets/<cs-filename>.yaml — identify the next pending task
-  and the Gherkin scenario(s) it corresponds to in .storyline/features/.
-
-  ## Your discovery notes:
-  Read .storyline/workbench/amigo-notes/testing.md for your notes from the discovery session.
-
-  Write the acceptance test BEFORE any implementation exists.
-  Verify the test fails (RED), commit the failing test, and report back.
+  Write the acceptance test BEFORE any implementation exists. Verify RED, commit, report back.
   Use context7 for test framework docs.
-  Read and update `.storyline/workbench/build-board.md` per build board conventions.
+  Update .storyline/workbench/build-board.md per build board conventions.
   Work from: [project directory]
 </agent-dispatch>
 
@@ -60,20 +53,13 @@ prompt: |
 
 <agent-dispatch subagent_type="storyline:developer-amigo">
 prompt: |
-  ## Your notes from previous sessions:
-  Read your persona memory from .storyline/personas/developer-amigo.md (may not exist yet).
+  Read persona memory: .storyline/personas/developer-amigo.md
+  Read changeset: .storyline/changesets/<cs-filename>.yaml — next pending task
+  Read discovery notes: .storyline/workbench/amigo-notes/developer.md
 
-  ## Your task:
-  The Testing Amigo has written a failing acceptance test. Read the next pending task from
-  .storyline/changesets/<cs-filename>.yaml.
-
-  ## Your discovery notes:
-  Read .storyline/workbench/amigo-notes/developer.md from the discovery session.
-
-  Implement until the acceptance test is GREEN. Outside-in TDD: the acceptance test is there —
-  write unit tests for the inner loop, then implement. Commit when green and report back.
+  The acceptance test is failing. Implement until GREEN. Commit, report back.
   Use context7 for framework/library docs.
-  Read and update `.storyline/workbench/build-board.md` per build board conventions.
+  Update .storyline/workbench/build-board.md per build board conventions.
   Work from: [project directory]
 </agent-dispatch>
 
@@ -83,19 +69,14 @@ prompt: |
 
 <agent-dispatch subagent_type="storyline:testing-amigo">
 prompt: |
-  ## Your notes from previous sessions:
-  Read your persona memory from .storyline/personas/testing-amigo.md (may not exist yet).
+  Read persona memory: .storyline/personas/testing-amigo.md
+  Run `git diff HEAD~1` — see what the Developer built.
+  Read discovery notes: .storyline/workbench/amigo-notes/testing.md
 
-  ## What the Developer just built:
-  Run `git diff HEAD~1` to see the Developer's commit.
-
-  ## Your discovery notes:
-  Read .storyline/workbench/amigo-notes/testing.md from the discovery session.
-
-  Confirm the acceptance test is green. Check: are the edge cases you flagged during discovery covered?
-  Add any missing tests, commit additions, and report back.
+  Confirm acceptance test is GREEN. Are the edge cases you flagged during discovery covered?
+  Add missing tests, commit, report back.
   Use context7 for test framework docs.
-  Read and update `.storyline/workbench/build-board.md` per build board conventions.
+  Update .storyline/workbench/build-board.md per build board conventions.
   Work from: [project directory]
 </agent-dispatch>
 
@@ -103,12 +84,8 @@ prompt: |
 
 <agent-dispatch subagent_type="storyline:product-amigo">
 prompt: |
-  ## The scenario that's now green:
   Read the relevant feature file in .storyline/features/.
-
-  ## Your discovery notes:
-  Read .storyline/workbench/amigo-notes/product.md from the discovery session.
-
+  Read discovery notes: .storyline/workbench/amigo-notes/product.md
   Does this match what we discussed? Is the behavior what the user expects?
   Work from: [project directory]
 </agent-dispatch>
@@ -150,19 +127,14 @@ prompt: |
 
   | Pass | Check | Skip |
   |---|---|---|
-  | **Correctness** | Logic bugs, edge cases, off-by-one, null handling, incorrect conditionals, error handling gaps | Style, naming, formatting (linters handle that) |
-  | **Invariants** | Every `invariants[]` from blueprint holds in the code. Every command validates its preconditions. | Generic "consider pattern X" suggestions |
-  | **Cross-file impact** | Changes that break assumptions in other files. Dependency chains, call sites, type contracts. | Praise, positive comments |
-  | **Security** | Injection, hardcoded secrets, auth gaps, unsafe input handling. Focus on code paths that touch user input or external APIs. | Low-risk utility code |
-  | **Test completeness** | New code paths have tests. Sad paths from feature files have test coverage. | Asserting test style preferences |
-  | **Glossary** | Code identifiers match `glossary[]` terms exactly. No drift from ubiquitous language. | |
+  | **Correctness** | Logic bugs, null handling, error handling gaps | Style, naming, formatting |
+  | **Invariants** | Every `invariants[]` from blueprint holds in the code | Generic suggestions |
+  | **Cross-file impact** | Broken assumptions, call sites, type contracts | Praise |
+  | **Security** | Injection, hardcoded secrets, auth gaps — mandatory if touching user input or external APIs | Low-risk utility code |
+  | **Test completeness** | Uncovered code paths and sad paths from feature files | Style preferences |
+  | **Glossary** | Code identifiers match `glossary[]` exactly | |
 
-  ## Rules
-  - Only flag issues with high confidence. State confidence if borderline.
-  - Every finding: severity (blocking / warning / nit), file:line, what's wrong, suggested fix.
-  - If the feature touches auth, user input, sensitive data, or external APIs — the security pass is mandatory.
-  - Do NOT comment on style, naming, formatting, or things linters catch.
-  - Do NOT add praise or positive comments.
+  Only flag high-confidence issues. Every finding: severity (blocking/warning/nit), file:line, what's wrong, fix.
 
   Work from: [project directory]
 </agent-dispatch>
@@ -198,4 +170,3 @@ git commit -m "chore: workbench cleanup after [feature name]"
 ```
 </bash-commands>
 
-> "Building's done, specs are updated, session's archived. Ready for the next job."

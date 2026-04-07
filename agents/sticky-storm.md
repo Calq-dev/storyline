@@ -35,7 +35,7 @@ Focus on scenarios without events in the blueprint.
 
 ### Step 1: Extract from Scenarios
 
-For each feature file: `When` steps → Commands, `Then` steps → Domain Events, `Given` steps → preconditions or prior Events. For each event: triggering command, actor, owning aggregate, policies (automated reactions: "when X, do Y").
+Apply Event Storming to each feature file. Map steps to commands, events, and policies. Identify owning aggregate for each.
 
 ### Step 2: Write domain_model_delta to Changeset
 
@@ -75,11 +75,7 @@ storyline stamp
 ### Step 4: Flag Hot Spots
 
 ```bash
-storyline add-question \
-  --question "What happens when payment fails after OrderPlaced?" \
-  --severity "critical" \
-  --raised-during "Sticky Storm" \
-  --affects "Ordering"
+storyline add-question --question "..." --severity "critical|important|nice_to_know" --raised-during "Sticky Storm" --affects "<context>"
 ```
 
 ### Step 5: Commit

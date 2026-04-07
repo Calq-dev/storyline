@@ -116,25 +116,12 @@ Return a structured status report as JSON:
 
 ## Rules for Status Fields
 
-- `"not_started"`: prerequisite data absent from blueprint
-- `"in_progress"`: partial data exists (e.g., some contexts have relationships but not all)
-- `"complete"`: all expected data present and internally consistent
+- `"not_started"`: prerequisite data absent
+- `"in_progress"`: partial data exists
+- `"complete"`: all expected data present and consistent
 
-For `next_recommended_action`:
-- Name the exact slash command to run
-- One sentence: what it does and where output goes
-- If all phases complete: "All design phases complete. Run `/storyline:the-surveyor` for an as-built survey to update blueprint.yaml with what was actually built."
+`next_recommended_action`: exact slash command + one sentence. If all phases complete: recommend `/storyline:the-surveyor` as-built survey.
 
-## Implementation Plan Detection
+`phase5_the_onion`: if `.storyline/plans/*.md` exist, status → `"plan_ready"`, populate `plans` with `{ filename, title, task_count }`.
 
-When `.storyline/plans/` contains one or more `*.md` files (glob `.storyline/plans/*.md`):
-- Set `phase5_the_onion.status` to `"plan_ready"`
-- Set `plans_available` to the number of matching files
-- Set `plans` to an array of `{ filename, title, task_count }` objects — parse the first `#` heading and count task items
-- Update the note to show plan filenames and task counts
-
-## Persona Agents Detection
-
-Check if `.storyline/personas/` directory exists with non-empty files:
-- Set `persona_agents.persona_agents_available` to `true` if directory has content
-- Set to `false` if directory doesn't exist or is empty
+`persona_agents.persona_agents_available`: true if `.storyline/personas/` has content.

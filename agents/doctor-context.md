@@ -37,7 +37,7 @@ Blueprint has bounded contexts, aggregates, events, and commands. Your job: REFI
 
 ### 1. Refine Bounded Context Boundaries
 
-Move aggregates between contexts or rename contexts using standard DDD context-mapping rules. Boundary decisions inform what you write to the changeset.
+Boundary decisions inform what you write to the changeset.
 
 ### 2. Write Invariants and Relationships to the Changeset
 
