@@ -1,0 +1,101 @@
+meta:
+  id: CS-2026-04-07-verify-invariant-integration-tests
+  title: verify-invariant-integration-tests
+  blueprint_version: 48
+  created_at: 2026-04-07T09:59:13.318Z
+  status: draft
+
+goal: >
+  VERIFY agents in Crew mode write one integration test per in-scope changeset invariant,
+  exercising the real code path with no domain mocks, so that bugs masked by mocked
+  fixtures are caught at VERIFY time rather than final code review.
+
+constraints:
+  - This feature is a skill/agent instruction edit — no TypeScript code to compile or run
+  - Implementation is two file edits: crew-build-loop.md (VERIFY prompt) and agents/testing-amigo.md
+  - Acceptance criteria are verified by reading the resulting instructions
+
+# Scenario execution order
+# Walking skeleton first: the VERIFY prompt edit is the primary behavior.
+# Testing amigo reinforcement second: standing rule in the agent file.
+#
+# S1 (walking skeleton): VERIFY identifies in-scope invariants from changeset touches
+# S2: Integration tests invoke the real code path without domain mocks
+# S3: Integration tests are placed in the designated directory
+# S4: VERIFY reports invariant coverage in the commit message
+# S5: VERIFY skips invariant already covered by acceptance test step definitions
+# S6: VERIFY skips architectural invariants that are not programmatically assertable
+# S7 (edge case): VERIFY flags when more than half of in-scope invariants were skipped
+# S8 (sad path): Changeset with no touches produces no invariant tests
+# S9 (sad path): Touched aggregate has no invariants defined
+
+phases:
+  - id: P1
+    title: Add invariant integration test instruction to VERIFY dispatch prompt
+    type: refactor
+    migration:
+      strategy: Edit crew-build-loop.md in place — no data migration needed
+      rollback: Revert the file to previous version via git
+    touches:
+      - bounded_contexts[Implementation].aggregates[ImplementationPlan].commands[VerifyInvariantCoverage]
+    tasks:
+      - id: T1
+        name: Edit crew-build-loop.md VERIFY dispatch prompt
+        description: >
+          Replace the current generic VERIFY prompt with explicit step-by-step
+          invariant integration test instructions covering all 9 scenarios.
+        scenarios:
+          - "VERIFY identifies in-scope invariants from changeset touches"
+          - "Integration tests invoke the real code path without domain mocks"
+          - "Integration tests are placed in the designated directory"
+          - "VERIFY reports invariant coverage in the commit message"
+          - "VERIFY skips an invariant already covered by the acceptance test step definitions"
+          - "VERIFY skips architectural invariants that are not programmatically assertable"
+          - "VERIFY flags when more than half of in-scope invariants were skipped"
+          - "Changeset with no touches produces no invariant tests"
+          - "Touched aggregate has no invariants defined"
+          - "Changeset with multiple phases touching different aggregates"
+        files:
+          - skills/the-foreman/crew-build-loop.md
+        acceptance_criteria:
+          - Prompt instructs VERIFY to read changeset phases[].touches[] and extract bounded_contexts[X].aggregates[Y] paths
+          - Prompt instructs VERIFY to run storyline view --context X to get invariants[] for each touched aggregate
+          - Prompt instructs VERIFY to iterate all phases and all touched aggregates (not just the first)
+          - Prompt states one integration test per assertable invariant goes in tests/integration/<context>_<aggregate>_invariants_test.<ext>
+          - Prompt states VERIFY writes or updates the test file (not skip if file already exists)
+          - Prompt states no mocks at aggregate or domain service boundary
+          - Prompt states coverage report goes in commit message (N written, N skipped with reasons)
+          - Prompt states architectural-invariant heuristic: "no observable state or event in text → skip with reason 'architectural'"
+          - Prompt states >50% skipped → add note "review invariant quality"
+          - Prompt states if no touches → report no tests required and skip
+          - Prompt states if aggregate has no invariants[] → report and skip
+
+  - id: P2
+    title: Reinforce invariant integration test rule in Testing Amigo agent
+    type: refactor
+    migration:
+      strategy: Edit agents/testing-amigo.md in place — no data migration needed
+      rollback: Revert the file to previous version via git
+    touches:
+      - bounded_contexts[Implementation].aggregates[ImplementationPlan].commands[VerifyInvariantCoverage]
+    tasks:
+      - id: T2
+        name: Edit agents/testing-amigo.md How You Review section
+        description: >
+          Add explicit invariant integration test step to "How You Review (Crew Mode)"
+          so the standing rule is in the persona file as well as the dispatch prompt.
+        scenarios:
+          - "VERIFY identifies in-scope invariants from changeset touches"
+        files:
+          - agents/testing-amigo.md
+        acceptance_criteria:
+          - How You Review section explicitly names invariant integration tests as a VERIFY step
+          - References tests/integration/ as the target location
+          - Notes domain boundary mock rule (no mocks at aggregate/domain service)
+
+completion_criteria:
+  - crew-build-loop.md VERIFY prompt covers all 9 scenarios from implementation.feature
+  - agents/testing-amigo.md How You Review references invariant integration tests
+  - All 9 implementation.feature VerifyInvariantCoverage scenarios traceable to prompt instructions
+
+open_questions: []

@@ -123,6 +123,16 @@ Feature: Outside-in TDD Implementation
       Then it reports "no invariants defined for <AggregateName>"
       And writes no test file for that aggregate
 
+    @must-have @edge-case
+    Scenario: Changeset with multiple phases touching different aggregates
+      Given a changeset with two phases
+      And phase 1 touches "bounded_contexts[Ordering].aggregates[Order]" with 3 invariants
+      And phase 2 touches "bounded_contexts[Payment].aggregates[PaymentRequest]" with 2 invariants
+      When the VERIFY agent runs
+      Then it iterates all phases and all touched aggregates
+      And writes integration tests for all 5 invariants across both contexts
+      And produces a combined coverage report
+
   @command:ScaffoldFromBlueprint
   Rule: Scaffold generates code skeletons from the blueprint
 
