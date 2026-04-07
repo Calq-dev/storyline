@@ -50,6 +50,79 @@ Feature: Outside-in TDD Implementation
       And sequential tasks run after their dependencies complete
       And an integration check runs the full test suite after all batches
 
+  @command:VerifyInvariantCoverage
+  Rule: VERIFY agents write one integration test per in-scope changeset invariant
+
+    @must-have
+    Scenario: VERIFY identifies in-scope invariants from changeset touches
+      Given a Crew build task has gone GREEN
+      And the changeset touches "bounded_contexts[Implementation].aggregates[Changeset]"
+      And the Changeset aggregate has 2 invariants defined in the blueprint
+      When the VERIFY agent runs
+      Then it reads the invariants for the Changeset aggregate via storyline view
+      And writes one integration test per invariant to tests/integration/
+      And all integration tests pass
+
+    @must-have
+    Scenario: Integration tests invoke the real code path without domain mocks
+      Given an invariant "delta entries are applied incrementally per scenario as acceptance tests go green"
+      When the VERIFY agent writes an integration test for this invariant
+      Then the test invokes the real command handler against real files on disk
+      And does not mock the aggregate or domain service
+      And asserts the invariant holds on the resulting state or emitted events
+
+    @must-have
+    Scenario: Integration tests are placed in the designated directory
+      Given the VERIFY agent writes a test for the Changeset aggregate in the Implementation context
+      When it saves the test file
+      Then the file is created at tests/integration/implementation_changeset_invariants_test.<ext>
+      And the test is discoverable by the project's test runner as an integration suite
+
+    @must-have
+    Scenario: VERIFY reports invariant coverage in the commit message
+      Given 3 invariants are in scope
+      And 2 are assertable runtime invariants
+      And 1 is a process discipline invariant
+      When VERIFY commits the integration tests
+      Then the commit message notes "2 written, 1 skipped (architectural)"
+
+    @must-have @sad-path
+    Scenario: VERIFY skips an invariant already covered by the acceptance test step definitions
+      Given an invariant "acceptance test must be written before unit test"
+      And the step definition "a failing acceptance test is written first" already asserts this end-to-end
+      When the VERIFY agent checks for existing coverage
+      Then it marks the invariant as "already covered" and writes no new test
+      And reports "already covered by acceptance step definitions"
+
+    @must-have @sad-path
+    Scenario: VERIFY skips architectural invariants that are not programmatically assertable
+      Given an invariant "outer loop stays red while inner loop cycles"
+      When the VERIFY agent classifies it
+      Then it identifies the invariant describes a process discipline with no observable state or event
+      And skips it with reason "architectural"
+      And includes it in the coverage report as skipped
+
+    @must-have @edge-case
+    Scenario: VERIFY flags when more than half of in-scope invariants were skipped
+      Given 4 invariants are in scope for the touched aggregates
+      And 3 are skipped as architectural or already covered
+      When VERIFY completes
+      Then it adds a note to the commit: "75% of invariants skipped — review invariant quality"
+
+    @must-have @sad-path
+    Scenario: Changeset with no touches produces no invariant tests
+      Given a changeset with no phases[].touches[] entries
+      When the VERIFY agent runs
+      Then it reports "no aggregates touched — no invariant integration tests required"
+      And writes no test files
+
+    @must-have @sad-path
+    Scenario: Touched aggregate has no invariants defined
+      Given the changeset touches an aggregate that has no invariants[] in the blueprint
+      When the VERIFY agent checks for in-scope invariants
+      Then it reports "no invariants defined for <AggregateName>"
+      And writes no test file for that aggregate
+
   @command:ScaffoldFromBlueprint
   Rule: Scaffold generates code skeletons from the blueprint
 

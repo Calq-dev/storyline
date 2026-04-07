@@ -1,8 +1,8 @@
 meta:
   project: Storyline
   created_at: '2026-04-04'
-  updated_at: '2026-04-06T19:32:26.473Z'
-  version: 47
+  updated_at: '2026-04-07T09:52:21.674Z'
+  version: 48
 tech_stack:
   language: "TypeScript, Markdown, Bash, YAML"
   framework: "Claude Code Plugin SDK"
@@ -421,6 +421,9 @@ bounded_contexts:
             feature_files:
               - "implementation.feature"
               - "scaffold.feature"
+          - name: VerifyInvariantCoverage
+            feature_files:
+              - implementation.feature
         events:
           - name: "ImplementationPlanCreated"
             payload_fields:
@@ -889,6 +892,24 @@ glossary:
           .storyline/workbench/murphy.md throughout the session. Surfaces one
           targeted critique per phase transition via AskUserQuestion — one at a
           time, never interrupting flow.
+  Invariant integration test:
+    definitions:
+      - context: Implementation
+        meaning: An integration test written by the VERIFY agent that asserts a specific
+          blueprint aggregate invariant holds against the real code path, with
+          no mocks at the domain boundary
+  In-scope invariants:
+    definitions:
+      - context: Implementation
+        meaning: The invariants[] entries for aggregates named in the changeset's
+          phases[].touches[] paths, identified by the VERIFY agent as requiring
+          integration test coverage
+  Assertable invariant:
+    definitions:
+      - context: Implementation
+        meaning: An invariant that can be expressed as a runtime assertion on state or
+          emitted events — as opposed to architectural invariants that describe
+          process discipline and cannot be programmatically checked
 gaps:
   - id: "GAP-003"
     description: "No integration tests verifying the full pipeline flow from Foreman
