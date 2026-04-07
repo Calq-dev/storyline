@@ -13,6 +13,7 @@ description: Use when an example map exists and needs to be formalized into Gher
 - ALWAYS AskUserQuestion (MCQ) for vague rules. Never plain text.
 - No implementation details in step text. Only in traceability tags.
 - Vague rules are a GATE — resolve before writing any scenario.
+- Skip any read/fetch whose output is already in this session's context.
 
 ## Inputs
 ```bash

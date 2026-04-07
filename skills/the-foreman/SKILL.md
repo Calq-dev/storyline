@@ -14,6 +14,7 @@ argument-hint: "[feature description | @backlog-file.md | build [plan-name]]"
 ## Hard Rules
 - NEVER explore codebase (no Explore/Glob/Grep/Read on source). Blueprint = codebase context.
 - Run `storyline summary` only. No blueprint → dispatch Surveyor.
+- Skip any read/fetch whose output is already in this session's context.
 - ALWAYS use TodoWrite for all plans (prefix: "Foreman:"). Write ALL todos upfront before work.
 - ALWAYS use AskUserQuestion for every decision (MCQ). Never plain-text questions.
 

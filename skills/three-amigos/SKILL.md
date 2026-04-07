@@ -14,6 +14,7 @@ If invoked with arguments (e.g., `/storyline:three-amigos order cancellation`), 
 Do NOT explore the codebase. The blueprint IS your context.
 Run `storyline summary` for project context, then read relevant feature files — nothing else.
 In full session mode, the persona AGENTS explore the code, not you.
+Skip any read/fetch whose output is already in this session's context.
 </HARD-GATE>
 
 <TOOL-REQUIREMENTS>

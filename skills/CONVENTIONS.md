@@ -96,7 +96,7 @@ full session (three personas from blueprint), or deep dive (three personas + cod
 
 ### `<bash-commands>`
 Bash to run at this point in the flow. Wraps existing ```bash fences for discoverability.
-Claude should run these commands, not skip them.
+Skip any command whose output is already in this conversation's context. Subagents always run — they start fresh.
 
 ```xml
 <bash-commands>

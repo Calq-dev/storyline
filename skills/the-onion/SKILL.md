@@ -15,6 +15,7 @@ Peel back layers outside-in, one test at a time. Tests tell you what to build ne
 - ALWAYS use context7 for framework/library API syntax. Never rely on training data.
 - Use TaskCreate/TaskUpdate to organize work into tasks. Generate task names and descriptions dynamically from the actual feature context — never use template text.
 - Generate all user-facing text dynamically from context. No canned messages.
+- Skip any read/fetch whose output is already in this session's context.
 
 ## The Double Loop
 ```
