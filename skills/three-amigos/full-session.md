@@ -143,30 +143,27 @@ Each agent reads the others' notes and appends reactions to their own file. Also
 <agent-dispatch>
 Agent (subagent_type: "storyline:product-amigo"):
   prompt: |
-    This is Round 2 — read the others and react.
-    Read: .storyline/workbench/amigo-notes/developer.md and testing.md
-    (and frontend.md / security.md if present)
-    Append reactions to .storyline/workbench/amigo-notes/product.md
+    This is Round 2 — two-step:
+    Step 1 — BEFORE reading any other notes, append `## One Thing I Think the Others Missed Entirely` to your own note with a concrete claim or the literal sentence `I couldn't find one`. This section must not echo your R1 Must Address.
+    Step 2 — Now read: .storyline/workbench/amigo-notes/developer.md and testing.md (and frontend.md / security.md if present). Append reactions to .storyline/workbench/amigo-notes/product.md.
     Update persona memory at .storyline/personas/product-amigo.md
     Use @mentions to direct questions. @user for human-only. @mister-gherkin for Mister Gherkin handovers.
     Work from: [project directory]
 
 Agent (subagent_type: "storyline:developer-amigo"):
   prompt: |
-    This is Round 2 — read the others and react.
-    Read: .storyline/workbench/amigo-notes/product.md and testing.md
-    (and frontend.md / security.md if present)
-    Append reactions to .storyline/workbench/amigo-notes/developer.md
+    This is Round 2 — two-step:
+    Step 1 — BEFORE reading any other notes, append `## One Thing I Think the Others Missed Entirely` to your own note with a concrete claim or the literal sentence `I couldn't find one`. Must not echo your R1 Must Address.
+    Step 2 — Read: .storyline/workbench/amigo-notes/product.md and testing.md (and frontend.md / security.md if present). Append reactions to .storyline/workbench/amigo-notes/developer.md.
     Update persona memory at .storyline/personas/developer-amigo.md
     Use @mentions, @user, @mister-gherkin conventions.
     Work from: [project directory]
 
 Agent (subagent_type: "storyline:testing-amigo"):
   prompt: |
-    This is Round 2 — read the others and react.
-    Read: .storyline/workbench/amigo-notes/product.md and developer.md
-    (and frontend.md / security.md if present)
-    Append reactions to .storyline/workbench/amigo-notes/testing.md
+    This is Round 2 — two-step:
+    Step 1 — BEFORE reading any other notes, append `## One Thing I Think the Others Missed Entirely` to your own note with a concrete claim or the literal sentence `I couldn't find one`. Must not echo your R1 Must Address.
+    Step 2 — Read: .storyline/workbench/amigo-notes/product.md and developer.md (and frontend.md / security.md if present). Append reactions to .storyline/workbench/amigo-notes/testing.md.
     Update persona memory at .storyline/personas/testing-amigo.md
     Use @mentions, @user, @mister-gherkin conventions.
     Work from: [project directory]
@@ -217,7 +214,7 @@ storyline amigo-score
 ```
 </bash-commands>
 
-Reads the amigo notes and writes `.storyline/workbench/amigo-notes/scorecard.yaml`. Deterministic metrics only — tier counts, new-catch detection, dissent markers, agreement overlap, sensitive-aggregate hit. Exits `0` for GREEN/YELLOW, `2` for RED hard gate.
+Reads the amigo notes and writes `.storyline/workbench/amigo-notes/scorecard.yaml`. Deterministic metrics only — tier counts, new-catch detection, dissent markers, agreement overlap, sensitive-aggregate hit, and per-amigo forced-divergence classification (`substantive | disclaimed | missing`). When `.storyline/.session-id` is set, the scorecard is also snapshotted to `.storyline/sessions/<session-id>/scorecard.yaml` so historical trending across runs is possible. Exits `0` for GREEN/YELLOW, `2` for RED hard gate.
 
 **Handle the verdict before F4:**
 
@@ -251,7 +248,7 @@ Read all amigo notes, then build the example map in this order:
 ## Step F5: Present to User
 
 Show:
-- **Session ROI** — one line from the scorecard: `rating  new_catches=N  dissent=N  overlap=N.NN  peer:user=N.NN`. If YELLOW, also show the `verdict.reasons` list so the user understands what was weak.
+- **Session ROI** — one line from the scorecard: `rating  new_catches=N  dissent=N  overlap=N.NN  peer:user=N.NN  forced_divergence=N/M`. The `forced_divergence` field counts how many amigos wrote a substantive `One Thing I Think the Others Missed Entirely` section out of the total dispatched (the rest were disclaimed or missing) — it's an audit signal, not a gate in v1. If YELLOW, also show the `verdict.reasons` list so the user understands what was weak.
 - Proposed rules (which persona surfaced them)
 - Examples per rule
 - Open questions (grouped by who can answer)

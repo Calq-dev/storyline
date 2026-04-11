@@ -15,7 +15,7 @@
  * fire, which is the correct failure direction.
  */
 
-import { readFileSync, writeFileSync, existsSync, readdirSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 
@@ -23,6 +23,12 @@ const NOTES_DIR = ".storyline/workbench/amigo-notes";
 const OUTPUT_REL = join(NOTES_DIR, "scorecard.yaml");
 const BLUEPRINT_PATH = ".storyline/blueprint.yaml";
 const SESSION_ID_PATH = ".storyline/.session-id";
+const SESSIONS_DIR = ".storyline/sessions";
+
+const FORCED_DIVERGENCE_HEADER = "One Thing I Think the Others Missed Entirely";
+const FORCED_DIVERGENCE_FALLBACK = "i couldn't find one";
+const FORCED_DIVERGENCE_MIN_WORDS = 20;
+const FORCED_DIVERGENCE_REHASH_THRESHOLD = 0.8;
 
 const AMIGO_FILES = ["product.md", "developer.md", "testing.md", "frontend.md", "security.md"];
 
@@ -71,6 +77,7 @@ interface AmigoScore {
   dissent_markers: number;
   r3_responses: number;
   r3_empty: boolean;
+  r2_forced_divergence: "substantive" | "disclaimed" | "missing";
 }
 
 interface BlueprintSignals {
@@ -152,6 +159,33 @@ function readFileOrNull(path: string): string | null {
   return readFileSync(path, "utf-8");
 }
 
+function extractForcedDivergenceBody(r2: string): string | null {
+  const re = new RegExp(`^##\\s*${FORCED_DIVERGENCE_HEADER}\\s*\\n([\\s\\S]*?)(?=\\n##\\s|$)`, "mi");
+  const m = r2.match(re);
+  if (!m) return null;
+  return m[1].trim();
+}
+
+function classifyForcedDivergence(
+  r2: string,
+  mustStems: Set<string>,
+): "substantive" | "disclaimed" | "missing" {
+  const body = extractForcedDivergenceBody(r2);
+  if (body === null) return "missing";
+  if (body.length === 0) return "disclaimed";
+  if (body.toLowerCase().includes(FORCED_DIVERGENCE_FALLBACK)) return "disclaimed";
+  const words = body.split(/\s+/).filter(Boolean);
+  if (words.length < FORCED_DIVERGENCE_MIN_WORDS) return "disclaimed";
+  // Rehash check: stems of body heavily covered by R1 Must Address stems
+  const bodyStems = stems(body);
+  if (bodyStems.size === 0) return "disclaimed";
+  let overlap = 0;
+  for (const s of bodyStems) if (mustStems.has(s)) overlap++;
+  const coverage = overlap / bodyStems.size;
+  if (coverage >= FORCED_DIVERGENCE_REHASH_THRESHOLD) return "disclaimed";
+  return "substantive";
+}
+
 function scoreAmigo(content: string): { score: AmigoScore; mustStems: Set<string> } {
   const { r1, r2, r3 } = splitRounds(content);
   const tiers = extractTiers(r1);
@@ -166,6 +200,8 @@ function scoreAmigo(content: string): { score: AmigoScore; mustStems: Set<string
   for (const item of tiers.must) {
     for (const s of stems(item)) mustStems.add(s);
   }
+
+  const forcedDivergence = classifyForcedDivergence(r2, mustStems);
 
   // R2 new catches: bullets in R2 with <50% stem overlap against R1 aggregate
   const r2Bullets = bulletsUnder(r2.replace(/^## React to Others.*?\n/i, ""));
@@ -205,6 +241,7 @@ function scoreAmigo(content: string): { score: AmigoScore; mustStems: Set<string
       dissent_markers: dissent,
       r3_responses: r3Responses,
       r3_empty: r3Empty,
+      r2_forced_divergence: forcedDivergence,
     },
     mustStems,
   };
@@ -329,6 +366,9 @@ function main(): void {
   const totalPeer = scores.reduce((s, a) => s + a.peer_mentions, 0);
   const totalUser = scores.reduce((s, a) => s + a.user_mentions, 0);
   const totalTierShifts = scores.reduce((s, a) => s + a.r2_tier_shifts, 0);
+  const forcedDivergenceSubstantive = scores.filter(a => a.r2_forced_divergence === "substantive").length;
+  const forcedDivergenceDisclaimed = scores.filter(a => a.r2_forced_divergence === "disclaimed").length;
+  const forcedDivergenceMissing = scores.filter(a => a.r2_forced_divergence === "missing").length;
   const peerUserRatio =
     totalUser === 0
       ? (totalPeer === 0 ? 0 : 99)
@@ -376,6 +416,9 @@ function main(): void {
       total_tier_shifts: totalTierShifts,
       peer_to_user_ratio: peerUserRatio,
       agreement_overlap: agreementOverlap,
+      forced_divergence_substantive_count: forcedDivergenceSubstantive,
+      forced_divergence_disclaimed_count: forcedDivergenceDisclaimed,
+      forced_divergence_missing_count: forcedDivergenceMissing,
     },
     verdict: {
       rating,
@@ -389,16 +432,33 @@ function main(): void {
   };
 
   const outPath = join(cwd, OUTPUT_REL);
-  writeFileSync(outPath, stringifyYaml(scorecard));
+  const scorecardYaml = stringifyYaml(scorecard);
+  writeFileSync(outPath, scorecardYaml);
+
+  // Session archival — snapshot the scorecard under .storyline/sessions/<id>/
+  // so historical trending across runs is possible. v1: raw dump, no index.
+  const sessionId = scorecard.session_id;
+  let archivePath: string | null = null;
+  if (sessionId && sessionId !== "unknown") {
+    const archiveDir = join(cwd, SESSIONS_DIR, sessionId);
+    mkdirSync(archiveDir, { recursive: true });
+    archivePath = join(archiveDir, "scorecard.yaml");
+    writeFileSync(archivePath, scorecardYaml);
+  }
 
   // One-line stdout summary
+  const fdSubstantive = forcedDivergenceSubstantive;
+  const fdTotal = scores.length;
   console.log(
-    `[amigo-score] ${rating}  new_catches=${totalNewCatches}  dissent=${totalDissent}  overlap=${agreementOverlap}  peer:user=${peerUserRatio}`,
+    `[amigo-score] ${rating}  new_catches=${totalNewCatches}  dissent=${totalDissent}  overlap=${agreementOverlap}  peer:user=${peerUserRatio}  forced_divergence=${fdSubstantive}/${fdTotal}`,
   );
   if (hardGate) {
     console.log(`[amigo-score] HARD GATE: ${hardGateReason}`);
   }
   console.log(`[amigo-score] Written to ${OUTPUT_REL}`);
+  if (archivePath) {
+    console.log(`[amigo-score] Archived to ${join(SESSIONS_DIR, sessionId, "scorecard.yaml")}`);
+  }
 
   // Exit code: 0 for GREEN/YELLOW, 2 for RED hard gate
   process.exit(hardGate ? 2 : 0);

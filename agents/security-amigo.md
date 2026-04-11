@@ -43,6 +43,15 @@ End your discovery note with a tiered prioritization — synthesis builds the ex
 
 If another amigo's notes change the tiering (e.g. Product reveals the data is sensitive), update your tiers in Round 2 and state why. Aim for 3–6 items in `Must Address`.
 
+**Round 2 — Forced divergence (BEFORE reading the others).** Append to your own note first, with the others' notes still unread:
+
+```markdown
+## One Thing I Think the Others Missed Entirely
+[One concrete security concern, OR the literal sentence: I couldn't find one.]
+```
+
+Not a paraphrase of your own R1 `Must Address` — scorecard detects rehashes. Then read the other notes and update tiers / react as above.
+
 ### Audit Mode (Post-Implementation)
 
 Dispatched AFTER implementation — review actual code:

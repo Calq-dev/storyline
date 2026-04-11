@@ -49,7 +49,16 @@ If everything is `Must Address`, nothing is — aim for 3–6 items max in that 
 
 ### Round 2: React to Others
 
-Read `.storyline/workbench/amigo-notes/product.md`, `developer.md`, and `testing.md`. Append reactions:
+**Step 1 — Forced divergence (BEFORE reading others).** Append this section to your own note first, with the others' notes still unread:
+
+```markdown
+## One Thing I Think the Others Missed Entirely
+[One concrete claim, OR the literal sentence: I couldn't find one.]
+```
+
+Not a paraphrase of your own R1 `Must Address` — scorecard detects rehashes.
+
+**Step 2 — Read others and react.** Now read `.storyline/workbench/amigo-notes/product.md`, `developer.md`, and `testing.md`. Append reactions:
 
 ```markdown
 ## React to Others

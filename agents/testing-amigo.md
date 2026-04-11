@@ -75,7 +75,16 @@ If everything is `Must Address`, nothing is — aim for 3–6 items max in that 
 
 ### Round 2: React to Others
 
-Read `product.md` and `developer.md`. Append `## React to Others`.
+**Step 1 — Forced divergence (BEFORE reading others).** Append first, with the others' notes still unread:
+
+```markdown
+## One Thing I Think the Others Missed Entirely
+[One concrete claim, OR the literal sentence: I couldn't find one.]
+```
+
+Not a paraphrase of your own R1 `Must Address` — scorecard detects rehashes.
+
+**Step 2 — Read others and react.** Now read `product.md` and `developer.md`. Append `## React to Others`.
 Use `@mentions` to direct questions. `@user` = human-only. `@mister-gherkin` = Mister Gherkin handover.
 If another amigo's concerns change the tiering of something in your `## Prioritized Findings`, update it and state why.
 Update persona memory. NOT done until memory updated.
