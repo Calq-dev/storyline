@@ -980,7 +980,7 @@ function cmdAddContext(args: { name: string }, cwd: string) {
   console.log(`Added bounded context '${args.name}'.`);
 }
 
-function cmdAddAggregate(args: { context: string; name: string }, cwd: string) {
+function cmdAddAggregate(args: { context: string; name: string; sensitive?: boolean }, cwd: string) {
   const [bp, data] = requireBlueprint(cwd);
   const ctx = findContext(data, args.context);
   if (ctx === null) {
@@ -1001,7 +1001,7 @@ function cmdAddAggregate(args: { context: string; name: string }, cwd: string) {
     aggs = findDocNode(doc, ["bounded_contexts", ctxIndex, "aggregates"]);
   }
 
-  const agg = doc.createNode({
+  const aggPayload: Record<string, unknown> = {
     name: args.name,
     root_entity: args.name,
     entities: [],
@@ -1009,11 +1009,15 @@ function cmdAddAggregate(args: { context: string; name: string }, cwd: string) {
     commands: [],
     events: [],
     invariants: [],
-  });
+  };
+  if (args.sensitive) aggPayload.sensitive = true;
+
+  const agg = doc.createNode(aggPayload);
   aggs.add(agg);
 
   saveDocument(bp, doc);
-  console.log(`Added aggregate '${args.name}' to context '${args.context}'.`);
+  const tag = args.sensitive ? " (sensitive)" : "";
+  console.log(`Added aggregate '${args.name}'${tag} to context '${args.context}'.`);
 }
 
 function cmdAddEvent(args: { context: string; aggregate: string; name: string; payload: string }, cwd: string) {
@@ -1811,7 +1815,7 @@ Commands:
   validate [--strict]                            Validate the blueprint schema
   stamp                                          Validate then bump version/date
   add-context <name>                             Add a bounded context
-  add-aggregate --context X --name Y             Add an aggregate
+  add-aggregate --context X --name Y [--sensitive]  Add an aggregate (mark --sensitive if it touches auth, PII, money)
   add-event --context X --aggregate Y --name Z [--payload "fields"]
   add-command --context X --aggregate Y --name Z [--feature-files "files"]
   add-glossary --term X --context Y --meaning Z  Add a glossary term
@@ -1883,6 +1887,7 @@ function main() {
         options: {
           context: { type: "string" },
           name: { type: "string" },
+          sensitive: { type: "boolean", default: false },
         },
         strict: true,
       });
@@ -1890,7 +1895,7 @@ function main() {
         console.error("Error: --context and --name are required for add-aggregate");
         process.exit(1);
       }
-      cmdAddAggregate({ context: values.context, name: values.name }, cwd);
+      cmdAddAggregate({ context: values.context, name: values.name, sensitive: values.sensitive ?? false }, cwd);
       break;
     }
 

@@ -21,6 +21,28 @@ Dispatched BEFORE implementation — work at the design level, not code:
 
 Do NOT explore the codebase in discovery mode.
 
+End your discovery note with a tiered prioritization — synthesis builds the example map from `Must Address` first, so anything outside that tier is at risk of being dropped:
+
+```markdown
+## Prioritized Findings
+
+### Must Address
+- [security concern] — Why: [one line on the attack, data exposure, or compliance gap this prevents]
+
+### Should Consider
+- [concern]
+
+### Noted
+- [concern]
+
+## Top 3 Security Concerns
+1. ...
+2. ...
+3. ...
+```
+
+If another amigo's notes change the tiering (e.g. Product reveals the data is sensitive), update your tiers in Round 2 and state why. Aim for 3–6 items in `Must Address`.
+
 ### Audit Mode (Post-Implementation)
 
 Dispatched AFTER implementation — review actual code:

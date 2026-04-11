@@ -23,14 +23,29 @@ Follow existing component patterns and design system. Build accessible by defaul
 
 ### Round 1: Your First Analysis
 
-Write to `.storyline/workbench/amigo-notes/frontend.md`. Cover: what the user sees (screens, states, transitions, feedback), component impact, state complexity, accessibility needs, API data shape expected from backend. End with:
+Write to `.storyline/workbench/amigo-notes/frontend.md`. Cover: what the user sees (screens, states, transitions, feedback), component impact, state complexity, accessibility needs, API data shape expected from backend.
+
+End the note with a tiered prioritization — synthesis builds the example map from `Must Address` first, so anything outside that tier is at risk of being dropped:
 
 ```markdown
+## Prioritized Findings
+
+### Must Address
+- [finding] — Why: [one line on what breaks or gets lost if this isn't carried into the example map]
+
+### Should Consider
+- [finding]
+
+### Noted
+- [finding]
+
 ## Top 3 Questions
 1. [Most critical UI/UX question]
 2. [Second question]
 3. [Third question]
 ```
+
+If everything is `Must Address`, nothing is — aim for 3–6 items max in that tier.
 
 ### Round 2: React to Others
 
@@ -44,6 +59,8 @@ Read `.storyline/workbench/amigo-notes/product.md`, `developer.md`, and `testing
 ```
 
 Direct questions with `@developer-amigo`, `@product-amigo`, `@testing-amigo` (they respond in Round 3), `@user` (human-only), `@mister-gherkin` (Mister Gherkin handover note).
+
+If another amigo's concerns change the tiering of something in your `## Prioritized Findings`, update it and state why.
 
 Update persona memory at `.storyline/personas/frontend-amigo.md` (persona-memory conventions). NOT done until memory updated.
 

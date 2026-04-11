@@ -39,6 +39,9 @@ if [ -z "$FIRST_ARG" ]; then
   echo "" >&2
   echo "Scaffold commands:" >&2
   echo "  scaffold --model <path> --output <dir> --lang typescript|python" >&2
+  echo "" >&2
+  echo "Amigo scoring:" >&2
+  echo "  amigo-score                                    Score the current Three Amigos session (zero LLM calls)" >&2
   exit 1
 elif [ "$FIRST_ARG" = "changeset" ]; then
   shift
@@ -46,6 +49,9 @@ elif [ "$FIRST_ARG" = "changeset" ]; then
 elif [ "$FIRST_ARG" = "scaffold" ]; then
   shift
   exec node --import "${NM}/tsx/dist/esm/index.mjs" "${SCRIPT_DIR}/scripts/scaffold.ts" "$@"
+elif [ "$FIRST_ARG" = "amigo-score" ]; then
+  shift
+  exec node --import "${NM}/tsx/dist/esm/index.mjs" "${SCRIPT_DIR}/scripts/amigo-score.ts" "$@"
 else
   exec node --import "${NM}/tsx/dist/esm/index.mjs" "${SCRIPT_DIR}/scripts/blueprint.ts" "$@"
 fi

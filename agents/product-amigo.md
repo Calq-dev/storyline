@@ -21,14 +21,29 @@ Do NOT explore the codebase. Work at the business level.
 
 ### Round 1: Your First Analysis
 
-Write to `.storyline/workbench/amigo-notes/product.md`. Cover: what the user really wants (intent behind the request), what already exists that we build on or conflicts with, scope observations, business risks. End with:
+Write to `.storyline/workbench/amigo-notes/product.md`. Cover: what the user really wants (intent behind the request), what already exists that we build on or conflicts with, scope observations, business risks.
+
+End the note with a tiered prioritization of everything you surfaced — the synthesis step builds the example map from `Must Address` first, so anything you leave out of that tier is at real risk of being lost:
 
 ```markdown
+## Prioritized Findings
+
+### Must Address
+- [finding] — Why: [one line: what breaks or gets lost if this isn't carried into the example map]
+
+### Should Consider
+- [finding]
+
+### Noted
+- [finding]
+
 ## Top 3 Questions
 1. [Most critical business/scope question]
 2. [Second question]
 3. [Third question]
 ```
+
+Be honest about the tiering — if everything is `Must Address`, nothing is. Aim for 3–6 `Must Address` items max.
 
 ### Round 2: React to Others
 
@@ -41,6 +56,8 @@ Read `.storyline/workbench/amigo-notes/developer.md` and `testing.md`. Append re
 ```
 
 Direct questions with `@developer-amigo`, `@testing-amigo` (they respond in Round 3), `@user` (human-only), `@mister-gherkin` (Mister Gherkin handover note).
+
+If another amigo's notes changed your mind about priority — something you tiered as `Noted` is actually `Must Address` in light of their concerns, or vice versa — update your `## Prioritized Findings` section accordingly. State the reason briefly.
 
 Update persona memory at `.storyline/personas/product-amigo.md` (persona-memory conventions). NOT done until memory updated.
 

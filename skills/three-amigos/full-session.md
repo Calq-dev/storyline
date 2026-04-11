@@ -209,21 +209,49 @@ If Frontend Amigo was dispatched, also dispatch in Round 3 with the same pattern
 
 Wait for all agents to finish.
 
+## Step F3c: Score the Session (zero LLM calls)
+
+<bash-commands>
+```bash
+storyline amigo-score
+```
+</bash-commands>
+
+Reads the amigo notes and writes `.storyline/workbench/amigo-notes/scorecard.yaml`. Deterministic metrics only — tier counts, new-catch detection, dissent markers, agreement overlap, sensitive-aggregate hit. Exits `0` for GREEN/YELLOW, `2` for RED hard gate.
+
+**Handle the verdict before F4:**
+
+- **GREEN** → session earned its tokens. Continue to F4. Surface the one-line summary in F5.
+- **YELLOW** → note the warning. Continue to F4. Show the scorecard reasons in F5 alongside the example map so the user sees which signals were weak.
+- **RED (hard gate)** → stop. A sensitive aggregate was discussed with zero dissent and zero Round 2 new catches. Do NOT proceed to F4. Present the scorecard to the user and require one of:
+  1. **Re-run with `deep_dive: true`** (forces Developer/Testing to read actual code — breaks shared-prior groupthink on library semantics)
+  2. **Add a Security Amigo** to the crew and re-run Rounds 1–3 (different system prompt = different attention biases on the same input)
+  3. **Documented override** — user explicitly accepts the risk in writing; record it as a `best_guess` assumption in the example map with `confidence: low`
+
+The RED trigger exists because the worst failure mode of the ritual is three amigos confidently agreeing on a security, concurrency, or money-handling concern that all three got wrong from the same training prior. When the scorecard shows zero dissent AND a sensitive aggregate, the output is a false-confidence signal and should not be trusted downstream.
+
 ## Step F4: Synthesize the Discussion
 
-Read all amigo notes. Build the example map by:
+Each amigo ends their note with a `## Prioritized Findings` section tiered into `Must Address` / `Should Consider` / `Noted`. Use the tiers — don't try to re-rank the full wall of notes yourself.
 
-1. **Extracting rules** from findings and top questions across all perspectives
-2. **Creating examples** per rule — using concrete scenarios from the notes
-3. **Listing open questions** — combining all, deduplicating, noting agreements/disagreements
-4. **Flagging risks** — from all perspectives
-5. **Highlighting the discussion** — where did they challenge each other? What changed in Round 2?
-6. **Collecting @user mentions** — grep all notes for `@user`; these become Step F5 questions
-7. **Collecting @mister-gherkin mentions** — grep for `@mister-gherkin`; pass to Mister Gherkin in Phase 2
+Read all amigo notes, then build the example map in this order:
+
+1. **Union of `Must Address` across all amigos** → every item becomes either a rule, an example, or an open question in the map. Nothing in this tier may be silently dropped. If two amigos flagged related concerns, merge them but keep both rationales visible.
+2. **Cross-perspective synthesis** — this is where you add value beyond the tiers: scan `Should Consider` for items that become critical when combined with another amigo's `Must Address` (e.g. Product's "noted" data field is a Security `Must Address` because it's PII). Promote those into the map.
+3. **`Should Consider` sweep** → fold in remaining items that fit naturally as rules, examples, or questions. Ones that don't fit can be left in the notes.
+4. **`Noted` tier is context only** — do not pull from it unless you're filling a gap left by the tiers above.
+5. **Open questions** — combine from `Top 3 Questions` sections + any unresolved `@mentions`, dedupe, note agreements/disagreements.
+6. **Risks** — pull from `Must Address` items that describe risks rather than rules, plus any Round 2 disagreements.
+7. **Highlighting the discussion** — where did amigos challenge each other? What tier changes happened in Round 2? Surface these as decisions the user should see.
+8. **Collecting @user mentions** — grep all notes for `@user`; these become Step F5 questions.
+9. **Collecting @mister-gherkin mentions** — grep for `@mister-gherkin`; pass to Mister Gherkin in Phase 2.
+
+**Coverage check before presenting:** for each amigo, count their `Must Address` items and confirm every one is represented somewhere in the map (rule / example / question / risk). If any are missing, either add them or explicitly note to the user why they were excluded — never silently.
 
 ## Step F5: Present to User
 
 Show:
+- **Session ROI** — one line from the scorecard: `rating  new_catches=N  dissent=N  overlap=N.NN  peer:user=N.NN`. If YELLOW, also show the `verdict.reasons` list so the user understands what was weak.
 - Proposed rules (which persona surfaced them)
 - Examples per rule
 - Open questions (grouped by who can answer)

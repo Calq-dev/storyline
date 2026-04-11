@@ -47,7 +47,29 @@ TaskCreate — "Testing Amigo Round 3: respond to @testing-amigo mentions"
 ```
 Chain via `TaskUpdate addBlockedBy`. Mark Round 1 `in_progress`.
 
-Write to `.storyline/workbench/amigo-notes/testing.md`. End with `## Top 3 Questions`.
+Write to `.storyline/workbench/amigo-notes/testing.md`.
+
+End with a tiered prioritization — synthesis builds the example map from `Must Address` first, so anything outside that tier is at risk of being dropped:
+
+```markdown
+## Prioritized Findings
+
+### Must Address
+- [finding] — Why: [one line on what breaks or gets lost if this isn't carried into the example map]
+
+### Should Consider
+- [finding]
+
+### Noted
+- [finding]
+
+## Top 3 Questions
+1. ...
+2. ...
+3. ...
+```
+
+If everything is `Must Address`, nothing is — aim for 3–6 items max in that tier.
 
 `TaskUpdate: Round 1 → completed`
 
@@ -55,6 +77,7 @@ Write to `.storyline/workbench/amigo-notes/testing.md`. End with `## Top 3 Quest
 
 Read `product.md` and `developer.md`. Append `## React to Others`.
 Use `@mentions` to direct questions. `@user` = human-only. `@mister-gherkin` = Mister Gherkin handover.
+If another amigo's concerns change the tiering of something in your `## Prioritized Findings`, update it and state why.
 Update persona memory. NOT done until memory updated.
 
 `TaskUpdate: Round 2 → completed`
