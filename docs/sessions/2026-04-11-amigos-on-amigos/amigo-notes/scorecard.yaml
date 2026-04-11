@@ -1,0 +1,67 @@
+session_id: 4c288b54-3ef6-454d-a1fd-12a450229a2d
+generated_at: 2026-04-11T09:41:08.172Z
+blueprint_signals:
+  contexts_touched: 1
+  aggregates_touched: 1
+  sensitive_aggregate_hit: true
+  sensitive_aggregates_named: []
+  detection_source: keyword-fallback
+amigos:
+  product:
+    r1_must_address_count: 3
+    r1_should_count: 4
+    r1_noted_count: 3
+    r1_must_caps_ok: true
+    r2_react_word_count: 1793
+    r2_new_catches: 26
+    r2_tier_shifts: 6
+    peer_mentions: 8
+    user_mentions: 2
+    dissent_markers: 11
+    r3_responses: 3
+    r3_empty: false
+  developer:
+    r1_must_address_count: 4
+    r1_should_count: 5
+    r1_noted_count: 5
+    r1_must_caps_ok: true
+    r2_react_word_count: 1156
+    r2_new_catches: 18
+    r2_tier_shifts: 1
+    peer_mentions: 13
+    user_mentions: 12
+    dissent_markers: 23
+    r3_responses: 4
+    r3_empty: false
+  testing:
+    r1_must_address_count: 3
+    r1_should_count: 4
+    r1_noted_count: 4
+    r1_must_caps_ok: true
+    r2_react_word_count: 1968
+    r2_new_catches: 23
+    r2_tier_shifts: 3
+    peer_mentions: 8
+    user_mentions: 6
+    dissent_markers: 21
+    r3_responses: 4
+    r3_empty: false
+session_totals:
+  total_new_catches: 67
+  total_dissent: 55
+  total_tier_shifts: 10
+  peer_to_user_ratio: 1.45
+  agreement_overlap: 0.04
+verdict:
+  rating: GREEN
+  reasons:
+    - 67 new catches in Round 2 across amigos
+    - 55 dissent markers; agreement overlap 0.04
+    - peer:user mention ratio 1.45
+  hard_gate:
+    triggered: false
+    reason: null
+cost_estimate:
+  prompt_caching_verified: unknown
+  note: Until verified in the plugin's sub-agent dispatch code, all amigo
+    token-cost estimates are off by an unknown factor.
