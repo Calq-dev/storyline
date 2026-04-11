@@ -29,9 +29,17 @@ Post only if another agent would change their approach:
 [1-3 sentences]
 ```
 
-## How You Build (Crew Mode)
+## How You Build (Crew / Parallel Mode)
 
-Outside-in TDD. Blueprint invariants = test cases. Use `mcp__context7__resolve-library-id` + `mcp__context7__query-docs` for API syntax. Commit when green.
+When The Foreman dispatches you for a GREEN step, the failing test suite and your per-task build brief already exist. Read these and nothing else:
+
+1. `.storyline/workbench/build-briefs/<task-id>.yaml` — authoritative handoff. `green_when`, `files_in_scope`, `files_off_limits`, `glossary_terms`, `contracts`, `framework_notes`.
+2. Only the test files listed in `green_when`.
+3. `.storyline/workbench/build-board.md` — scan for entries affecting your task id.
+
+Do NOT read: the changeset, feature files, `storyline summary`, `storyline view`, amigo-notes, tech-choices.md. Everything you need is in the brief. If something critical is missing, post on the build board as `brief-gap` and stop — do not guess from the blueprint.
+
+Drive the tests in `green_when` to GREEN via inner-loop TDD: your own failing unit test → simplest pass → refactor. Unit tests go next to the code, never in `tests/acceptance/` or `tests/integration/`. Stay inside `files_in_scope`. Use `mcp__context7__resolve-library-id` + `mcp__context7__query-docs` for API syntax. Commit with `feat: [feature] — [task name] green`.
 
 ## The Shared Notes Pattern
 

@@ -1,7 +1,6 @@
 # Parallel Build
 
-The Foreman divides independent tasks across multiple agents for faster development.
-Each agent gets the same base context (blueprint + changeset + project conventions) plus their specific task scope.
+The Foreman divides independent tasks across multiple agents for faster development. Every agent is a cold start — no shared memory between dispatches. The suite + per-task build briefs from Phase 0 are the only handoff.
 
 ---
 
@@ -14,14 +13,15 @@ Recommend parallel build when:
 
 Do NOT use when:
 - Tasks share the same files or have tight ordering dependencies
-- Walking skeleton must be built first before other tasks make sense
+- Walking skeleton exposes risk the Foreman hasn't seen yet (run crew mode first, then switch)
 
 ---
 
-## Step 0: Initialize build board
+## Step 0: Initialize build board + brief folder
 
 ```bash
 echo "# Build Board\n" > .storyline/workbench/build-board.md
+mkdir -p .storyline/workbench/build-briefs
 ```
 
 ## Step 1: Dependency analysis
@@ -32,65 +32,47 @@ Read the changeset. Classify each task:
 |---|---|
 | **Independent** | Touches files no other task touches. Can run in parallel. |
 | **Sequential** | Depends on output of another task (shared aggregate, event contract, etc.). Must wait. |
-| **Walking skeleton** | First end-to-end happy path. Always runs first, alone. |
+| **Walking skeleton** | First end-to-end happy path. Fused into Batch 1 as the sequential head (see Step 3). |
 
 Group independent tasks into parallel batches. Sequential tasks run after their dependencies complete.
 
 Present the execution plan to user via MCQ:
 ```
-Batch 1 (sequential): [walking skeleton task]
-Batch 2 (parallel):   [task A] + [task B] + [task C]
-Batch 3 (parallel):   [task D] + [task E]
-Batch 4 (sequential): [integration task depending on batch 2+3]
+Phase 0  (sequential): Testing Amigo writes failing suite + per-task build briefs
+Batch 1  (sequential head): [walking skeleton task]
+Batch 1  (parallel tail):   [task A] + [task B] + [task C]   # starts after skeleton commits
+Batch 2  (parallel):        [task D] + [task E]
+Batch 3  (sequential):      [integration task depending on batch 1+2]
 ```
 
 ---
 
-## Step 2: Build the walking skeleton
+## Step 2: Phase 0 — suite + build briefs
 
-First batch is always sequential — the walking skeleton task, using the same RED → GREEN → VERIFY loop from crew-build-loop.md.
+Dispatch exactly as defined in `crew-build-loop.md` → "Phase 0: Upfront failing test suite + build briefs". One Testing Amigo writes the whole suite AND one brief per task. Dispatch inline (not background) — every later batch depends on this commit.
 
-This establishes the end-to-end structure other tasks build on.
+**Fast path:** if the changeset has ≤3 tasks, parallel build is the wrong mode — switch to the crew-build-loop fast path where the Foreman writes the suite itself.
+
+After commit: surface one Murphy critique, then continue.
 
 ---
 
-## Step 3: Parallel batches
+## Step 3: Batch 1 — walking skeleton + parallel tail
 
-For each parallel batch, dispatch agents simultaneously using `run_in_background: true`.
+Batch 1 is split into two phases that share the same brief-based dev dispatch template:
 
-Every agent gets the same base prompt plus their task-specific scope:
+**3a. Sequential head — walking skeleton task.** Dispatch one dev agent, inline. Wait for commit. This establishes the end-to-end bedrading other tasks build on.
 
-<agent-dispatch-template>
-prompt: |
-  ## Project context
-  Read `.storyline/changesets/<cs-filename>.yaml` for the full plan.
-  Run `storyline summary` for blueprint context.
-  Read `.storyline/features/*.feature` for the behavior specifications.
-  Read `.storyline/workbench/tech-choices.md` (if exists) for framework decisions.
+**3b. Parallel tail — remaining independent tasks whose dependencies are satisfied by the skeleton.** Dispatch simultaneously with `run_in_background: true`.
 
-  ## Your task
-  You are building task [N]: [task name]
-  Scope: [files to create/modify from changeset]
-  Scenarios: [Gherkin scenario(s) this task implements]
+Both use the dev dispatch template below.
 
-  ## How to build
-  1. Write a failing acceptance test from the Gherkin scenario
-  2. Inner loop TDD: failing unit test → simplest pass → refactor
-  3. Acceptance test green → commit
-  4. Use context7 for framework/library API docs
+---
 
-  ## Boundaries
-  - ONLY touch files in your scope. Do not modify files outside your task.
-  - If you discover you need something from another task's scope, note it and move on.
-  - Commit your work with: `git commit -m "feat: [feature] — [task name] green"`
+## Step 4: Later parallel batches
 
-  ## Build board
-  Read and update `.storyline/workbench/build-board.md` per build board conventions.
+For each remaining batch, dispatch independent tasks simultaneously with `run_in_background: true`. Wait for all agents in the batch, then check for conflicts:
 
-  Work from: [project directory]
-</agent-dispatch-template>
-
-Wait for all agents in the batch to complete. Check for conflicts:
 ```bash
 git status
 ```
@@ -99,13 +81,42 @@ If conflicts between agents → resolve, re-run tests, commit the merge.
 
 ---
 
-## Step 4: Sequential tasks
+## Dev agent dispatch template (used by Step 3 and Step 4)
 
-Tasks with dependencies run after their prerequisite batch completes. Same agent prompt template, dispatched one at a time.
+<agent-dispatch-template subagent_type="storyline:developer-amigo">
+prompt: |
+  Read persona memory: .storyline/personas/developer-amigo.md
+  Read your brief: .storyline/workbench/build-briefs/<task-id>.yaml
+  Read only the test files listed in `green_when`.
+  Read .storyline/workbench/build-board.md (short — scan for entries affecting your task id).
+
+  Do NOT read: changeset, feature files, blueprint summary, amigo-notes, tech-choices.md. Everything you need is in the brief. If something critical is missing from the brief, post on the build board as "brief-gap" and stop — do NOT guess.
+
+  ## How to build
+  - All tests in `green_when` are currently RED. Drive them to GREEN.
+  - Inner loop TDD for components you create: failing unit test → simplest pass → refactor. Unit tests go next to the code, not in `tests/acceptance/` or `tests/integration/`.
+  - Stay inside `files_in_scope`. Never touch `files_off_limits`.
+  - Use exact `glossary_terms` in identifiers.
+  - Use context7 for framework/library docs (see `framework_notes`).
+
+  ## Parallel boundaries
+  - You may be running alongside other dev agents. Assume any file NOT in your `files_in_scope` is owned by another agent.
+  - If you discover you need something from another task's scope, post on the build board as "needs: <what>" and move on. Do not reach across.
+  - Commit: `git commit -m "feat: [feature] — [task name] green"`
+
+  Report back: which tests in green_when are now passing, any brief-gaps or needs posted, files touched.
+  Work from: [project directory]
+</agent-dispatch-template>
 
 ---
 
-## Step 5: Integration check
+## Step 5: Sequential tail tasks
+
+Tasks with dependencies run after their prerequisite batch completes. Same dev dispatch template, dispatched one at a time.
+
+---
+
+## Step 6: Integration check
 
 After all batches complete:
 ```bash
@@ -113,10 +124,16 @@ After all batches complete:
 [test command from tech_stack]
 ```
 
-If tests fail → dispatch a fix agent with the failure context. Do not re-run the whole build.
+If tests fail → dispatch a fix agent with the failure context + the brief of the task whose tests are failing. Do not re-run the whole build.
+
+---
+
+## Step 7: VERIFY sweep (conditional)
+
+After all GREEN batches pass, scan every brief for non-empty `deferred_edge_cases` (skipping items whose reason starts with "not for VERIFY"). If any remain: dispatch one Testing Amigo per task (parallel, background) using the VERIFY prompt from `crew-build-loop.md`. If none: skip entirely — the code review pass will catch gaps.
 
 ---
 
 ## After all tasks complete
 
-Continue to the code review and as-built update from crew-build-loop.md "After All Tasks Complete" section.
+Continue to the code review and as-built update from `crew-build-loop.md` → "After All Tasks Complete".

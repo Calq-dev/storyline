@@ -1625,6 +1625,10 @@ function cmdHousekeeping(args: { cleanup: boolean; phase?: string }, cwd: string
     if (phase === "all") {
       const murphy = join(workbench, "murphy.md");
       if (existsSync(murphy)) toRemove.push(murphy);
+      const buildBriefs = join(workbench, "build-briefs");
+      if (existsSync(buildBriefs)) toRemove.push(buildBriefs);
+      const buildBoard = join(workbench, "build-board.md");
+      if (existsSync(buildBoard)) toRemove.push(buildBoard);
     }
 
     if (phase !== "three-amigos" && phase !== "sticky-storm" && phase !== "all") {
@@ -1670,6 +1674,8 @@ function archiveSession(feature: string, cwd: string): void {
     { src: join(workbench, "events-raw.md"), dest: "events-raw.md" },
     { src: join(workbench, "estimates"), dest: "estimates" },
     { src: join(workbench, "technical-brief.yaml"), dest: "technical-brief.yaml" },
+    { src: join(workbench, "build-briefs"), dest: "build-briefs" },
+    { src: join(workbench, "build-board.md"), dest: "build-board.md" },
   ];
 
   // Project-wide: copy only, keep in workbench

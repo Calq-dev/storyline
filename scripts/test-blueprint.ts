@@ -819,6 +819,28 @@ test("test_archive_copies_workbench_artifacts", () => {
   assert.ok(existsSync(archived), "Expected example-map.yaml to be archived");
 });
 
+test("test_archive_copies_build_briefs_and_board", () => {
+  const d = tmp();
+  setupBddDir(d);
+  run(["init", "--project", "Test App"], d);
+
+  const workbench = join(d, ".storyline", "workbench");
+  const briefs = join(workbench, "build-briefs");
+  mkdirSync(briefs, { recursive: true });
+  writeFileSync(join(briefs, "T1.yaml"), "task: T1\nname: walking skeleton\n");
+  writeFileSync(join(workbench, "build-board.md"), "# Build Board\n");
+
+  run(["archive", "--feature", "checkout"], d);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const sessionDir = join(d, ".storyline", "sessions", `${today}-checkout`);
+  assert.ok(existsSync(join(sessionDir, "build-briefs", "T1.yaml")), "Expected build-briefs/T1.yaml to be archived");
+  assert.ok(existsSync(join(sessionDir, "build-board.md")), "Expected build-board.md to be archived");
+  // And removed from workbench
+  assert.ok(!existsSync(briefs), "Expected build-briefs/ to be removed from workbench");
+  assert.ok(!existsSync(join(workbench, "build-board.md")), "Expected build-board.md to be removed from workbench");
+});
+
 test("test_archive_slugifies_feature_name", () => {
   const d = tmp();
   setupBddDir(d);

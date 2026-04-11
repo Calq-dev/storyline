@@ -102,14 +102,22 @@ Dispatch `Skill: storyline:the-foreman` for build choice. Do NOT start implement
 
 ## Phase 2: Build (after Foreman gives go-ahead)
 
+This is the "continue here" path — the main agent builds inline, context stays warm, no subagent dispatches. If the Foreman instead chose The Crew or Parallel build, those skills handle Phase 2 — but the scope of 2b (suite + briefs) is the same in all three modes.
+
 ### 2a: Confirm Execution Order
-Present recommended scenario order to user via MCQ. After confirmation, create a task per scenario using TaskCreate, chained with TaskUpdate addBlockedBy. Mark first in_progress.
+Present recommended scenario order to user via MCQ. After confirmation, create a task per scenario using TaskCreate, chained with TaskUpdate addBlockedBy. Prepend one SUITE task for 2b and mark it in_progress.
 
-### 2b: Step Definitions
-Detect language + framework from `tech_stack`. Generate **declarative** step definitions (business actions, not UI). See `./step-definition-examples.md`. Write to: `tests/acceptance/steps/<feature>_steps.*`
+### 2b: Upfront failing suite + build briefs (whole feature)
+Before implementing anything, write the full failing suite for the entire changeset in one pass:
+- **Acceptance tests** — declarative step definitions per scenario across every touched `.feature` file. Detect language + framework from `tech_stack`. See `./step-definition-examples.md`. Write to: `tests/acceptance/steps/<feature>_steps.*`
+- **Invariant integration tests** — one per in-scope invariant from `phases[].touches[]` (assertable only — skip architectural). Write to `tests/integration/<context>_<aggregate>_invariants_test.<ext>`. Do not mock the aggregate, command handler, or domain service.
 
-### 2c: Failing Acceptance Test
-Run scenario — it must fail. The failure tells you what to build first.
+Also write `.storyline/workbench/build-briefs/<task-id>.yaml` per changeset task. Schema + rules are in `crew-build-loop.md` Phase 0. In "continue here" mode you won't dispatch dev subagents, but the briefs are still mandatory: they serve as the durable record of per-task contracts and as fallback handoff if the user later re-enters build via The Crew or Parallel build.
+
+Run the suite — everything must be RED. Commit: `test: failing suite + build briefs for [feature]`. Then move to 2c for the first scenario.
+
+### 2c: Confirm Failing Acceptance Test
+For the current scenario, run it from the suite written in 2b — confirm it still fails for the right reason. The failure tells you what to build first.
 
 ### 2d: Inner Loop TDD
 Per component: failing unit test → simplest pass → refactor → check acceptance test.
@@ -146,7 +154,7 @@ If `domain_model_delta` is absent, skip silently.
 git add .storyline/ src/ tests/
 git commit -m "feat: [feature name] — [scenario name] green"
 ```
-TaskUpdate current → completed. TaskUpdate next → in_progress. Repeat 2b–2e.
+TaskUpdate current → completed. TaskUpdate next → in_progress. Repeat 2c–2e (2b runs once for the whole feature, not per scenario).
 
 ### 2f: Outside-In Discipline Check
 If implementation came before tests — write the missing test now.
